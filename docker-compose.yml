@@ -1,0 +1,118 @@
+version: "3"
+
+networks:
+  incredible-squaring-network:
+    name: incredible-squaring-network
+    driver: bridge
+
+services:
+  anvil:
+    image: ghcr.io/foundry-rs/foundry
+    container_name: anvil
+    ports:
+      # opening the port so we can easily cast to anvil from localhost
+      - "8545:8545"
+    # changed entrypoint because the default 'bash -c' entrypoint wasn't working the intended way...
+    entrypoint: anvil
+    volumes:
+      - ./tests/anvil/avs-and-eigenlayer-deployed-anvil-state.json:/root/.anvil/state.json
+    command: --host 0.0.0.0 --load-state /root/.anvil/state.json
+    networks:
+      - incredible-squaring-network
+
+  aggregator:
+    image: ghcr.io/layr-labs/incredible-squaring/aggregator/cmd/main.go:latest
+    container_name: incredible-squaring-aggregator
+    depends_on:
+      anvil:
+        condition: service_started
+    volumes:
+      - ./:/incredible-squaring/
+    working_dir: /incredible-squaring
+    command: 
+      - --config 
+      - config-files/aggregator-docker-compose.yaml
+      - --credible-squaring-deployment 
+      - contracts/script/output/31337/credible_squaring_avs_deployment_output.json
+      - --ecdsa-private-key 
+      - "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"
+    networks:
+      - incredible-squaring-network
+
+  operator1:
+    image: ghcr.io/layr-labs/incredible-squaring/operator/cmd/main.go:latest
+    container_name: incredible-squaring-operator1
+    depends_on:
+      anvil:
+        condition: service_started
+      aggregator:
+        condition: service_started
+    ports:
+      - "9090:9090" # prometheus metrics port (defined in operator-docker-compose.anvil.yaml file)
+    volumes:
+      - ./:/incredible-squaring/
+    working_dir: /incredible-squaring
+    command: --config config-files/operator-docker-compose.anvil.yaml
+    networks:
+      - incredible-squaring-network
+
+  # operator2:
+  #   image: ghcr.io/layr-labs/incredible-squaring/operator/cmd/main.go:latest
+  #   container_name: incredible-squaring-operator2
+  #   depends_on:
+  #     anvil:
+  #       condition: service_started
+  #   volumes:
+  #     - ./:/incredible-squaring/
+  #   working_dir: /incredible-squaring
+  #   command: --config config-files/operator-docker-compose.anvil.yaml --credible-squaring-deployment contracts/script/output/31337/credible_squaring_avs_deployment_output.json --ecdsa-private-key 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d --bls-private-key 2
+  #   networks:
+  #     - incredible-squaring-network
+
+  # METRICS RELATED
+  grafana:
+    image: grafana/grafana:9.4.1
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      # See https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#override-configuration-with-environment-variables
+      # and https://grafana.com/docs/grafana/latest/setup-grafana/configure-docker/
+      # They recommend using env vars instead of overwriting config.ini
+      - GF_SECURITY_ADMIN_USER=${ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    networks:
+      - incredible-squaring-network
+
+  prometheus:
+    image: prom/prometheus:v2.42.0
+    container_name: prometheus
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--storage.tsdb.retention.time=200h"
+      - "--web.enable-lifecycle"
+      - --web.enable-remote-write-receiver
+    restart: unless-stopped
+    expose:
+      - 9090
+    networks:
+      - incredible-squaring-network
+    # so that we can access the host from within the container
+    # needed to get the metrics from host.docker.internal:9184/metrics
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  prometheus_data: {}
+  grafana_data: {}

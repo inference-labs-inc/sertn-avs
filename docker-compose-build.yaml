@@ -1,0 +1,12 @@
+# This file is used for building and pushing images
+services:
+  node:
+    build:
+      context: .
+      dockerfile: operator.Dockerfile
+    image: ghcr.io/layr-labs/incredible-squaring-avs/node:latest
+  nodeplugin:
+    build:
+      context: .
+      dockerfile: plugin.Dockerfile
+    image: ghcr.io/layr-labs/incredible-squaring-avs/nodeplugin:latest

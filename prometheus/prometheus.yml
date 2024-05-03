@@ -1,0 +1,27 @@
+global:
+  scrape_interval: 15s
+
+  # Attach these labels to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  external_labels:
+    monitor: "docker-host-alpha"
+
+# A scrape configuration containing exactly one endpoint to scrape.
+scrape_configs:
+
+  - job_name: "prometheus"
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "incredible-squaring-node"
+    scrape_interval: 5s
+    static_configs:
+      # host.docker.internal might not work on linux
+      # TODO: do https://stackoverflow.com/a/67158212/4971151
+      # - targets: ["host.docker.internal:9090"]
+      - targets: ["incredible-squaring-operator1:9090"]
+        labels:
+          bot: "inc-sq-node"
+    relabel_configs:
+      # is this actually useful? We already have the job name

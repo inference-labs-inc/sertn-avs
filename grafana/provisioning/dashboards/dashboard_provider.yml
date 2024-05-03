@@ -1,0 +1,17 @@
+apiVersion: 1
+
+# dashboard providers
+# we use a single generic one for now.
+# we could split this into a provider for sui bot related, and one for general purpose, etc eventually
+# see https://grafana.com/docs/grafana/latest/administration/provisioning/#dashboards
+providers:
+  - name: 'Local Files'
+    folder: '' # General is the default
+    type: file
+    disableDeletion: false
+    editable: true
+    allowUiUpdates: true
+    updateIntervalSeconds: 10
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: true

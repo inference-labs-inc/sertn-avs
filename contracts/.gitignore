@@ -1,0 +1,15 @@
+# Compiler files
+cache/
+out/
+
+# Ignores development broadcast logs
+/broadcast/**
+
+# Docs
+docs/
+
+# Dotenv file
+.env
+
+# Not sure what this folder is for.. so removing for now
+data/

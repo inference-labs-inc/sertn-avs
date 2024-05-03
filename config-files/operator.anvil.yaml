@@ -1,0 +1,44 @@
+# this sets the logger level (true = info, false = debug)
+production: true
+
+operator_address: 0x860B6912C2d0337ef05bbC89b0C2CB6CbAEAB4A5
+
+# EigenLayer Slasher contract address
+
+# This is the address of the contracts which are deployed in the anvil saved state
+# The saved eigenlayer state is located in tests/anvil/credible_squaring_avs_deployment_output.json
+# TODO(samlaf): automate updating these addresses when we deploy new contracts
+avs_registry_coordinator_address: 0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9
+operator_state_retriever_address: 0x95401dc811bb5740090279Ba06cfA8fcF6113778
+
+# ETH RPC URL
+eth_rpc_url: http://localhost:8545
+eth_ws_url: ws://localhost:8545
+
+# If you running this using eigenlayer CLI and the provided AVS packaging structure,
+# this should be /operator_keys/ecdsa_key.json as the host path will be asked while running
+#
+# If you are running locally using go run main.go, this should be full path to your local ecdsa key file
+ecdsa_private_key_store_path: tests/keys/test.ecdsa.key.json
+
+# If you running this using eigenlayer CLI and the provided AVS packaging structure,
+# this should be /operator_keys/bls_key.json as the host path will be asked while running
+#
+# We are using bn254 curve for bls keys
+#
+# If you are running locally using go run main.go, this should be full path to your local bls key file
+bls_private_key_store_path: tests/keys/test.bls.key.json
+
+# address which the aggregator listens on for operator signed messages
+aggregator_server_ip_port_address: localhost:8090
+
+# avs node spec compliance https://eigen.nethermind.io/docs/spec/intro
+eigen_metrics_ip_port_address: localhost:9090
+enable_metrics: true
+node_api_ip_port_address: localhost:9010
+enable_node_api: true
+
+register_operator_on_startup: true
+# address of token to deposit tokens into when registering on startup
+# addresses.erc20MockStrategy in tests/anvil/credible_squaring_avs_deployment_output.json
+token_strategy_addr: 0x09635F643e140090A9A8Dcd712eD6285858ceBef

@@ -1,0 +1,29 @@
+name: integration-tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:  
+  Test:
+    name: Integration Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+      
+      # we use forge right now as part of integration test, so need to install it first
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+      - name: Install forge dependencies
+        run: forge install
+        working-directory: ./contracts
+
+      - name: Test
+        run: make tests-integration

@@ -1,0 +1,6 @@
+# production only prints info and above. development also prints debug
+environment: production
+eth_rpc_url: http://anvil:8545
+eth_ws_url: ws://anvil:8545
+# address which the aggregator listens on for operator signed messages
+aggregator_server_ip_port_address: 0.0.0.0:8090

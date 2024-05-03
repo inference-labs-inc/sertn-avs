@@ -1,0 +1,29 @@
+name: ko-publish-aggregator-and-operator
+
+on:
+  push:
+    branches: ['master']
+  # we can also trigger manually in case needed
+  workflow_dispatch:
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    permissions:
+      # Need this to be allowed to publish image to registry
+      # see https://docs.github.com/en/actions/publishing-packages/publishing-docker-images
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.21.x'
+      - uses: actions/checkout@v2
+
+      - uses: ko-build/setup-ko@v0.6
+      # We build both the aggregator and the operator in the same job
+      # we could separate them, but anyways they share core/ so it would get messy
+      # See https://ko.build/configuration/#naming-images to understand --preserve-import-paths
+      - run: KO_DOCKER_REPO=ghcr.io/layr-labs/incredible-squaring ko build aggregator/cmd/main.go --preserve-import-paths
+      - run: KO_DOCKER_REPO=ghcr.io/layr-labs/incredible-squaring ko build operator/cmd/main.go --preserve-import-paths
