@@ -131,7 +131,8 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 	taskNum := int64(0)
 	// ticker doesn't tick immediately, so we send the first task here
 	// see https://github.com/golang/go/issues/17601
-	_ = agg.sendNewTask(big.NewInt(taskNum))
+	inputs := [5]*big.Int{big.NewInt(taskNum + 30), big.NewInt(0), big.NewInt(taskNum), big.NewInt(taskNum), big.NewInt(taskNum)}
+	_ = agg.sendNewTask(inputs)
 	taskNum++
 
 	for {
@@ -142,7 +143,7 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 			agg.logger.Info("Received response from blsAggregationService", "blsAggServiceResp", blsAggServiceResp)
 			agg.sendAggregatedResponseToContract(blsAggServiceResp)
 		case <-ticker.C:
-			err := agg.sendNewTask(big.NewInt(taskNum))
+			err := agg.sendNewTask(inputs)
 			taskNum++
 			if err != nil {
 				// we log the errors inside sendNewTask() so here we just continue to the next task
@@ -195,12 +196,12 @@ func (agg *Aggregator) sendAggregatedResponseToContract(blsAggServiceResp blsagg
 
 // sendNewTask sends a new task to the task manager contract, and updates the Task dict struct
 // with the information of operators opted into quorum 0 at the block of task creation.
-func (agg *Aggregator) sendNewTask(numToSquare *big.Int) error {
-	agg.logger.Info("Aggregator sending new task", "numberToSquare", numToSquare)
+func (agg *Aggregator) sendNewTask(input [5]*big.Int) error {
+	agg.logger.Info("Aggregator sending new task", "input", input)
 	// Send number to square to the task manager contract
-	newTask, taskIndex, err := agg.avsWriter.SendNewTaskNumberToSquare(context.Background(), numToSquare, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS)
+	newTask, taskIndex, err := agg.avsWriter.SendNewTaskInput(context.Background(), input, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS)
 	if err != nil {
-		agg.logger.Error("Aggregator failed to send number to square", "err", err)
+		agg.logger.Error("Aggregator failed to send input", "err", err)
 		return err
 	}
 
