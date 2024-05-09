@@ -24,6 +24,8 @@ interface IIncredibleSquaringTaskManager {
         address indexed challenger
     );
 
+    event TaskChallenged(uint32 indexed taskIndex);
+
     // STRUCTS
     struct Task {
         uint256[5] inputs;

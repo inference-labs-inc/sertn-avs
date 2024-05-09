@@ -11,6 +11,7 @@ import {BLSSignatureChecker, IRegistryCoordinator} from "@eigenlayer-middleware/
 import {OperatorStateRetriever} from "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 import "@eigenlayer-middleware/src/libraries/BN254.sol";
 import "./IIncredibleSquaringTaskManager.sol";
+import "./ZKVerifier.sol";
 
 contract IncredibleSquaringTaskManager is
     Initializable,
@@ -18,7 +19,8 @@ contract IncredibleSquaringTaskManager is
     Pausable,
     BLSSignatureChecker,
     OperatorStateRetriever,
-    IIncredibleSquaringTaskManager
+    IIncredibleSquaringTaskManager,
+    ZKVerifier
 {
     using BN254 for BN254.G1Point;
 
@@ -41,7 +43,17 @@ contract IncredibleSquaringTaskManager is
     // mapping of task indices to hash of abi.encode(taskResponse, taskResponseMetadata)
     mapping(uint32 => bytes32) public allTaskResponses;
 
-    mapping(uint32 => bool) public taskSuccesfullyChallenged;
+    enum TASK_CHALLENGED_STATE {
+        NOT_CHALLENGED,
+        BEING_CHALLENGED,
+        SUCCESSFUL_CHALLENGE,
+        UNSUCCESSFUL_CHALLENGE
+    }
+
+    mapping(uint32 => TASK_CHALLENGED_STATE) public taskChallengeState;
+
+    mapping(uint32 => uint256) public taskChallengedBlock;
+    mapping(uint32 => uint256[6]) public taskChallengedInstances;
 
     address public aggregator;
     address public generator;
@@ -180,7 +192,7 @@ contract IncredibleSquaringTaskManager is
         BN254.G1Point[] memory pubkeysOfNonSigningOperators
     ) external {
         uint32 referenceTaskIndex = taskResponse.referenceTaskIndex;
-        uint256[5] memory inputs = task.inputs;
+
         // some logical checks
         require(
             allTaskResponses[referenceTaskIndex] != bytes32(0),
@@ -192,8 +204,9 @@ contract IncredibleSquaringTaskManager is
             "Task response does not match the one recorded in the contract"
         );
         require(
-            taskSuccesfullyChallenged[referenceTaskIndex] == false,
-            "The response to this task has already been challenged successfully."
+            taskChallengeState[referenceTaskIndex] ==
+                TASK_CHALLENGED_STATE.NOT_CHALLENGED,
+            "The response to this task has already been challenged."
         );
 
         require(
@@ -202,16 +215,57 @@ contract IncredibleSquaringTaskManager is
                     TASK_CHALLENGE_WINDOW_BLOCK,
             "The challenge period for this task has already expired."
         );
+        // Mark this task as challenged and freeze inputs and output
+        uint256[6] memory instances;
+        for (uint256 i = 0; i < 5; ++i) {
+            instances[i] = task.inputs[i] * 4;
+        }
+        instances[5] = taskResponse.output * 4;
+        taskChallengedInstances[referenceTaskIndex] = instances;
 
-        // TODO: ZK PROOF logic for checking whether challenge is valid or not
+        taskChallengedBlock[referenceTaskIndex] = block.number;
+        taskChallengeState[referenceTaskIndex] = TASK_CHALLENGED_STATE
+            .BEING_CHALLENGED;
 
-        bool isResponseCorrect = inputs.length > 0;
+        emit TaskChallenged(referenceTaskIndex);
+    }
 
-        // if response was correct, no slashing happens so we return
+    function ProveChallenge(
+        uint32 referenceTaskIndex,
+        bytes calldata proof
+    ) external {
+        bool isResponseCorrect = verifyProof(
+            proof,
+            taskChallengedInstances[referenceTaskIndex]
+        );
+
         if (isResponseCorrect == true) {
             emit TaskChallengedUnsuccessfully(referenceTaskIndex, msg.sender);
-            return;
+            taskChallengeState[referenceTaskIndex] = TASK_CHALLENGED_STATE
+                .UNSUCCESSFUL_CHALLENGE;
         }
+    }
+
+    function checkChallenge(
+        Task calldata task,
+        TaskResponse calldata taskResponse,
+        TaskResponseMetadata calldata taskResponseMetadata,
+        BN254.G1Point[] memory pubkeysOfNonSigningOperators
+    ) external {
+        uint32 referenceTaskIndex = taskResponse.referenceTaskIndex;
+
+        require(
+            taskChallengeState[referenceTaskIndex] ==
+                TASK_CHALLENGED_STATE.BEING_CHALLENGED,
+            "The response is not in a waiting state"
+        );
+
+        require(
+            block.number >
+                taskChallengedBlock[referenceTaskIndex] +
+                    TASK_CHALLENGE_WINDOW_BLOCK,
+            "The operator still has time to submit a proof"
+        );
 
         // get the list of hash of pubkeys of operators who weren't part of the task response submitted by the aggregator
         bytes32[] memory hashesOfPubkeysOfNonSigningOperators = new bytes32[](
@@ -308,7 +362,8 @@ contract IncredibleSquaringTaskManager is
         // }
 
         // the task response has been challenged successfully
-        taskSuccesfullyChallenged[referenceTaskIndex] = true;
+        taskChallengeState[referenceTaskIndex] = TASK_CHALLENGED_STATE
+            .SUCCESSFUL_CHALLENGE;
 
         emit TaskChallengedSuccessfully(referenceTaskIndex, msg.sender);
     }
