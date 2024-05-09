@@ -32,6 +32,8 @@ type AvsWriterer interface {
 		taskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
 		taskResponseMetadata cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata,
 		pubkeysOfNonSigningOperators []cstaskmanager.BN254G1Point,
+		instances []*big.Int,
+		proof []byte,
 	) (*types.Receipt, error)
 	SendAggregatedResponse(ctx context.Context,
 		task cstaskmanager.IIncredibleSquaringTaskManagerTask,
@@ -129,13 +131,15 @@ func (w *AvsWriter) RaiseChallenge(
 	taskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
 	taskResponseMetadata cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata,
 	pubkeysOfNonSigningOperators []cstaskmanager.BN254G1Point,
+	instances []*big.Int,
+	proof []byte,
 ) (*types.Receipt, error) {
 	txOpts, err := w.TxMgr.GetNoSendTxOpts()
 	if err != nil {
 		w.logger.Errorf("Error getting tx opts")
 		return nil, err
 	}
-	tx, err := w.AvsContractBindings.TaskManager.RaiseAndResolveChallenge(txOpts, task, taskResponse, taskResponseMetadata, pubkeysOfNonSigningOperators)
+	tx, err := w.AvsContractBindings.TaskManager.RaiseAndResolveChallenge(txOpts, task, taskResponse, taskResponseMetadata, pubkeysOfNonSigningOperators, instances, proof)
 	if err != nil {
 		w.logger.Errorf("Error assembling RaiseChallenge tx")
 		return nil, err

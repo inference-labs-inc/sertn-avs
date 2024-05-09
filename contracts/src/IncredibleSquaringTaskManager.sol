@@ -11,6 +11,7 @@ import {BLSSignatureChecker, IRegistryCoordinator} from "@eigenlayer-middleware/
 import {OperatorStateRetriever} from "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 import "@eigenlayer-middleware/src/libraries/BN254.sol";
 import "./IIncredibleSquaringTaskManager.sol";
+import {IZKVerifier} from "./IZKVerifier.sol";
 
 contract IncredibleSquaringTaskManager is
     Initializable,
@@ -46,6 +47,8 @@ contract IncredibleSquaringTaskManager is
     address public aggregator;
     address public generator;
 
+    IZKVerifier zkVerifier;
+
     /* MODIFIERS */
     modifier onlyAggregator() {
         require(msg.sender == aggregator, "Aggregator must be the caller");
@@ -70,12 +73,14 @@ contract IncredibleSquaringTaskManager is
         IPauserRegistry _pauserRegistry,
         address initialOwner,
         address _aggregator,
-        address _generator
+        address _generator,
+        address _zkVerifier
     ) public initializer {
         _initializePauser(_pauserRegistry, UNPAUSE_ALL);
         _transferOwnership(initialOwner);
         aggregator = _aggregator;
         generator = _generator;
+        zkVerifier = IZKVerifier(_zkVerifier);
     }
 
     /* FUNCTIONS */
@@ -121,8 +126,8 @@ contract IncredibleSquaringTaskManager is
         );
         require(
             uint32(block.number) <=
-                taskCreatedBlock + TASK_RESPONSE_WINDOW_BLOCK,
-            "Aggregator has responded to the task too late"
+                taskCreatedBlock + TASK_RESPONSE_WINDOW_BLOCK
+            //"1" // Aggregator has responded to the task too late
         );
 
         /* CHECKING SIGNATURES & WHETHER THRESHOLD IS MET OR NOT */
@@ -177,35 +182,46 @@ contract IncredibleSquaringTaskManager is
         Task calldata task,
         TaskResponse calldata taskResponse,
         TaskResponseMetadata calldata taskResponseMetadata,
-        BN254.G1Point[] memory pubkeysOfNonSigningOperators
+        BN254.G1Point[] memory pubkeysOfNonSigningOperators,
+        uint256[] calldata instances,
+        bytes calldata proof
     ) external {
         uint32 referenceTaskIndex = taskResponse.referenceTaskIndex;
-        uint256[5] memory inputs = task.inputs;
         // some logical checks
         require(
-            allTaskResponses[referenceTaskIndex] != bytes32(0),
-            "Task hasn't been responded to yet"
+            allTaskResponses[referenceTaskIndex] != bytes32(0)
+            //"2" // "Task hasn't been responded to yet"
         );
         require(
             allTaskResponses[referenceTaskIndex] ==
-                keccak256(abi.encode(taskResponse, taskResponseMetadata)),
-            "Task response does not match the one recorded in the contract"
+                keccak256(abi.encode(taskResponse, taskResponseMetadata))
+            //"3" // "Task response does not match the one recorded in the contract"
         );
         require(
-            taskSuccesfullyChallenged[referenceTaskIndex] == false,
-            "The response to this task has already been challenged successfully."
+            taskSuccesfullyChallenged[referenceTaskIndex] == false
+            //"4" // "The response to this task has already been challenged successfully."
         );
 
         require(
             uint32(block.number) <=
                 taskResponseMetadata.taskResponsedBlock +
                     TASK_CHALLENGE_WINDOW_BLOCK,
-            "The challenge period for this task has already expired."
+            "5" // "The challenge period for this task has already expired."
         );
 
-        // TODO: ZK PROOF logic for checking whether challenge is valid or not
+        for (uint8 i = 0; i < 5; i++) {
+            require(
+                instances[i] == task.inputs[i] * 4,
+                "6" // "Challenger inputs not the same as task inputs"
+            );
+        }
+        // ZK proof of challenger output
+        require(
+            zkVerifier.verifyProof(proof, instances),
+            "7" // "Challenger ZK proof invalid"
+        );
 
-        bool isResponseCorrect = inputs.length > 0;
+        bool isResponseCorrect = instances[5] == taskResponse.output * 4; // Challenger output is the same as response output
 
         // if response was correct, no slashing happens so we return
         if (isResponseCorrect == true) {
@@ -236,7 +252,7 @@ contract IncredibleSquaringTaskManager is
         );
         require(
             signatoryRecordHash == taskResponseMetadata.hashOfNonSigners,
-            "The pubkeys of non-signing operators supplied by the challenger are not correct."
+            "8" // "The pubkeys of non-signing operators supplied by the challenger are not correct."
         );
 
         // get the address of operators who didn't sign

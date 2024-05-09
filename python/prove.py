@@ -1,5 +1,4 @@
 import ezkl
-import os
 import argparse
 from utils import relative_file_path
 import json

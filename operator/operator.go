@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"os/exec"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -317,10 +319,29 @@ func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.Con
 		"quorumNumbers", newTaskCreatedLog.Task.QuorumNumbers,
 		"QuorumThresholdPercentage", newTaskCreatedLog.Task.QuorumThresholdPercentage,
 	)
-	output := big.NewInt(0)
+	var inputs [5]string
+
+	for i := 0; i < 5; i++ {
+		inputs[i] = newTaskCreatedLog.Task.Inputs[i].String()
+	}
+
+	cmd := exec.Command("python", "python/run.py", "--input", strings.Join(inputs[:], " "))
+
+	stdout, err := cmd.Output()
+	if err != nil {
+		o.logger.Error(err.Error())
+	}
+	outputString := string(stdout)
+
+	// convert output string into int64
+	var output int64
+	fmt.Sscan(outputString, &output)
+
+	o.logger.Info("Python", "ouput", output)
+
 	taskResponse := &cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 		ReferenceTaskIndex: newTaskCreatedLog.TaskIndex,
-		Output:      output,
+		Output:             big.NewInt(output),
 	}
 	return taskResponse
 }

@@ -24,6 +24,8 @@ interface IIncredibleSquaringTaskManager {
         address indexed challenger
     );
 
+    event TaskChallenged(uint32 indexed taskIndex);
+
     // STRUCTS
     struct Task {
         uint256[5] inputs;
@@ -71,7 +73,9 @@ interface IIncredibleSquaringTaskManager {
         Task calldata task,
         TaskResponse calldata taskResponse,
         TaskResponseMetadata calldata taskResponseMetadata,
-        BN254.G1Point[] memory pubkeysOfNonSigningOperators
+        BN254.G1Point[] memory pubkeysOfNonSigningOperators,
+        uint256[] calldata instances,
+        bytes calldata proof
     ) external;
 
     /// @notice Returns the TASK_RESPONSE_WINDOW_BLOCK

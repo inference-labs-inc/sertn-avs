@@ -3,6 +3,7 @@ package challenger
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"math/big"
 
 	ethclient "github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
@@ -136,20 +137,22 @@ func (c *Challenger) processTaskResponseLog(taskResponseLog *cstaskmanager.Contr
 }
 
 func (c *Challenger) callChallengeModule(taskIndex uint32) error {
-	numberToBeSquared := c.tasks[taskIndex].NumberToBeSquared
-	answerInResponse := c.taskResponses[taskIndex].TaskResponse.NumberSquared
-	trueAnswer := numberToBeSquared.Exp(numberToBeSquared, big.NewInt(2), nil)
+	// numberToBeSquared := c.tasks[taskIndex].Inputs
+	// answerInResponse := c.taskResponses[taskIndex].TaskResponse.Output
+	// trueAnswer := numberToBeSquared.Exp(numberToBeSquared, big.NewInt(2), nil)
 
 	// checking if the answer in the response submitted by aggregator is correct
-	if trueAnswer.Cmp(answerInResponse) != 0 {
-		c.logger.Infof("The number squared is not correct")
+	// if trueAnswer.Cmp(answerInResponse) != 0 {
+	// 	c.logger.Infof("The number squared is not correct")
 
-		// raise challenge
-		c.raiseChallenge(taskIndex)
+	// 	// raise challenge
+	// 	c.raiseChallenge(taskIndex)
 
-		return nil
-	}
-	return types.NoErrorInTaskResponse
+	// 	return nil
+	// }
+	c.raiseChallenge(taskIndex)
+	return nil
+	//return types.NoErrorInTaskResponse
 }
 
 func (c *Challenger) getNonSigningOperatorPubKeys(vLog *cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded) []cstaskmanager.BN254G1Point {
@@ -226,12 +229,22 @@ func (c *Challenger) raiseChallenge(taskIndex uint32) error {
 	c.logger.Info("TaskResponseMetadata", "TaskResponseMetadata", c.taskResponses[taskIndex].TaskResponseMetadata)
 	c.logger.Info("NonSigningOperatorPubKeys", "NonSigningOperatorPubKeys", c.taskResponses[taskIndex].NonSigningOperatorPubKeys)
 
+	var instances [6]*big.Int
+	for i := 0; i < 5; i++ {
+		instances[i] = c.tasks[taskIndex].Inputs[i]
+	}
+	instances[5] = c.taskResponses[taskIndex].TaskResponse.Output
+
+	proof, _ := hex.DecodeString("464466")
+
 	receipt, err := c.avsWriter.RaiseChallenge(
 		context.Background(),
 		c.tasks[taskIndex],
 		c.taskResponses[taskIndex].TaskResponse,
 		c.taskResponses[taskIndex].TaskResponseMetadata,
 		c.taskResponses[taskIndex].NonSigningOperatorPubKeys,
+		instances[:], // need to convert from array to slice
+		proof,
 	)
 	if err != nil {
 		c.logger.Error("Challenger failed to raise challenge:", "err", err)
