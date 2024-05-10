@@ -3,6 +3,7 @@ package aggregator
 import (
 	"context"
 	"math/big"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -14,12 +15,12 @@ import (
 	blsagg "github.com/Layr-Labs/eigensdk-go/services/bls_aggregation"
 	oprsinfoserv "github.com/Layr-Labs/eigensdk-go/services/operatorsinfo"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
-	"github.com/Layr-Labs/incredible-squaring-avs/aggregator/types"
-	"github.com/Layr-Labs/incredible-squaring-avs/core"
-	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
-	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
+	"github.com/inference-labs-inc/omron-avs/aggregator/types"
+	"github.com/inference-labs-inc/omron-avs/core"
+	"github.com/inference-labs-inc/omron-avs/core/chainio"
+	"github.com/inference-labs-inc/omron-avs/core/config"
 
-	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
+	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/IncredibleSquaringTaskManager"
 )
 
 const (
@@ -119,6 +120,15 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 	}, nil
 }
 
+func (agg *Aggregator) RandomInputs() [5]*big.Int {
+	var inputs [5]*big.Int
+	for i := 0; i < 5; i++ {
+		r := rand.Int63n(10)
+		inputs[i] = big.NewInt(r)
+	}
+	return inputs
+}
+
 func (agg *Aggregator) Start(ctx context.Context) error {
 	agg.logger.Infof("Starting aggregator.")
 	agg.logger.Infof("Starting aggregator rpc server.")
@@ -131,7 +141,8 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 	taskNum := int64(0)
 	// ticker doesn't tick immediately, so we send the first task here
 	// see https://github.com/golang/go/issues/17601
-	_ = agg.sendNewTask(big.NewInt(taskNum))
+	inputs := agg.RandomInputs()
+	_ = agg.sendNewTask(inputs)
 	taskNum++
 
 	for {
@@ -142,8 +153,9 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 			agg.logger.Info("Received response from blsAggregationService", "blsAggServiceResp", blsAggServiceResp)
 			agg.sendAggregatedResponseToContract(blsAggServiceResp)
 		case <-ticker.C:
-			err := agg.sendNewTask(big.NewInt(taskNum))
+			err := agg.sendNewTask(inputs)
 			taskNum++
+			inputs = agg.RandomInputs()
 			if err != nil {
 				// we log the errors inside sendNewTask() so here we just continue to the next task
 				continue
@@ -195,12 +207,12 @@ func (agg *Aggregator) sendAggregatedResponseToContract(blsAggServiceResp blsagg
 
 // sendNewTask sends a new task to the task manager contract, and updates the Task dict struct
 // with the information of operators opted into quorum 0 at the block of task creation.
-func (agg *Aggregator) sendNewTask(numToSquare *big.Int) error {
-	agg.logger.Info("Aggregator sending new task", "numberToSquare", numToSquare)
+func (agg *Aggregator) sendNewTask(input [5]*big.Int) error {
+	agg.logger.Info("Aggregator sending new task", "input", input)
 	// Send number to square to the task manager contract
-	newTask, taskIndex, err := agg.avsWriter.SendNewTaskNumberToSquare(context.Background(), numToSquare, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS)
+	newTask, taskIndex, err := agg.avsWriter.SendNewTaskInput(context.Background(), input, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS)
 	if err != nil {
-		agg.logger.Error("Aggregator failed to send number to square", "err", err)
+		agg.logger.Error("Aggregator failed to send input", "err", err)
 		return err
 	}
 

@@ -23,6 +23,8 @@ import {IncredibleSquaringTaskManager} from "../src/IncredibleSquaringTaskManage
 import {IIncredibleSquaringTaskManager} from "../src/IIncredibleSquaringTaskManager.sol";
 import "../src/ERC20Mock.sol";
 
+import {ZKVerifier} from "../src/ZKVerifier.sol";
+
 import {Utils} from "./utils/Utils.sol";
 
 import "forge-std/Test.sol";
@@ -376,6 +378,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
             registryCoordinator,
             TASK_RESPONSE_WINDOW_BLOCK
         );
+        ZKVerifier zkVerifier = new ZKVerifier();
 
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
         incredibleSquaringProxyAdmin.upgradeAndCall(
@@ -388,7 +391,8 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 incredibleSquaringPauserReg,
                 incredibleSquaringCommunityMultisig,
                 AGGREGATOR_ADDR,
-                TASK_GENERATOR_ADDR
+                TASK_GENERATOR_ADDR,
+                address(zkVerifier)
             )
         );
 
@@ -435,6 +439,11 @@ contract IncredibleSquaringDeployer is Script, Utils {
             deployed_addresses,
             "registryCoordinatorImplementation",
             address(registryCoordinatorImplementation)
+        );
+        vm.serializeAddress(
+            deployed_addresses,
+            "zkVerifier",
+            address(zkVerifier)
         );
         string memory deployed_addresses_output = vm.serializeAddress(
             deployed_addresses,

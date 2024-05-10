@@ -2,10 +2,11 @@ package core
 
 import (
 	"math/big"
+	"strings"
 
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
-	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -20,7 +21,7 @@ func AbiEncodeTaskResponse(h *cstaskmanager.IIncredibleSquaringTaskManagerTaskRe
 			Type: "uint32",
 		},
 		{
-			Name: "numberSquared",
+			Name: "output",
 			Type: "uint256",
 		},
 	})
@@ -76,4 +77,12 @@ func ConvertToBN254G2Point(input *bls.G2Point) cstaskmanager.BN254G2Point {
 		Y: [2]*big.Int{input.Y.A1.BigInt(big.NewInt(0)), input.Y.A0.BigInt(big.NewInt(0))},
 	}
 	return output
+}
+
+func FormatBigIntInputsToString(rawInputs [5]*big.Int) string {
+	var inputs []string
+	for i := 0; i < 5; i++ {
+		inputs = append(inputs, rawInputs[i].String())
+	}
+	return strings.Join(inputs, " ")
 }

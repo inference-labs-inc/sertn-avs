@@ -26,3 +26,8 @@ logs.txt
 
 # just for example
 id_rsa
+
+.venv
+__pycache__
+
+.DS_Store

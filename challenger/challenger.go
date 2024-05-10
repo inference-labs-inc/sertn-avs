@@ -3,17 +3,24 @@ package challenger
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"math/big"
+	"os/exec"
+	"strconv"
+	"strings"
+
+	_ "embed"
 
 	ethclient "github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/logging"
-	"github.com/Layr-Labs/incredible-squaring-avs/common"
-	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/inference-labs-inc/omron-avs/common"
+	"github.com/inference-labs-inc/omron-avs/core"
+	"github.com/inference-labs-inc/omron-avs/core/config"
 
-	"github.com/Layr-Labs/incredible-squaring-avs/challenger/types"
-	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
-	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
+	"github.com/inference-labs-inc/omron-avs/challenger/types"
+	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/IncredibleSquaringTaskManager"
+	"github.com/inference-labs-inc/omron-avs/core/chainio"
 )
 
 type Challenger struct {
@@ -125,6 +132,7 @@ func (c *Challenger) processTaskResponseLog(taskResponseLog *cstaskmanager.Contr
 
 	// get the inputs necessary for raising a challenge
 	nonSigningOperatorPubKeys := c.getNonSigningOperatorPubKeys(taskResponseLog)
+
 	taskResponseData := types.TaskResponseData{
 		TaskResponse:              taskResponseLog.TaskResponse,
 		TaskResponseMetadata:      taskResponseLog.TaskResponseMetadata,
@@ -135,21 +143,46 @@ func (c *Challenger) processTaskResponseLog(taskResponseLog *cstaskmanager.Contr
 	return taskResponseRawLog.TaskResponse.ReferenceTaskIndex
 }
 
+func (c *Challenger) FormatInstancesForSolidity(inputs [5]*big.Int, output *big.Int) [6]*big.Int {
+	var instances [6]*big.Int
+	for i := 0; i < 5; i++ {
+		instances[i] = big.NewInt(0).Mul(inputs[i], big.NewInt(4))
+	}
+	instances[5] = output
+	return instances
+}
+
+func (c *Challenger) OutputAndProofFromInputs(inputs string) (*big.Int, []byte) {
+	cmd := exec.Command("python", "python/prove.py", "--input", inputs)
+	stdout, err := cmd.Output()
+	if err != nil {
+		c.logger.Error("Challenger failed to prove computation:", "err", err)
+	}
+
+	result := string(stdout)
+	instancesAndProof := strings.Split(result, "\n")
+
+	proof, _ := hex.DecodeString(instancesAndProof[1])
+	output, _ := strconv.ParseInt(instancesAndProof[0], 16, 64)
+
+	return big.NewInt(output), proof
+}
+
 func (c *Challenger) callChallengeModule(taskIndex uint32) error {
-	numberToBeSquared := c.tasks[taskIndex].NumberToBeSquared
-	answerInResponse := c.taskResponses[taskIndex].TaskResponse.NumberSquared
-	trueAnswer := numberToBeSquared.Exp(numberToBeSquared, big.NewInt(2), nil)
+	inputs := core.FormatBigIntInputsToString(c.tasks[taskIndex].Inputs)
+	responce := big.NewInt(0).Mul(c.taskResponses[taskIndex].TaskResponse.Output, big.NewInt(4))
+	output, proof := c.OutputAndProofFromInputs(inputs)
 
-	// checking if the answer in the response submitted by aggregator is correct
-	if trueAnswer.Cmp(answerInResponse) != 0 {
-		c.logger.Infof("The number squared is not correct")
-
+	//checking if the answer in the response submitted by aggregator is correct
+	if output.Cmp(responce) != 0 {
+		c.logger.Infof("The output from operator was not correct")
 		// raise challenge
-		c.raiseChallenge(taskIndex)
-
+		c.raiseChallenge(taskIndex, output, proof)
 		return nil
 	}
-	return types.NoErrorInTaskResponse
+	c.logger.Infof("The ouput from operator was correct")
+	return nil
+	//return types.NoErrorInTaskResponse
 }
 
 func (c *Challenger) getNonSigningOperatorPubKeys(vLog *cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded) []cstaskmanager.BN254G1Point {
@@ -168,7 +201,9 @@ func (c *Challenger) getNonSigningOperatorPubKeys(vLog *cstaskmanager.ContractIn
 	}
 	calldata := tx.Data()
 	c.logger.Info("calldata", "calldata", calldata)
-	cstmAbi, err := abi.JSON(bytes.NewReader(common.IncredibleSquaringTaskManagerAbi))
+
+	cstmAbi, err := abi.JSON(bytes.NewReader(common.TaskManagerAbi))
+
 	if err != nil {
 		c.logger.Error("Error getting Abi", "err", err)
 	}
@@ -219,12 +254,20 @@ func (c *Challenger) getNonSigningOperatorPubKeys(vLog *cstaskmanager.ContractIn
 	return nonSigningOperatorPubKeys
 }
 
-func (c *Challenger) raiseChallenge(taskIndex uint32) error {
+func (c *Challenger) raiseChallenge(taskIndex uint32, output *big.Int, proof []byte) error {
 	c.logger.Info("Challenger raising challenge.", "taskIndex", taskIndex)
 	c.logger.Info("Task", "Task", c.tasks[taskIndex])
 	c.logger.Info("TaskResponse", "TaskResponse", c.taskResponses[taskIndex].TaskResponse)
 	c.logger.Info("TaskResponseMetadata", "TaskResponseMetadata", c.taskResponses[taskIndex].TaskResponseMetadata)
 	c.logger.Info("NonSigningOperatorPubKeys", "NonSigningOperatorPubKeys", c.taskResponses[taskIndex].NonSigningOperatorPubKeys)
+
+	inputs := core.FormatBigIntInputsToString(c.tasks[taskIndex].Inputs)
+	c.logger.Info("Task Inputs", "Task inputs to prove", inputs)
+
+	instances := c.FormatInstancesForSolidity(c.tasks[taskIndex].Inputs, output)
+
+	c.logger.Info("Instances", "instances", instances)
+	c.logger.Info("Proof", "proof", instances)
 
 	receipt, err := c.avsWriter.RaiseChallenge(
 		context.Background(),
@@ -232,6 +275,8 @@ func (c *Challenger) raiseChallenge(taskIndex uint32) error {
 		c.taskResponses[taskIndex].TaskResponse,
 		c.taskResponses[taskIndex].TaskResponseMetadata,
 		c.taskResponses[taskIndex].NonSigningOperatorPubKeys,
+		instances[:], // need to convert from array to slice
+		proof,
 	)
 	if err != nil {
 		c.logger.Error("Challenger failed to raise challenge:", "err", err)

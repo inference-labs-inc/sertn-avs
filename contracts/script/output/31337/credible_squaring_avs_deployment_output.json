@@ -8,6 +8,7 @@
     "erc20MockStrategy": "0x09635F643e140090A9A8Dcd712eD6285858ceBef",
     "operatorStateRetriever": "0x95401dc811bb5740090279Ba06cfA8fcF6113778",
     "registryCoordinator": "0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9",
-    "registryCoordinatorImplementation": "0x9d4454B023096f34B160D6B654540c56A1F81688"
+    "registryCoordinatorImplementation": "0x9d4454B023096f34B160D6B654540c56A1F81688",
+    "zkVerifier": "0x1291Be112d480055DaFd8a610b7d1e203891C274"
   }
 }

@@ -7,13 +7,13 @@ import (
 
 	mockethclient "github.com/Layr-Labs/eigensdk-go/chainio/mocks"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
-	aggtypes "github.com/Layr-Labs/incredible-squaring-avs/aggregator/types"
-	"github.com/Layr-Labs/incredible-squaring-avs/challenger/mocks"
-	chtypes "github.com/Layr-Labs/incredible-squaring-avs/challenger/types"
-	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
-	chainiomocks "github.com/Layr-Labs/incredible-squaring-avs/core/chainio/mocks"
 	"github.com/ethereum/go-ethereum/common"
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
+	aggtypes "github.com/inference-labs-inc/omron-avs/aggregator/types"
+	"github.com/inference-labs-inc/omron-avs/challenger/mocks"
+	chtypes "github.com/inference-labs-inc/omron-avs/challenger/types"
+	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/IncredibleSquaringTaskManager"
+	chainiomocks "github.com/inference-labs-inc/omron-avs/core/chainio/mocks"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )

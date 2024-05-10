@@ -1,3 +1,3 @@
 package operator
 
-//go:generate mockgen -destination=./mocks/rpc_client.go -package=mocks github.com/Layr-Labs/incredible-squaring-avs/operator AggregatorRpcClienter
+//go:generate mockgen -destination=./mocks/rpc_client.go -package=mocks github.com/inference-labs-inc/omron-avs/operator AggregatorRpcClienter

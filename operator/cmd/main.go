@@ -8,9 +8,9 @@ import (
 
 	"github.com/urfave/cli"
 
-	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
-	"github.com/Layr-Labs/incredible-squaring-avs/operator"
-	"github.com/Layr-Labs/incredible-squaring-avs/types"
+	"github.com/inference-labs-inc/omron-avs/core/config"
+	"github.com/inference-labs-inc/omron-avs/operator"
+	"github.com/inference-labs-inc/omron-avs/types"
 
 	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
 )

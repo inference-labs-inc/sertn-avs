@@ -5,17 +5,20 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"os/exec"
+	"strconv"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
-	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
-	"github.com/Layr-Labs/incredible-squaring-avs/core"
-	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
-	"github.com/Layr-Labs/incredible-squaring-avs/metrics"
-	"github.com/Layr-Labs/incredible-squaring-avs/types"
+	"github.com/inference-labs-inc/omron-avs/aggregator"
+	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/IncredibleSquaringTaskManager"
+	"github.com/inference-labs-inc/omron-avs/core"
+	"github.com/inference-labs-inc/omron-avs/core/chainio"
+	"github.com/inference-labs-inc/omron-avs/metrics"
+	"github.com/inference-labs-inc/omron-avs/types"
 
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	sdkelcontracts "github.com/Layr-Labs/eigensdk-go/chainio/clients/elcontracts"
@@ -25,6 +28,7 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	sdkecdsa "github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
 	"github.com/Layr-Labs/eigensdk-go/logging"
+
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdkmetrics "github.com/Layr-Labs/eigensdk-go/metrics"
 	"github.com/Layr-Labs/eigensdk-go/metrics/collectors/economic"
@@ -306,21 +310,40 @@ func (o *Operator) Start(ctx context.Context) error {
 	}
 }
 
+func (o *Operator) RunModelFromBigIntInputs(rawInputs [5]*big.Int) *big.Int {
+	inputs := core.FormatBigIntInputsToString(rawInputs)
+	cmd := exec.Command("python", "python/run.py", "--input", inputs)
+
+	stdout, err := cmd.Output()
+	if err != nil {
+		o.logger.Error(err.Error())
+	}
+	// convert output string into int64
+	output, err := strconv.ParseInt(strings.Split(string(stdout), "\n")[0], 10, 64)
+	if err != nil {
+		o.logger.Error("Error parsing integer from python response", "error", err.Error(), "python output", string(stdout))
+	}
+
+	return big.NewInt(output)
+}
+
 // Takes a NewTaskCreatedLog struct as input and returns a TaskResponseHeader struct.
 // The TaskResponseHeader struct is the struct that is signed and sent to the contract as a task response.
 func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated) *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse {
 	o.logger.Debug("Received new task", "task", newTaskCreatedLog)
 	o.logger.Info("Received new task",
-		"numberToBeSquared", newTaskCreatedLog.Task.NumberToBeSquared,
+		"inputs", newTaskCreatedLog.Task.Inputs,
 		"taskIndex", newTaskCreatedLog.TaskIndex,
 		"taskCreatedBlock", newTaskCreatedLog.Task.TaskCreatedBlock,
 		"quorumNumbers", newTaskCreatedLog.Task.QuorumNumbers,
 		"QuorumThresholdPercentage", newTaskCreatedLog.Task.QuorumThresholdPercentage,
 	)
-	numberSquared := big.NewInt(0).Exp(newTaskCreatedLog.Task.NumberToBeSquared, big.NewInt(2), nil)
+
+	output := o.RunModelFromBigIntInputs(newTaskCreatedLog.Task.Inputs)
+
 	taskResponse := &cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 		ReferenceTaskIndex: newTaskCreatedLog.TaskIndex,
-		NumberSquared:      numberSquared,
+		Output:             output,
 	}
 	return taskResponse
 }
