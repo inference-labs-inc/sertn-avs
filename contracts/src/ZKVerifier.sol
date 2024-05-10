@@ -2507,6 +2507,7 @@ contract ZKVerifier {
 
             // Return 1 as result if everything succeeds
             mstore(0x00, 1)
+            return(0x00, 0x20)
         }
     }
 }

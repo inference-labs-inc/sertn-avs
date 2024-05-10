@@ -3,6 +3,7 @@ package aggregator
 import (
 	"context"
 	"math/big"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -131,7 +132,8 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 	taskNum := int64(0)
 	// ticker doesn't tick immediately, so we send the first task here
 	// see https://github.com/golang/go/issues/17601
-	inputs := [5]*big.Int{big.NewInt(taskNum + 30), big.NewInt(0), big.NewInt(taskNum), big.NewInt(taskNum), big.NewInt(taskNum)}
+	r := rand.Int63n(4)
+	inputs := [5]*big.Int{big.NewInt(2), big.NewInt(0), big.NewInt(r), big.NewInt(3), big.NewInt(1)}
 	_ = agg.sendNewTask(inputs)
 	taskNum++
 

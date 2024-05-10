@@ -5,6 +5,9 @@ import (
 	"context"
 	"encoding/hex"
 	"math/big"
+	"os/exec"
+	"strconv"
+	"strings"
 
 	ethclient "github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/logging"
@@ -125,7 +128,9 @@ func (c *Challenger) processTaskResponseLog(taskResponseLog *cstaskmanager.Contr
 	}
 
 	// get the inputs necessary for raising a challenge
-	nonSigningOperatorPubKeys := c.getNonSigningOperatorPubKeys(taskResponseLog)
+	//nonSigningOperatorPubKeys := c.getNonSigningOperatorPubKeys(taskResponseLog)
+	nonSigningOperatorPubKeys := make([]cstaskmanager.BN254G1Point, 0)
+
 	taskResponseData := types.TaskResponseData{
 		TaskResponse:              taskResponseLog.TaskResponse,
 		TaskResponseMetadata:      taskResponseLog.TaskResponseMetadata,
@@ -150,6 +155,7 @@ func (c *Challenger) callChallengeModule(taskIndex uint32) error {
 
 	// 	return nil
 	// }
+	c.logger.Infof("The number squared is not correct")
 	c.raiseChallenge(taskIndex)
 	return nil
 	//return types.NoErrorInTaskResponse
@@ -229,14 +235,36 @@ func (c *Challenger) raiseChallenge(taskIndex uint32) error {
 	c.logger.Info("TaskResponseMetadata", "TaskResponseMetadata", c.taskResponses[taskIndex].TaskResponseMetadata)
 	c.logger.Info("NonSigningOperatorPubKeys", "NonSigningOperatorPubKeys", c.taskResponses[taskIndex].NonSigningOperatorPubKeys)
 
+	var inputs [5]string
+	for i := 0; i < 5; i++ {
+		inputs[i] = c.tasks[taskIndex].Inputs[i].String()
+	}
+	c.logger.Info("Still good", "Still good here", inputs)
+	cmd := exec.Command("python", "python/prove.py", "--input", strings.Join(inputs[:], " "))
+
+	stdout, err := cmd.Output()
+
+	c.logger.Info("After running python", "", string(stdout))
+	if err != nil {
+		c.logger.Error("Challenger failed to raise challenge:", "err", err)
+		return err
+	}
+
+	result := string(stdout)
+
+	instancesAndProof := strings.Split(result, "\n")
+	proof, _ := hex.DecodeString(instancesAndProof[1])
+
+	output, _ := strconv.ParseInt(instancesAndProof[0], 16, 64)
+
 	var instances [6]*big.Int
 	for i := 0; i < 5; i++ {
-		instances[i] = c.tasks[taskIndex].Inputs[i]
+		temp := big.NewInt(1)
+		temp.Mul(c.tasks[taskIndex].Inputs[i], big.NewInt(4))
+		instances[i] = temp
 	}
-	instances[5] = c.taskResponses[taskIndex].TaskResponse.Output
-
-	proof, _ := hex.DecodeString("464466")
-
+	instances[5] = big.NewInt(output)
+	c.logger.Info("Instances", "instances", instances)
 	receipt, err := c.avsWriter.RaiseChallenge(
 		context.Background(),
 		c.tasks[taskIndex],

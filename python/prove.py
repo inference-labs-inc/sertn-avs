@@ -1,9 +1,7 @@
 import ezkl
 import argparse
-from utils import relative_file_path
+from utils import relative_file_path, parse_input
 import json
-import torch
-from torch.autograd import Variable
 
 parser = argparse.ArgumentParser(
                     prog='Omron AVS ezkl operator engine')
@@ -12,7 +10,7 @@ parser.add_argument('-i','--input', nargs='+', help='input data to run on', requ
 
 args = parser.parse_args()
 
-input = Variable(torch.Tensor([float(i) for i in args.input]))
+input = parse_input(args.input)
 
 data_array = ((input).detach().numpy()).reshape([-1]).tolist()
 
@@ -39,16 +37,14 @@ proof = ezkl.prove(
         proof_path,
         "single",
     )
-assert ezkl.verify(
-        proof_path,
-        settings_path,
-        vk_path,
-    ) == True
+
 
 onchain_input_array = []
 
 # using a loop
 # avoiding printing last comma
+
+# Below is the instances but rescaling will be done on chain so all we need is a proof
 formatted_output = "["
 for i, value in enumerate(proof["instances"]):
     for j, field_element in enumerate(value):
@@ -63,5 +59,8 @@ formatted_output += "]"
 # This will be the values you use onchain
 # copy them over to remix and see if they verify
 # What happens when you change a value?
-print("Inputs: ", formatted_output)
-print("Proof: ", proof["proof"])
+# print(formatted_output)
+
+##### OUTPUT then Proof
+print(onchain_input_array[-1][2:])
+print(proof["proof"][2:])

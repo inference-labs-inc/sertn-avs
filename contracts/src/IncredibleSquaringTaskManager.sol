@@ -324,7 +324,7 @@ contract IncredibleSquaringTaskManager is
         // }
 
         // the task response has been challenged successfully
-        taskSuccesfullyChallenged[referenceTaskIndex] = true;
+        //taskSuccesfullyChallenged[referenceTaskIndex] = true;
 
         emit TaskChallengedSuccessfully(referenceTaskIndex, msg.sender);
     }
