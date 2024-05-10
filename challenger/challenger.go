@@ -14,6 +14,7 @@ import (
 	ethclient "github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/inference-labs-inc/omron-avs/common"
 	"github.com/inference-labs-inc/omron-avs/core"
 	"github.com/inference-labs-inc/omron-avs/core/config"
 
@@ -33,9 +34,6 @@ type Challenger struct {
 	taskResponseChan   chan *cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded
 	newTaskCreatedChan chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated
 }
-
-//go:embed out/IncredibleSquaringTaskManager.json
-var contractAbi []byte
 
 func NewChallenger(c *config.Config) (*Challenger, error) {
 
@@ -204,7 +202,7 @@ func (c *Challenger) getNonSigningOperatorPubKeys(vLog *cstaskmanager.ContractIn
 	calldata := tx.Data()
 	c.logger.Info("calldata", "calldata", calldata)
 
-	cstmAbi, err := abi.JSON(bytes.NewReader(contractAbi))
+	cstmAbi, err := abi.JSON(bytes.NewReader(common.TaskManagerAbi))
 
 	if err != nil {
 		c.logger.Error("Error getting Abi", "err", err)

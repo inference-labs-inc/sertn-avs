@@ -5,4 +5,4 @@ import (
 )
 
 //go:embed abis/IncredibleSquaringTaskManager.json
-var IncredibleSquaringTaskManagerAbi []byte
+var TaskManagerAbi []byte

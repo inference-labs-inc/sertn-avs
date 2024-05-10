@@ -6,6 +6,8 @@ import (
 	"math/big"
 	"os"
 	"os/exec"
+	"strconv"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -26,6 +28,7 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	sdkecdsa "github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
 	"github.com/Layr-Labs/eigensdk-go/logging"
+
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdkmetrics "github.com/Layr-Labs/eigensdk-go/metrics"
 	"github.com/Layr-Labs/eigensdk-go/metrics/collectors/economic"
@@ -307,6 +310,23 @@ func (o *Operator) Start(ctx context.Context) error {
 	}
 }
 
+func (o *Operator) RunModelFromBigIntInputs(rawInputs [5]*big.Int) *big.Int {
+	inputs := core.FormatBigIntInputsToString(rawInputs)
+	cmd := exec.Command("python", "python/run.py", "--input", inputs)
+
+	stdout, err := cmd.Output()
+	if err != nil {
+		o.logger.Error(err.Error())
+	}
+	// convert output string into int64
+	output, err := strconv.ParseInt(strings.Split(string(stdout), "\n")[0], 10, 64)
+	if err != nil {
+		o.logger.Error("Error parsing integer from python response", "error", err.Error(), "python output", string(stdout))
+	}
+
+	return big.NewInt(output)
+}
+
 // Takes a NewTaskCreatedLog struct as input and returns a TaskResponseHeader struct.
 // The TaskResponseHeader struct is the struct that is signed and sent to the contract as a task response.
 func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated) *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse {
@@ -319,25 +339,11 @@ func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.Con
 		"QuorumThresholdPercentage", newTaskCreatedLog.Task.QuorumThresholdPercentage,
 	)
 
-	inputs := core.FormatBigIntInputsToString(newTaskCreatedLog.Task.Inputs)
-
-	cmd := exec.Command("python", "python/run.py", "--input", inputs)
-
-	stdout, err := cmd.Output()
-	if err != nil {
-		o.logger.Error(err.Error())
-	}
-	outputString := string(stdout)
-
-	// convert output string into int64
-	var output int64
-	fmt.Sscan(outputString, &output)
-
-	o.logger.Info("Python", "ouput", output)
+	output := o.RunModelFromBigIntInputs(newTaskCreatedLog.Task.Inputs)
 
 	taskResponse := &cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 		ReferenceTaskIndex: newTaskCreatedLog.TaskIndex,
-		Output:             big.NewInt(output),
+		Output:             output,
 	}
 	return taskResponse
 }

@@ -120,6 +120,15 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 	}, nil
 }
 
+func (agg *Aggregator) RandomInputs() [5]*big.Int {
+	var inputs [5]*big.Int
+	for i := 0; i < 5; i++ {
+		r := rand.Int63n(10)
+		inputs[i] = big.NewInt(r)
+	}
+	return inputs
+}
+
 func (agg *Aggregator) Start(ctx context.Context) error {
 	agg.logger.Infof("Starting aggregator.")
 	agg.logger.Infof("Starting aggregator rpc server.")
@@ -132,8 +141,7 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 	taskNum := int64(0)
 	// ticker doesn't tick immediately, so we send the first task here
 	// see https://github.com/golang/go/issues/17601
-	r := rand.Int63n(4)
-	inputs := [5]*big.Int{big.NewInt(2), big.NewInt(0), big.NewInt(r), big.NewInt(3), big.NewInt(1)}
+	inputs := agg.RandomInputs()
 	_ = agg.sendNewTask(inputs)
 	taskNum++
 
@@ -147,6 +155,7 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 		case <-ticker.C:
 			err := agg.sendNewTask(inputs)
 			taskNum++
+			inputs = agg.RandomInputs()
 			if err != nil {
 				// we log the errors inside sendNewTask() so here we just continue to the next task
 				continue
