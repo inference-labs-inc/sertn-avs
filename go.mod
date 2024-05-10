@@ -1,4 +1,4 @@
-module github.com/Layr-Labs/incredible-squaring-avs
+module github.com/inference-labs-inc/omron-avs
 
 go 1.21
 
