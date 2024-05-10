@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"os"
 	"os/exec"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -319,13 +318,10 @@ func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.Con
 		"quorumNumbers", newTaskCreatedLog.Task.QuorumNumbers,
 		"QuorumThresholdPercentage", newTaskCreatedLog.Task.QuorumThresholdPercentage,
 	)
-	var inputs [5]string
 
-	for i := 0; i < 5; i++ {
-		inputs[i] = newTaskCreatedLog.Task.Inputs[i].String()
-	}
+	inputs := core.FormatBigIntInputsToString(newTaskCreatedLog.Task.Inputs)
 
-	cmd := exec.Command("python", "python/run.py", "--input", strings.Join(inputs[:], " "))
+	cmd := exec.Command("python", "python/run.py", "--input", inputs)
 
 	stdout, err := cmd.Output()
 	if err != nil {

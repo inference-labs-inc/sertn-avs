@@ -2,6 +2,7 @@ package core
 
 import (
 	"math/big"
+	"strings"
 
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -76,4 +77,12 @@ func ConvertToBN254G2Point(input *bls.G2Point) cstaskmanager.BN254G2Point {
 		Y: [2]*big.Int{input.Y.A1.BigInt(big.NewInt(0)), input.Y.A0.BigInt(big.NewInt(0))},
 	}
 	return output
+}
+
+func FormatBigIntInputsToString(rawInputs [5]*big.Int) string {
+	var inputs []string
+	for i := 0; i < 5; i++ {
+		inputs = append(inputs, rawInputs[i].String())
+	}
+	return strings.Join(inputs, " ")
 }
