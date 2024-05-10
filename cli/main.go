@@ -4,8 +4,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/Layr-Labs/incredible-squaring-avs/cli/actions"
-	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
+	"github.com/inference-labs-inc/omron-avs/cli/actions"
+	"github.com/inference-labs-inc/omron-avs/core/config"
 	"github.com/urfave/cli"
 )
 
