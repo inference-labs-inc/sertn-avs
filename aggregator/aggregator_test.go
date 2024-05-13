@@ -59,9 +59,9 @@ func TestSendNewTask(t *testing.T) {
 
 	var TASK_INDEX = uint32(0)
 	var BLOCK_NUMBER = uint32(100)
-	INPUTS := core.TestInput()
+	INPUTS := core.TestInputs()
 
-	mockAvsWriterer.EXPECT().SendNewTaskNumberToSquare(
+	mockAvsWriterer.EXPECT().SendNewTaskInput(
 		context.Background(), INPUTS, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS,
 	).Return(mocks.MockSendNewTaskNumberToSquareCall(BLOCK_NUMBER, TASK_INDEX, INPUTS))
 
