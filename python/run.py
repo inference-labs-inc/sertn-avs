@@ -12,6 +12,7 @@ try:
     model = Model()
     model.eval()
     # return the answer
-    print(0) #print(int(model(input)[0]))
+    # print(0) ## bad answer
+    print(int(model(input)[0])) ## good answer
 except:
-    print(0)
+    print(404)

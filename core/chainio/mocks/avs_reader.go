@@ -15,10 +15,10 @@ import (
 
 	contractOperatorStateRetriever "github.com/Layr-Labs/eigensdk-go/contracts/bindings/OperatorStateRetriever"
 	types "github.com/Layr-Labs/eigensdk-go/types"
-	contractERC20Mock "github.com/inference-labs-inc/omron-avs/contracts/bindings/ERC20Mock"
-	contractIncredibleSquaringTaskManager "github.com/inference-labs-inc/omron-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	bind "github.com/ethereum/go-ethereum/accounts/abi/bind"
 	common "github.com/ethereum/go-ethereum/common"
+	contractERC20Mock "github.com/inference-labs-inc/omron-avs/contracts/bindings/ERC20Mock"
+	contractIncredibleSquaringTaskManager "github.com/inference-labs-inc/omron-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	gomock "go.uber.org/mock/gomock"
 )
 

@@ -20,6 +20,7 @@ import (
 	"github.com/inference-labs-inc/omron-avs/aggregator/mocks"
 	"github.com/inference-labs-inc/omron-avs/aggregator/types"
 	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/IncredibleSquaringTaskManager"
+	"github.com/inference-labs-inc/omron-avs/core"
 	chainiomocks "github.com/inference-labs-inc/omron-avs/core/chainio/mocks"
 )
 
@@ -58,12 +59,11 @@ func TestSendNewTask(t *testing.T) {
 
 	var TASK_INDEX = uint32(0)
 	var BLOCK_NUMBER = uint32(100)
-	var NUMBER_TO_SQUARE = uint32(3)
-	var NUMBER_TO_SQUARE_BIG_INT = big.NewInt(int64(NUMBER_TO_SQUARE))
+	INPUTS := core.TestInput()
 
 	mockAvsWriterer.EXPECT().SendNewTaskNumberToSquare(
-		context.Background(), NUMBER_TO_SQUARE_BIG_INT, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS,
-	).Return(mocks.MockSendNewTaskNumberToSquareCall(BLOCK_NUMBER, TASK_INDEX, NUMBER_TO_SQUARE))
+		context.Background(), INPUTS, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS,
+	).Return(mocks.MockSendNewTaskNumberToSquareCall(BLOCK_NUMBER, TASK_INDEX, INPUTS))
 
 	// 100 blocks, each takes 12 seconds. We hardcode for now since aggregator also hardcodes this value
 	taskTimeToExpiry := 100 * 12 * time.Second
@@ -72,7 +72,7 @@ func TestSendNewTask(t *testing.T) {
 	// see https://hynek.me/articles/what-to-mock-in-5-mins/
 	mockBlsAggService.EXPECT().InitializeNewTask(TASK_INDEX, BLOCK_NUMBER, types.QUORUM_NUMBERS, sdktypes.QuorumThresholdPercentages{types.QUORUM_THRESHOLD_NUMERATOR}, taskTimeToExpiry)
 
-	err = aggregator.sendNewTask(NUMBER_TO_SQUARE_BIG_INT)
+	err = aggregator.sendNewTask(INPUTS)
 	assert.Nil(t, err)
 }
 

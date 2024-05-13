@@ -11,9 +11,9 @@ package mocks
 import (
 	reflect "reflect"
 
-	contractIncredibleSquaringTaskManager "github.com/inference-labs-inc/omron-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	types "github.com/ethereum/go-ethereum/core/types"
 	event "github.com/ethereum/go-ethereum/event"
+	contractIncredibleSquaringTaskManager "github.com/inference-labs-inc/omron-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	gomock "go.uber.org/mock/gomock"
 )
 

@@ -312,9 +312,9 @@ func (o *Operator) Start(ctx context.Context) error {
 
 func (o *Operator) RunModelFromBigIntInputs(rawInputs [5]*big.Int) *big.Int {
 	inputs := core.FormatBigIntInputsToString(rawInputs)
-	cmd := exec.Command("python", "python/run.py", "--input", inputs)
+	cmd := exec.Command("python", "python/run.py", "-i", inputs)
 
-	stdout, err := cmd.Output()
+	stdout, err := cmd.CombinedOutput()
 	if err != nil {
 		o.logger.Error(err.Error())
 	}

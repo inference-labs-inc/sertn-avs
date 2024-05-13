@@ -13,6 +13,7 @@ import (
 	"github.com/inference-labs-inc/omron-avs/challenger/mocks"
 	chtypes "github.com/inference-labs-inc/omron-avs/challenger/types"
 	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/IncredibleSquaringTaskManager"
+	"github.com/inference-labs-inc/omron-avs/core"
 	chainiomocks "github.com/inference-labs-inc/omron-avs/core/chainio/mocks"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -21,6 +22,8 @@ import (
 var MOCK_OPERATOR_ID = [32]byte{207, 73, 226, 221, 104, 100, 123, 41, 192, 3, 9, 119, 90, 83, 233, 159, 231, 151, 245, 96, 150, 48, 144, 27, 102, 253, 39, 101, 1, 26, 135, 173}
 var MOCK_OPERATOR_STAKE = big.NewInt(100)
 var MOCK_OPERATOR_BLS_PRIVATE_KEY_STRING = "50"
+
+var OUTPUT, PROOF = core.OutputAndProof()
 
 // @samlaf I tried pulling the MockTask struct froma ggregator_test but getting error: "undefined: aggregator.MockTask"
 type MockTask struct {
@@ -40,7 +43,7 @@ func TestCallChallengeModule(t *testing.T) {
 	const BLOCK_NUMBER = uint32(100)
 
 	challenger.tasks[TASK_INDEX] = cstaskmanager.IIncredibleSquaringTaskManagerTask{
-		NumberToBeSquared:         big.NewInt(3),
+		Inputs:                    core.TestInputs(),
 		TaskCreatedBlock:          1000,
 		QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
 		QuorumThresholdPercentage: uint32(aggtypes.QUORUM_THRESHOLD_NUMERATOR),
@@ -49,7 +52,7 @@ func TestCallChallengeModule(t *testing.T) {
 	challenger.taskResponses[TASK_INDEX] = chtypes.TaskResponseData{
 		TaskResponse: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 			ReferenceTaskIndex: TASK_INDEX,
-			NumberSquared:      big.NewInt(2),
+			Output:             core.GoodOutput(),
 		},
 		TaskResponseMetadata: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
 			TaskResponsedBlock: 1001,
@@ -64,6 +67,8 @@ func TestCallChallengeModule(t *testing.T) {
 		challenger.taskResponses[TASK_INDEX].TaskResponse,
 		challenger.taskResponses[TASK_INDEX].TaskResponseMetadata,
 		challenger.taskResponses[TASK_INDEX].NonSigningOperatorPubKeys,
+		core.GoodOutput(),
+		"",
 	).Return(mocks.MockRaiseAndResolveChallengeCall(BLOCK_NUMBER, TASK_INDEX), nil)
 
 	msg := challenger.callChallengeModule(TASK_INDEX)
@@ -82,7 +87,7 @@ func TestRaiseChallenge(t *testing.T) {
 	const BLOCK_NUMBER = uint32(100)
 
 	challenger.tasks[TASK_INDEX] = cstaskmanager.IIncredibleSquaringTaskManagerTask{
-		NumberToBeSquared:         big.NewInt(3),
+		Inputs:                    core.TestInputs(),
 		TaskCreatedBlock:          1000,
 		QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
 		QuorumThresholdPercentage: uint32(aggtypes.QUORUM_THRESHOLD_NUMERATOR),
@@ -91,7 +96,7 @@ func TestRaiseChallenge(t *testing.T) {
 	challenger.taskResponses[TASK_INDEX] = chtypes.TaskResponseData{
 		TaskResponse: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 			ReferenceTaskIndex: TASK_INDEX,
-			NumberSquared:      big.NewInt(9),
+			Output:             core.GoodOutput(),
 		},
 		TaskResponseMetadata: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
 			TaskResponsedBlock: 1001,
@@ -106,9 +111,10 @@ func TestRaiseChallenge(t *testing.T) {
 		challenger.taskResponses[TASK_INDEX].TaskResponse,
 		challenger.taskResponses[TASK_INDEX].TaskResponseMetadata,
 		challenger.taskResponses[TASK_INDEX].NonSigningOperatorPubKeys,
+		OUTPUT,
+		PROOF,
 	).Return(mocks.MockRaiseAndResolveChallengeCall(BLOCK_NUMBER, TASK_INDEX), nil)
-
-	err = challenger.raiseChallenge(TASK_INDEX)
+	err = challenger.raiseChallenge(TASK_INDEX, OUTPUT, PROOF)
 	assert.Nil(t, err)
 }
 
@@ -122,7 +128,7 @@ func TestProcessTaskResponseLog(t *testing.T) {
 	const TASK_INDEX = 1
 
 	challenger.tasks[TASK_INDEX] = cstaskmanager.IIncredibleSquaringTaskManagerTask{
-		NumberToBeSquared:         big.NewInt(3),
+		Inputs:                    core.TestInputs(),
 		TaskCreatedBlock:          1000,
 		QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
 		QuorumThresholdPercentage: uint32(aggtypes.QUORUM_THRESHOLD_NUMERATOR),
@@ -131,7 +137,7 @@ func TestProcessTaskResponseLog(t *testing.T) {
 	challenger.taskResponses[TASK_INDEX] = chtypes.TaskResponseData{
 		TaskResponse: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 			ReferenceTaskIndex: TASK_INDEX,
-			NumberSquared:      big.NewInt(9),
+			Output:             core.BadOutput(),
 		},
 		TaskResponseMetadata: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
 			TaskResponsedBlock: 1001,
