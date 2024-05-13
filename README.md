@@ -1,6 +1,4 @@
-# Incredible Squaring AVS
-
-[![Go Report Card](https://goreportcard.com/badge/github.com/Layr-Labs/incredible-squaring-avs)](https://goreportcard.com/report/github.com/Layr-Labs/incredible-squaring-avs)
+# Omron AVS
 
 <b> Do not use it in Production, testnet only. </b>
 
