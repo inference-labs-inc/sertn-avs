@@ -2,24 +2,23 @@
 pragma solidity ^0.8.9;
 
 import "@eigenlayer/contracts/libraries/BytesLib.sol";
-import "./IIncredibleSquaringTaskManager.sol";
+import "./IOmronTaskManager.sol";
 import "@eigenlayer-middleware/src/ServiceManagerBase.sol";
 
 /**
- * @title Primary entrypoint for procuring services from IncredibleSquaring.
+ * @title Primary entrypoint for procuring services from Omron.
  * @author Layr Labs, Inc.
  */
-contract IncredibleSquaringServiceManager is ServiceManagerBase {
+contract OmronServiceManager is ServiceManagerBase {
     using BytesLib for bytes;
 
-    IIncredibleSquaringTaskManager
-        public immutable incredibleSquaringTaskManager;
+    IOmronTaskManager public immutable omronTaskManager;
 
     /// @notice when applied to a function, ensures that the function is only callable by the `registryCoordinator`.
-    modifier onlyIncredibleSquaringTaskManager() {
+    modifier onlyOmronTaskManager() {
         require(
-            msg.sender == address(incredibleSquaringTaskManager),
-            "onlyIncredibleSquaringTaskManager: not from credible squaring task manager"
+            msg.sender == address(omronTaskManager),
+            "onlyOmronTaskManager: not from credible squaring task manager"
         );
         _;
     }
@@ -28,7 +27,7 @@ contract IncredibleSquaringServiceManager is ServiceManagerBase {
         IAVSDirectory _avsDirectory,
         IRegistryCoordinator _registryCoordinator,
         IStakeRegistry _stakeRegistry,
-        IIncredibleSquaringTaskManager _incredibleSquaringTaskManager
+        IOmronTaskManager _omronTaskManager
     )
         ServiceManagerBase(
             _avsDirectory,
@@ -37,7 +36,7 @@ contract IncredibleSquaringServiceManager is ServiceManagerBase {
             _stakeRegistry
         )
     {
-        incredibleSquaringTaskManager = _incredibleSquaringTaskManager;
+        omronTaskManager = _omronTaskManager;
     }
 
     /// @notice Called in the event of challenge resolution, in order to forward a call to the Slasher, which 'freezes' the `operator`.
@@ -45,7 +44,7 @@ contract IncredibleSquaringServiceManager is ServiceManagerBase {
     ///      We recommend writing slashing logic without integrating with the Slasher at this point in time.
     function freezeOperator(
         address operatorAddr
-    ) external onlyIncredibleSquaringTaskManager {
+    ) external onlyOmronTaskManager {
         // slasher.freezeOperator(operatorAddr);
     }
 }

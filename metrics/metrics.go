@@ -23,20 +23,20 @@ type AvsAndEigenMetrics struct {
 	numSignedTaskResponsesAcceptedByAggregator prometheus.Counter
 }
 
-const incredibleSquaringNamespace = "incsq"
+const omronNamespace = "incsq"
 
 func NewAvsAndEigenMetrics(avsName string, eigenMetrics *metrics.EigenMetrics, reg prometheus.Registerer) *AvsAndEigenMetrics {
 	return &AvsAndEigenMetrics{
 		Metrics: eigenMetrics,
 		numTasksReceived: promauto.With(reg).NewCounter(
 			prometheus.CounterOpts{
-				Namespace: incredibleSquaringNamespace,
+				Namespace: omronNamespace,
 				Name:      "num_tasks_received",
 				Help:      "The number of tasks received by reading from the avs service manager contract",
 			}),
 		numSignedTaskResponsesAcceptedByAggregator: promauto.With(reg).NewCounter(
 			prometheus.CounterOpts{
-				Namespace: incredibleSquaringNamespace,
+				Namespace: omronNamespace,
 				Name:      "num_signed_task_responses_accepted_by_aggregator",
 				Help:      "The number of signed task responses accepted by the aggregator",
 			}),

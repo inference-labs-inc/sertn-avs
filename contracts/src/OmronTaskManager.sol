@@ -10,16 +10,16 @@ import {RegistryCoordinator} from "@eigenlayer-middleware/src/RegistryCoordinato
 import {BLSSignatureChecker, IRegistryCoordinator} from "@eigenlayer-middleware/src/BLSSignatureChecker.sol";
 import {OperatorStateRetriever} from "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 import "@eigenlayer-middleware/src/libraries/BN254.sol";
-import "./IIncredibleSquaringTaskManager.sol";
+import "./IOmronTaskManager.sol";
 import {IZKVerifier} from "./IZKVerifier.sol";
 
-contract IncredibleSquaringTaskManager is
+contract OmronTaskManager is
     Initializable,
     OwnableUpgradeable,
     Pausable,
     BLSSignatureChecker,
     OperatorStateRetriever,
-    IIncredibleSquaringTaskManager
+    IOmronTaskManager
 {
     using BN254 for BN254.G1Point;
 

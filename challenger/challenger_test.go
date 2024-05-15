@@ -12,7 +12,7 @@ import (
 	aggtypes "github.com/inference-labs-inc/omron-avs/aggregator/types"
 	"github.com/inference-labs-inc/omron-avs/challenger/mocks"
 	chtypes "github.com/inference-labs-inc/omron-avs/challenger/types"
-	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/IncredibleSquaringTaskManager"
+	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/OmronTaskManager"
 	"github.com/inference-labs-inc/omron-avs/core"
 	chainiomocks "github.com/inference-labs-inc/omron-avs/core/chainio/mocks"
 	"github.com/stretchr/testify/assert"
@@ -42,7 +42,7 @@ func TestCallChallengeModule(t *testing.T) {
 	const TASK_INDEX = 1
 	const BLOCK_NUMBER = uint32(100)
 
-	challenger.tasks[TASK_INDEX] = cstaskmanager.IIncredibleSquaringTaskManagerTask{
+	challenger.tasks[TASK_INDEX] = cstaskmanager.IOmronTaskManagerTask{
 		Inputs:                    core.TestInputs(),
 		TaskCreatedBlock:          1000,
 		QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
@@ -50,11 +50,11 @@ func TestCallChallengeModule(t *testing.T) {
 	}
 
 	challenger.taskResponses[TASK_INDEX] = chtypes.TaskResponseData{
-		TaskResponse: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
+		TaskResponse: cstaskmanager.IOmronTaskManagerTaskResponse{
 			ReferenceTaskIndex: TASK_INDEX,
 			Output:             core.GoodOutput(),
 		},
-		TaskResponseMetadata: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
+		TaskResponseMetadata: cstaskmanager.IOmronTaskManagerTaskResponseMetadata{
 			TaskResponsedBlock: 1001,
 			HashOfNonSigners:   [32]byte{},
 		},
@@ -86,7 +86,7 @@ func TestRaiseChallenge(t *testing.T) {
 	const TASK_INDEX = 1
 	const BLOCK_NUMBER = uint32(100)
 
-	challenger.tasks[TASK_INDEX] = cstaskmanager.IIncredibleSquaringTaskManagerTask{
+	challenger.tasks[TASK_INDEX] = cstaskmanager.IOmronTaskManagerTask{
 		Inputs:                    core.TestInputs(),
 		TaskCreatedBlock:          1000,
 		QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
@@ -94,11 +94,11 @@ func TestRaiseChallenge(t *testing.T) {
 	}
 
 	challenger.taskResponses[TASK_INDEX] = chtypes.TaskResponseData{
-		TaskResponse: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
+		TaskResponse: cstaskmanager.IOmronTaskManagerTaskResponse{
 			ReferenceTaskIndex: TASK_INDEX,
 			Output:             core.GoodOutput(),
 		},
-		TaskResponseMetadata: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
+		TaskResponseMetadata: cstaskmanager.IOmronTaskManagerTaskResponseMetadata{
 			TaskResponsedBlock: 1001,
 			HashOfNonSigners:   [32]byte{},
 		},
@@ -127,7 +127,7 @@ func TestProcessTaskResponseLog(t *testing.T) {
 
 	const TASK_INDEX = 1
 
-	challenger.tasks[TASK_INDEX] = cstaskmanager.IIncredibleSquaringTaskManagerTask{
+	challenger.tasks[TASK_INDEX] = cstaskmanager.IOmronTaskManagerTask{
 		Inputs:                    core.TestInputs(),
 		TaskCreatedBlock:          1000,
 		QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
@@ -135,18 +135,18 @@ func TestProcessTaskResponseLog(t *testing.T) {
 	}
 
 	challenger.taskResponses[TASK_INDEX] = chtypes.TaskResponseData{
-		TaskResponse: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
+		TaskResponse: cstaskmanager.IOmronTaskManagerTaskResponse{
 			ReferenceTaskIndex: TASK_INDEX,
 			Output:             core.BadOutput(),
 		},
-		TaskResponseMetadata: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
+		TaskResponseMetadata: cstaskmanager.IOmronTaskManagerTaskResponseMetadata{
 			TaskResponsedBlock: 1001,
 			HashOfNonSigners:   [32]byte{},
 		},
 		NonSigningOperatorPubKeys: []cstaskmanager.BN254G1Point{},
 	}
 
-	taskResponseLog := cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded{
+	taskResponseLog := cstaskmanager.ContractOmronTaskManagerTaskResponded{
 		TaskResponse:         challenger.taskResponses[TASK_INDEX].TaskResponse,
 		TaskResponseMetadata: challenger.taskResponses[TASK_INDEX].TaskResponseMetadata,
 		Raw: gethtypes.Log{
@@ -188,10 +188,10 @@ func createMockChallenger(mockCtrl *gomock.Controller) (*Challenger, *chainiomoc
 		avsReader:          mockAvsReader,
 		ethClient:          mockEthClient,
 		avsSubscriber:      mockAvsSubscriber,
-		tasks:              make(map[uint32]cstaskmanager.IIncredibleSquaringTaskManagerTask),
+		tasks:              make(map[uint32]cstaskmanager.IOmronTaskManagerTask),
 		taskResponses:      make(map[uint32]chtypes.TaskResponseData),
-		taskResponseChan:   make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded),
-		newTaskCreatedChan: make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated),
+		taskResponseChan:   make(chan *cstaskmanager.ContractOmronTaskManagerTaskResponded),
+		newTaskCreatedChan: make(chan *cstaskmanager.ContractOmronTaskManagerNewTaskCreated),
 	}
 	return challenger, mockAvsWriter, mockAvsReader, mockAvsSubscriber, mockEthClient, nil
 }
