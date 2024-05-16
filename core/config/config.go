@@ -20,7 +20,7 @@ import (
 	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
 )
 
-// Config contains all of the configuration information for a credible squaring aggregators and challengers.
+// Config contains all of the configuration information for a omron aggregators and challengers.
 // Operators use a separate config. (see config-files/operator.anvil.yaml)
 type Config struct {
 	EcdsaPrivateKey           *ecdsa.PrivateKey
@@ -52,7 +52,7 @@ type ConfigRaw struct {
 	RegisterOperatorOnStartup  bool                `yaml:"register_operator_on_startup"`
 }
 
-// These are read from CredibleSquaringDeploymentFileFlag
+// These are read from OmronDeploymentFileFlag
 type OmronDeploymentRaw struct {
 	Addresses OmronContractsRaw `json:"addresses"`
 }
@@ -72,12 +72,12 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 		sdkutils.ReadYamlConfig(configFilePath, &configRaw)
 	}
 
-	var credibleSquaringDeploymentRaw OmronDeploymentRaw
-	credibleSquaringDeploymentFilePath := ctx.GlobalString(CredibleSquaringDeploymentFileFlag.Name)
-	if _, err := os.Stat(credibleSquaringDeploymentFilePath); errors.Is(err, os.ErrNotExist) {
-		panic("Path " + credibleSquaringDeploymentFilePath + " does not exist")
+	var omronDeploymentRaw OmronDeploymentRaw
+	omronDeploymentFilePath := ctx.GlobalString(OmronDeploymentFileFlag.Name)
+	if _, err := os.Stat(omronDeploymentFilePath); errors.Is(err, os.ErrNotExist) {
+		panic("Path " + omronDeploymentFilePath + " does not exist")
 	}
-	sdkutils.ReadJsonConfig(credibleSquaringDeploymentFilePath, &credibleSquaringDeploymentRaw)
+	sdkutils.ReadJsonConfig(omronDeploymentFilePath, &omronDeploymentRaw)
 
 	logger, err := sdklogging.NewZapLogger(configRaw.Environment)
 	if err != nil {
@@ -135,8 +135,8 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 		EthHttpRpcUrl:                configRaw.EthRpcUrl,
 		EthHttpClient:                ethRpcClient,
 		EthWsClient:                  ethWsClient,
-		OperatorStateRetrieverAddr:   common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
-		OmronRegistryCoordinatorAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr),
+		OperatorStateRetrieverAddr:   common.HexToAddress(omronDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
+		OmronRegistryCoordinatorAddr: common.HexToAddress(omronDeploymentRaw.Addresses.RegistryCoordinatorAddr),
 		AggregatorServerIpPortAddr:   configRaw.AggregatorServerIpPortAddr,
 		RegisterOperatorOnStartup:    configRaw.RegisterOperatorOnStartup,
 		SignerFn:                     signerV2,
@@ -164,10 +164,10 @@ var (
 		Required: true,
 		Usage:    "Load configuration from `FILE`",
 	}
-	CredibleSquaringDeploymentFileFlag = cli.StringFlag{
-		Name:     "credible-squaring-deployment",
+	OmronDeploymentFileFlag = cli.StringFlag{
+		Name:     "omron-deployment",
 		Required: true,
-		Usage:    "Load credible squaring contract addresses from `FILE`",
+		Usage:    "Load omron contract addresses from `FILE`",
 	}
 	EcdsaPrivateKeyFlag = cli.StringFlag{
 		Name:     "ecdsa-private-key",
@@ -180,7 +180,7 @@ var (
 
 var requiredFlags = []cli.Flag{
 	ConfigFileFlag,
-	CredibleSquaringDeploymentFileFlag,
+	OmronDeploymentFileFlag,
 	EcdsaPrivateKeyFlag,
 }
 

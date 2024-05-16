@@ -11,7 +11,7 @@ parent_path=$(
 cd $parent_path/..
 
 CHAINID=$(cast chain-id)
-DEPLOYMENT_OUTPUT_FILE=./contracts/script/output/${CHAINID}/credible_squaring_avs_deployment_output.json
+DEPLOYMENT_OUTPUT_FILE=./contracts/script/output/${CHAINID}/omron_avs_deployment_output.json
 STRATEGY_ADDRESS=$(jq -r '.addresses.erc20MockStrategy' $DEPLOYMENT_OUTPUT_FILE)
 
 go run cli/main.go --config config-files/operator.anvil.yaml deposit-into-strategy --strategy-addr ${STRATEGY_ADDRESS} --amount 100

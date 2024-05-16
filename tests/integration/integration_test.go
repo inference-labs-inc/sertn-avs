@@ -52,9 +52,9 @@ func TestIntegration(t *testing.T) {
 	aggConfigRaw.EthRpcUrl = "http://" + anvilEndpoint
 	aggConfigRaw.EthWsUrl = "ws://" + anvilEndpoint
 
-	var credibleSquaringDeploymentRaw config.OmronDeploymentRaw
-	credibleSquaringDeploymentFilePath := "../../contracts/script/output/31337/credible_squaring_avs_deployment_output.json"
-	sdkutils.ReadJsonConfig(credibleSquaringDeploymentFilePath, &credibleSquaringDeploymentRaw)
+	var omronDeploymentRaw config.OmronDeploymentRaw
+	omronDeploymentFilePath := "../../contracts/script/output/31337/omron_avs_deployment_output.json"
+	sdkutils.ReadJsonConfig(omronDeploymentFilePath, &omronDeploymentRaw)
 
 	logger, err := sdklogging.NewZapLogger(aggConfigRaw.Environment)
 	if err != nil {
@@ -104,8 +104,8 @@ func TestIntegration(t *testing.T) {
 		EthHttpClient:                ethRpcClient,
 		EthWsRpcUrl:                  aggConfigRaw.EthWsUrl,
 		EthWsClient:                  ethWsClient,
-		OperatorStateRetrieverAddr:   common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
-		OmronRegistryCoordinatorAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr),
+		OperatorStateRetrieverAddr:   common.HexToAddress(omronDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
+		OmronRegistryCoordinatorAddr: common.HexToAddress(omronDeploymentRaw.Addresses.RegistryCoordinatorAddr),
 		AggregatorServerIpPortAddr:   aggConfigRaw.AggregatorServerIpPortAddr,
 		RegisterOperatorOnStartup:    aggConfigRaw.RegisterOperatorOnStartup,
 		TxMgr:                        txMgr,

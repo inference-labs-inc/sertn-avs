@@ -18,7 +18,7 @@ contract OmronServiceManager is ServiceManagerBase {
     modifier onlyOmronTaskManager() {
         require(
             msg.sender == address(omronTaskManager),
-            "onlyOmronTaskManager: not from credible squaring task manager"
+            "onlyOmronTaskManager: not from omron task manager"
         );
         _;
     }

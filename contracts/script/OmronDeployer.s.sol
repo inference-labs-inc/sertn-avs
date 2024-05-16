@@ -33,7 +33,7 @@ import "forge-std/StdJson.sol";
 import "forge-std/console.sol";
 
 // # To deploy and verify our contract
-// forge script script/CredibleSquaringDeployer.s.sol:CredibleSquaringDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
+// forge script script/OmronDeployer.s.sol:OmronDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
 contract OmronDeployer is Script, Utils {
     // DEPLOYMENT CONSTANTS
     uint256 public constant QUORUM_THRESHOLD_PERCENTAGE = 100;
@@ -50,7 +50,7 @@ contract OmronDeployer is Script, Utils {
     ERC20Mock public erc20Mock;
     StrategyBaseTVLLimits public erc20MockStrategy;
 
-    // Credible Squaring contracts
+    // Omron contracts
     ProxyAdmin public omronProxyAdmin;
     PauserRegistry public omronPauserReg;
 
@@ -116,8 +116,8 @@ contract OmronDeployer is Script, Utils {
                 )
             );
 
-        address credibleSquaringCommunityMultisig = msg.sender;
-        address credibleSquaringPauser = msg.sender;
+        address omronCommunityMultisig = msg.sender;
+        address omronPauser = msg.sender;
 
         vm.startBroadcast();
         _deployErc20AndStrategyAndWhitelistStrategy(
@@ -126,12 +126,12 @@ contract OmronDeployer is Script, Utils {
             baseStrategyImplementation,
             strategyManager
         );
-        _deployCredibleSquaringContracts(
+        _deployOmronContracts(
             delegationManager,
             avsDirectory,
             erc20MockStrategy,
-            credibleSquaringCommunityMultisig,
-            credibleSquaringPauser
+            omronCommunityMultisig,
+            omronPauser
         );
         vm.stopBroadcast();
     }
@@ -170,12 +170,12 @@ contract OmronDeployer is Script, Utils {
         );
     }
 
-    function _deployCredibleSquaringContracts(
+    function _deployOmronContracts(
         IDelegationManager delegationManager,
         IAVSDirectory avsDirectory,
         IStrategy strat,
         address omronCommunityMultisig,
-        address credibleSquaringPauser
+        address omronPauser
     ) internal {
         // Adding this as a temporary fix to make the rest of the script work with a single strategy
         // since it was originally written to work with an array of strategies
@@ -188,7 +188,7 @@ contract OmronDeployer is Script, Utils {
         // deploy pauser registry
         {
             address[] memory pausers = new address[](2);
-            pausers[0] = credibleSquaringPauser;
+            pausers[0] = omronPauser;
             pausers[1] = omronCommunityMultisig;
             omronPauserReg = new PauserRegistry(
                 pausers,
@@ -407,22 +407,22 @@ contract OmronDeployer is Script, Utils {
         );
         vm.serializeAddress(
             deployed_addresses,
-            "credibleSquaringServiceManager",
+            "omronServiceManager",
             address(omronServiceManager)
         );
         vm.serializeAddress(
             deployed_addresses,
-            "credibleSquaringServiceManagerImplementation",
+            "omronServiceManagerImplementation",
             address(omronServiceManagerImplementation)
         );
         vm.serializeAddress(
             deployed_addresses,
-            "credibleSquaringTaskManager",
+            "omronTaskManager",
             address(omronTaskManager)
         );
         vm.serializeAddress(
             deployed_addresses,
-            "credibleSquaringTaskManagerImplementation",
+            "omronTaskManagerImplementation",
             address(omronTaskManagerImplementation)
         );
         vm.serializeAddress(
@@ -453,6 +453,6 @@ contract OmronDeployer is Script, Utils {
             deployed_addresses_output
         );
 
-        writeOutput(finalJson, "credible_squaring_avs_deployment_output");
+        writeOutput(finalJson, "omron_avs_deployment_output");
     }
 }

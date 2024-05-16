@@ -25,8 +25,8 @@ func main() {
 	app := cli.NewApp()
 	app.Flags = config.Flags
 	app.Version = fmt.Sprintf("%s-%s-%s", Version, GitCommit, GitDate)
-	app.Name = "credible-squaring-aggregator"
-	app.Usage = "Credible Squaring Aggregator"
+	app.Name = "omron-aggregator"
+	app.Usage = "Omron Aggregator"
 	app.Description = "Service that sends number to be credibly squared by operator nodes."
 
 	app.Action = aggregatorMain

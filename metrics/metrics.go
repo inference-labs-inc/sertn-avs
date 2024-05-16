@@ -23,7 +23,7 @@ type AvsAndEigenMetrics struct {
 	numSignedTaskResponsesAcceptedByAggregator prometheus.Counter
 }
 
-const omronNamespace = "incsq"
+const omronNamespace = "omr"
 
 func NewAvsAndEigenMetrics(avsName string, eigenMetrics *metrics.EigenMetrics, reg prometheus.Registerer) *AvsAndEigenMetrics {
 	return &AvsAndEigenMetrics{

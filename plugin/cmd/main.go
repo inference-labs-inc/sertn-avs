@@ -69,8 +69,8 @@ func main() {
 		OperationFlag,
 		StrategyAddrFlag,
 	}
-	app.Name = "credible-squaring-plugin"
-	app.Usage = "Credible Squaring Plugin"
+	app.Name = "omron-plugin"
+	app.Usage = "Omron Plugin"
 	app.Description = "This is used to run one time operations like avs opt-in/opt-out"
 	app.Action = plugin
 	err := app.Run(os.Args)
@@ -100,7 +100,7 @@ func plugin(ctx *cli.Context) {
 		EthWsUrl:                   avsConfig.EthWsUrl,
 		RegistryCoordinatorAddr:    avsConfig.AVSRegistryCoordinatorAddress,
 		OperatorStateRetrieverAddr: avsConfig.OperatorStateRetrieverAddress,
-		AvsName:                    "incredible-squaring",
+		AvsName:                    "omron",
 		PromMetricsIpPortAddress:   avsConfig.EigenMetricsIpPortAddress,
 	}
 	logger, _ := logging.NewZapLogger(logging.Development)

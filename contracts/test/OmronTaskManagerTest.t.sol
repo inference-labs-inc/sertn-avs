@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.12;
 
-import "../src/OmronServiceManager.sol" as incsqsm;
+import "../src/OmronServiceManager.sol" as omrm;
 import {OmronTaskManager} from "../src/OmronTaskManager.sol";
 import {BLSMockAVSDeployer} from "@eigenlayer-middleware/test/utils/BLSMockAVSDeployer.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 contract OmronTaskManagerTest is BLSMockAVSDeployer {
-    incsqsm.OmronServiceManager sm;
-    incsqsm.OmronServiceManager smImplementation;
+    omrm.OmronServiceManager sm;
+    omrm.OmronServiceManager smImplementation;
     OmronTaskManager tm;
     OmronTaskManager tmImplementation;
 
@@ -22,7 +22,7 @@ contract OmronTaskManagerTest is BLSMockAVSDeployer {
         _setUpBLSMockAVSDeployer();
 
         tmImplementation = new OmronTaskManager(
-            incsqsm.IRegistryCoordinator(address(registryCoordinator)),
+            omrm.IRegistryCoordinator(address(registryCoordinator)),
             TASK_RESPONSE_WINDOW_BLOCK
         );
 

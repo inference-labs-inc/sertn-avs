@@ -55,7 +55,7 @@ func main() {
 		{
 			Name:    "print-operator-status",
 			Aliases: []string{"s"},
-			Usage:   "prints operator status as viewed from incredible squaring contracts",
+			Usage:   "prints operator status as viewed from omron contracts",
 			Action:  actions.PrintOperatorStatus,
 		},
 	}

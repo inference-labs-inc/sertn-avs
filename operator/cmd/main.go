@@ -18,8 +18,8 @@ import (
 func main() {
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{config.ConfigFileFlag}
-	app.Name = "credible-squaring-operator"
-	app.Usage = "Credible Squaring Operator"
+	app.Name = "omron-operator"
+	app.Usage = "Omron Operator"
 	app.Description = "Service that reads numbers onchain, squares, signs, and sends them to the aggregator."
 
 	app.Action = operatorMain

@@ -25,8 +25,8 @@ func main() {
 	app := cli.NewApp()
 	app.Flags = config.Flags
 	app.Version = fmt.Sprintf("%s-%s-%s", Version, GitCommit, GitDate)
-	app.Name = "credible-squaring-challenger"
-	app.Usage = "Credible Squaring Challenger"
+	app.Name = "omron-challenger"
+	app.Usage = "Omron Challenger"
 	app.Description = "Service that challenges wrong response to the task."
 
 	app.Action = challengerMain
