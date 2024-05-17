@@ -3,6 +3,8 @@ package core
 import (
 	"math/big"
 	"math/rand"
+	"os/exec"
+	"strconv"
 	"strings"
 
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
@@ -88,13 +90,38 @@ func FormatBigIntInputsToString(rawInputs [5]*big.Int) string {
 	return strings.Join(inputs, " ")
 }
 
-func RandomInputs() [5]*big.Int {
-	var inputs [5]*big.Int
+func FormatFloatInputsToString(rawInputs [5]float64) string {
+	var inputs []string
 	for i := 0; i < 5; i++ {
-		r := rand.Int63n(10)
-		inputs[i] = big.NewInt(r)
+		inputs = append(inputs, strconv.FormatFloat(rawInputs[i], 'f', -1, 64))
 	}
-	return inputs
+	return strings.Join(inputs, " ")
+}
+
+func RandomInputs() [5]*big.Int {
+	var inputs [5]float64
+	for i := 0; i < 5; i++ {
+		r := rand.Float64() * 2
+		inputs[i] = r
+	}
+	return FormatInputsForChain(inputs)
+}
+
+// TODO:(opnun) Do in golang
+func FormatInputsForChain(rawInputs [5]float64) [5]*big.Int {
+	var formattedInputs [len(rawInputs)]*big.Int
+	inputString := FormatFloatInputsToString(rawInputs)
+	cmd := exec.Command("python", "python/format.py", "-i", inputString)
+	stdout, _ := cmd.CombinedOutput()
+
+	output := strings.Split(string(stdout), "\n")[0]
+
+	for i := 0; i < len(rawInputs); i++ {
+		temp, _ := strconv.ParseInt(strings.Split(output, " ")[i], 10, 64)
+		formattedInputs[i] = big.NewInt(temp)
+	}
+
+	return formattedInputs
 }
 
 func TestInputs() [5]*big.Int {

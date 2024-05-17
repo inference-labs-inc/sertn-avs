@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"fmt"
 	"math/big"
 	"os/exec"
 	"strconv"
@@ -146,7 +147,7 @@ func (c *Challenger) processTaskResponseLog(taskResponseLog *cstaskmanager.Contr
 func (c *Challenger) FormatInstancesForSolidity(inputs [5]*big.Int, output *big.Int) [6]*big.Int {
 	var instances [6]*big.Int
 	for i := 0; i < 5; i++ {
-		instances[i] = big.NewInt(0).Mul(inputs[i], big.NewInt(4))
+		instances[i] = inputs[i]
 	}
 	instances[5] = output
 	return instances
@@ -170,9 +171,10 @@ func (c *Challenger) OutputAndProofFromInputs(inputs string) (*big.Int, []byte) 
 
 func (c *Challenger) callChallengeModule(taskIndex uint32) error {
 	inputs := core.FormatBigIntInputsToString(c.tasks[taskIndex].Inputs)
-	responce := big.NewInt(0).Mul(c.taskResponses[taskIndex].TaskResponse.Output, big.NewInt(4))
+	responce := c.taskResponses[taskIndex].TaskResponse.Output
 	output, proof := c.OutputAndProofFromInputs(inputs)
-
+	fmt.Println("RESPONCE", responce)
+	fmt.Println("OUTPUT", output)
 	//checking if the answer in the response submitted by aggregator is correct
 	if output.Cmp(responce) != 0 {
 		c.logger.Infof("The output from operator was not correct")
@@ -267,7 +269,7 @@ func (c *Challenger) raiseChallenge(taskIndex uint32, output *big.Int, proof []b
 	instances := c.FormatInstancesForSolidity(c.tasks[taskIndex].Inputs, output)
 
 	c.logger.Info("Instances", "instances", instances)
-	c.logger.Info("Proof", "proof", instances)
+	// c.logger.Info("Proof", "proof", proof)
 
 	receipt, err := c.avsWriter.RaiseChallenge(
 		context.Background(),

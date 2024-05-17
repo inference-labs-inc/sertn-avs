@@ -1,6 +1,6 @@
 import argparse
 from model import Model
-from utils import parse_input
+from utils import parse_input, field_element_to_input, input_to_field_element
 
 try:
     parser = argparse.ArgumentParser(
@@ -13,6 +13,6 @@ try:
     model.eval()
     # return the answer
     # print(0) ## bad answer
-    print(int(model(input)[0])) ## good answer
+    print(input_to_field_element(float(model(input)[0]))) ## good answer
 except:
     print(404)

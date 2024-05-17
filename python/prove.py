@@ -1,10 +1,10 @@
 import ezkl
 import argparse
-from utils import relative_file_path, parse_input
+from utils import relative_file_path, parse_input, field_element_to_input, input_to_field_element
 import json
 
 parser = argparse.ArgumentParser(
-                    prog='Omron AVS ezkl operator engine')
+                    prog='Omron AVS ezkl operator proving engine')
 
 parser.add_argument('-i','--input', nargs='+', help='input data to run on', required=True)
 

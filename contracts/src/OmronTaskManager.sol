@@ -209,9 +209,9 @@ contract OmronTaskManager is
             "5" // "The challenge period for this task has already expired."
         );
 
-        for (uint8 i = 0; i < 5; i++) {
+        for (uint8 i = 0; i < task.inputs.length; i++) {
             require(
-                instances[i] == task.inputs[i] * 4,
+                instances[i] == task.inputs[i],
                 "6" // "Challenger inputs not the same as task inputs"
             );
         }
