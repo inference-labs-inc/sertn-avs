@@ -221,7 +221,7 @@ contract OmronTaskManager is
             "7" // "Challenger ZK proof invalid"
         );
 
-        bool isResponseCorrect = instances[5] == taskResponse.output * 4; // Challenger output is the same as response output
+        bool isResponseCorrect = instances[5] == taskResponse.output; // Challenger output is the same as response output
 
         // if response was correct, no slashing happens so we return
         if (isResponseCorrect == true) {
