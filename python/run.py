@@ -1,6 +1,6 @@
 import argparse
 from model import Model
-from utils import parse_input, field_element_to_input, input_to_field_element
+from utils import parse_input, input_to_field_element
 
 try:
     parser = argparse.ArgumentParser(
