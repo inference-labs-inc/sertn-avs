@@ -331,7 +331,7 @@ func (o *Operator) RunModelFromBigIntInputs(rawInputs [5]*big.Int) *big.Int {
 // The TaskResponseHeader struct is the struct that is signed and sent to the contract as a task response.
 func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.ContractOmronTaskManagerNewTaskCreated) *cstaskmanager.IOmronTaskManagerTaskResponse {
 	o.logger.Debug("Received new task", "task", newTaskCreatedLog)
-	o.logger.Info("Received new task",
+	o.logger.Info("NEW TASK - OPERATOR",
 		"inputs", newTaskCreatedLog.Task.Inputs,
 		"taskIndex", newTaskCreatedLog.TaskIndex,
 		"taskCreatedBlock", newTaskCreatedLog.Task.TaskCreatedBlock,
@@ -340,6 +340,11 @@ func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.Con
 	)
 
 	output := o.RunModelFromBigIntInputs(newTaskCreatedLog.Task.Inputs)
+
+	o.logger.Info("OUTPUT FOR TASK - OPERATOR",
+		"inputs", newTaskCreatedLog.Task.Inputs,
+		"output", output,
+	)
 
 	taskResponse := &cstaskmanager.IOmronTaskManagerTaskResponse{
 		ReferenceTaskIndex: newTaskCreatedLog.TaskIndex,

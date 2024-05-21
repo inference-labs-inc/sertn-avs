@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
-	"fmt"
 	"math/big"
 	"os/exec"
 	"strconv"
@@ -173,16 +172,16 @@ func (c *Challenger) callChallengeModule(taskIndex uint32) error {
 	inputs := core.FormatBigIntInputsToString(c.tasks[taskIndex].Inputs)
 	responce := c.taskResponses[taskIndex].TaskResponse.Output
 	output, proof := c.OutputAndProofFromInputs(inputs)
-	fmt.Println("RESPONCE", responce)
-	fmt.Println("OUTPUT", output)
+	c.logger.Info("CHALLENGER - OPERATOR-OUTPUT", "response", responce)
+	c.logger.Info("CHALLENGER - REAL-OUTPUT", "output", output)
 	//checking if the answer in the response submitted by aggregator is correct
 	if output.Cmp(responce) != 0 {
-		c.logger.Infof("The output from operator was not correct")
+		c.logger.Infof("OUTPUT FROM OPERATOR INCORRECT")
 		// raise challenge
 		c.raiseChallenge(taskIndex, output, proof)
 		return nil
 	}
-	c.logger.Infof("The ouput from operator was correct")
+	c.logger.Infof("OUTPUT FROM OPERATOR CORRECT")
 	return nil
 	//return types.NoErrorInTaskResponse
 }
@@ -268,7 +267,7 @@ func (c *Challenger) raiseChallenge(taskIndex uint32, output *big.Int, proof []b
 
 	instances := c.FormatInstancesForSolidity(c.tasks[taskIndex].Inputs, output)
 
-	c.logger.Info("Instances", "instances", instances)
+	c.logger.Info("CHALLENGER - INSTANCES", "instances", instances)
 	// c.logger.Info("Proof", "proof", proof)
 
 	receipt, err := c.avsWriter.RaiseChallenge(

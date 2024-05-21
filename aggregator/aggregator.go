@@ -198,7 +198,7 @@ func (agg *Aggregator) sendAggregatedResponseToContract(blsAggServiceResp blsagg
 // sendNewTask sends a new task to the task manager contract, and updates the Task dict struct
 // with the information of operators opted into quorum 0 at the block of task creation.
 func (agg *Aggregator) sendNewTask(input [5]*big.Int) error {
-	agg.logger.Info("Aggregator sending new task", "input", input)
+	agg.logger.Info("AGGREGATOR - NEW TASK", "input", input)
 	// Send number to square to the task manager contract
 	newTask, taskIndex, err := agg.avsWriter.SendNewTaskInput(context.Background(), input, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS)
 	if err != nil {
