@@ -123,21 +123,3 @@ func FormatInputsForChain(rawInputs [5]float64) [5]*big.Int {
 
 	return formattedInputs
 }
-
-func TestInputs() [5]*big.Int {
-	inputs := [5]*big.Int{big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(1), big.NewInt(0)}
-	return inputs
-}
-
-func GoodOutput() *big.Int {
-	return big.NewInt(1)
-}
-
-func BadOutput() *big.Int {
-	return big.NewInt(0)
-}
-
-func OutputAndProof() (*big.Int, []byte) {
-	proof := []byte{byte(0)}
-	return GoodOutput(), proof
-}

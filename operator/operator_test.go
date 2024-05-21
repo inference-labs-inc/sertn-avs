@@ -17,9 +17,9 @@ import (
 	"github.com/inference-labs-inc/omron-avs/aggregator"
 	aggtypes "github.com/inference-labs-inc/omron-avs/aggregator/types"
 	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/OmronTaskManager"
-	"github.com/inference-labs-inc/omron-avs/core"
 	chainiomocks "github.com/inference-labs-inc/omron-avs/core/chainio/mocks"
 	operatormocks "github.com/inference-labs-inc/omron-avs/operator/mocks"
+	"github.com/inference-labs-inc/omron-avs/tests"
 )
 
 func TestOperator(t *testing.T) {
@@ -28,7 +28,7 @@ func TestOperator(t *testing.T) {
 	const taskIndex = 1
 
 	t.Run("ProcessNewTaskCreatedLog", func(t *testing.T) {
-		var inputs = core.TestInputs()
+		var inputs = tests.TestInputs()
 		newTaskCreatedLog := &cstaskmanager.ContractOmronTaskManagerNewTaskCreated{
 			TaskIndex: taskIndex,
 			Task: cstaskmanager.IOmronTaskManagerTask{
@@ -42,14 +42,14 @@ func TestOperator(t *testing.T) {
 		got := operator.ProcessNewTaskCreatedLog(newTaskCreatedLog)
 		want := &cstaskmanager.IOmronTaskManagerTaskResponse{
 			ReferenceTaskIndex: taskIndex,
-			Output:             core.GoodOutput(),
+			Output:             tests.GoodOutput(),
 		}
 		assert.Equal(t, want, got)
 	})
 
 	t.Run("Start", func(t *testing.T) {
-		inputs := core.TestInputs()
-		output := core.GoodOutput()
+		inputs := tests.TestInputs()
+		output := tests.GoodOutput()
 		// new task event
 		newTaskCreatedEvent := &cstaskmanager.ContractOmronTaskManagerNewTaskCreated{
 			TaskIndex: taskIndex,

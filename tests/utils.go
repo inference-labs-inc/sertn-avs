@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"math/big"
 	"os/exec"
 	"time"
 )
@@ -39,4 +40,22 @@ func StartAnvilChainAndDeployContracts() *exec.Cmd {
 	fmt.Println(stdout.String())
 
 	return anvilCmd
+}
+
+func TestInputs() [5]*big.Int {
+	inputs := [5]*big.Int{big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(1), big.NewInt(0)}
+	return inputs
+}
+
+func GoodOutput() *big.Int {
+	return big.NewInt(1)
+}
+
+func BadOutput() *big.Int {
+	return big.NewInt(0)
+}
+
+func OutputAndProof() (*big.Int, []byte) {
+	proof := []byte{byte(0)}
+	return GoodOutput(), proof
 }

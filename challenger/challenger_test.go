@@ -13,8 +13,8 @@ import (
 	"github.com/inference-labs-inc/omron-avs/challenger/mocks"
 	chtypes "github.com/inference-labs-inc/omron-avs/challenger/types"
 	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/OmronTaskManager"
-	"github.com/inference-labs-inc/omron-avs/core"
 	chainiomocks "github.com/inference-labs-inc/omron-avs/core/chainio/mocks"
+	"github.com/inference-labs-inc/omron-avs/tests"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -23,7 +23,7 @@ var MOCK_OPERATOR_ID = [32]byte{207, 73, 226, 221, 104, 100, 123, 41, 192, 3, 9,
 var MOCK_OPERATOR_STAKE = big.NewInt(100)
 var MOCK_OPERATOR_BLS_PRIVATE_KEY_STRING = "50"
 
-var OUTPUT, PROOF = core.OutputAndProof()
+var OUTPUT, PROOF = tests.OutputAndProof()
 
 // @samlaf I tried pulling the MockTask struct froma ggregator_test but getting error: "undefined: aggregator.MockTask"
 type MockTask struct {
@@ -43,7 +43,7 @@ func TestCallChallengeModule(t *testing.T) {
 	const BLOCK_NUMBER = uint32(100)
 
 	challenger.tasks[TASK_INDEX] = cstaskmanager.IOmronTaskManagerTask{
-		Inputs:                    core.TestInputs(),
+		Inputs:                    tests.TestInputs(),
 		TaskCreatedBlock:          1000,
 		QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
 		QuorumThresholdPercentage: uint32(aggtypes.QUORUM_THRESHOLD_NUMERATOR),
@@ -52,7 +52,7 @@ func TestCallChallengeModule(t *testing.T) {
 	challenger.taskResponses[TASK_INDEX] = chtypes.TaskResponseData{
 		TaskResponse: cstaskmanager.IOmronTaskManagerTaskResponse{
 			ReferenceTaskIndex: TASK_INDEX,
-			Output:             core.GoodOutput(),
+			Output:             tests.GoodOutput(),
 		},
 		TaskResponseMetadata: cstaskmanager.IOmronTaskManagerTaskResponseMetadata{
 			TaskResponsedBlock: 1001,
@@ -67,7 +67,7 @@ func TestCallChallengeModule(t *testing.T) {
 		challenger.taskResponses[TASK_INDEX].TaskResponse,
 		challenger.taskResponses[TASK_INDEX].TaskResponseMetadata,
 		challenger.taskResponses[TASK_INDEX].NonSigningOperatorPubKeys,
-		core.GoodOutput(),
+		tests.GoodOutput(),
 		"",
 	).Return(mocks.MockRaiseAndResolveChallengeCall(BLOCK_NUMBER, TASK_INDEX), nil)
 
@@ -87,7 +87,7 @@ func TestRaiseChallenge(t *testing.T) {
 	const BLOCK_NUMBER = uint32(100)
 
 	challenger.tasks[TASK_INDEX] = cstaskmanager.IOmronTaskManagerTask{
-		Inputs:                    core.TestInputs(),
+		Inputs:                    tests.TestInputs(),
 		TaskCreatedBlock:          1000,
 		QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
 		QuorumThresholdPercentage: uint32(aggtypes.QUORUM_THRESHOLD_NUMERATOR),
@@ -96,7 +96,7 @@ func TestRaiseChallenge(t *testing.T) {
 	challenger.taskResponses[TASK_INDEX] = chtypes.TaskResponseData{
 		TaskResponse: cstaskmanager.IOmronTaskManagerTaskResponse{
 			ReferenceTaskIndex: TASK_INDEX,
-			Output:             core.GoodOutput(),
+			Output:             tests.GoodOutput(),
 		},
 		TaskResponseMetadata: cstaskmanager.IOmronTaskManagerTaskResponseMetadata{
 			TaskResponsedBlock: 1001,
@@ -128,7 +128,7 @@ func TestProcessTaskResponseLog(t *testing.T) {
 	const TASK_INDEX = 1
 
 	challenger.tasks[TASK_INDEX] = cstaskmanager.IOmronTaskManagerTask{
-		Inputs:                    core.TestInputs(),
+		Inputs:                    tests.TestInputs(),
 		TaskCreatedBlock:          1000,
 		QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
 		QuorumThresholdPercentage: uint32(aggtypes.QUORUM_THRESHOLD_NUMERATOR),
@@ -137,7 +137,7 @@ func TestProcessTaskResponseLog(t *testing.T) {
 	challenger.taskResponses[TASK_INDEX] = chtypes.TaskResponseData{
 		TaskResponse: cstaskmanager.IOmronTaskManagerTaskResponse{
 			ReferenceTaskIndex: TASK_INDEX,
-			Output:             core.BadOutput(),
+			Output:             tests.BadOutput(),
 		},
 		TaskResponseMetadata: cstaskmanager.IOmronTaskManagerTaskResponseMetadata{
 			TaskResponsedBlock: 1001,

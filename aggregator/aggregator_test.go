@@ -20,8 +20,8 @@ import (
 	"github.com/inference-labs-inc/omron-avs/aggregator/mocks"
 	"github.com/inference-labs-inc/omron-avs/aggregator/types"
 	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/OmronTaskManager"
-	"github.com/inference-labs-inc/omron-avs/core"
 	chainiomocks "github.com/inference-labs-inc/omron-avs/core/chainio/mocks"
+	"github.com/inference-labs-inc/omron-avs/tests"
 )
 
 var MOCK_OPERATOR_ID = [32]byte{207, 73, 226, 221, 104, 100, 123, 41, 192, 3, 9, 119, 90, 83, 233, 159, 231, 151, 245, 96, 150, 48, 144, 27, 102, 253, 39, 101, 1, 26, 135, 173}
@@ -59,7 +59,7 @@ func TestSendNewTask(t *testing.T) {
 
 	var TASK_INDEX = uint32(0)
 	var BLOCK_NUMBER = uint32(100)
-	INPUTS := core.TestInputs()
+	INPUTS := tests.TestInputs()
 
 	mockAvsWriterer.EXPECT().SendNewTaskInput(
 		context.Background(), INPUTS, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS,

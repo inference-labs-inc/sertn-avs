@@ -13,6 +13,7 @@ import (
 	"github.com/inference-labs-inc/omron-avs/aggregator/types"
 	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/OmronTaskManager"
 	"github.com/inference-labs-inc/omron-avs/core"
+	"github.com/inference-labs-inc/omron-avs/tests"
 )
 
 func TestProcessSignedTaskResponse(t *testing.T) {
@@ -63,7 +64,7 @@ func TestProcessSignedTaskResponse(t *testing.T) {
 func createMockSignedTaskResponse(mockTask MockTask, keypair bls.KeyPair) (*SignedTaskResponse, error) {
 	taskResponse := &cstaskmanager.IOmronTaskManagerTaskResponse{
 		ReferenceTaskIndex: mockTask.TaskNum,
-		Output:             core.GoodOutput(),
+		Output:             tests.GoodOutput(),
 	}
 	taskResponseHash, err := core.GetTaskResponseDigest(taskResponse)
 	if err != nil {
