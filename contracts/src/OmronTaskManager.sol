@@ -44,6 +44,9 @@ contract OmronTaskManager is
 
     mapping(uint32 => bool) public taskSuccesfullyChallenged;
 
+    mapping(uint32 => TaskChallengeMetadata) public challengeData;
+    mapping(uint32 => mapping(uint256 => uint256)) public challengeInstances;
+
     address public aggregator;
     address public generator;
 
@@ -51,14 +54,14 @@ contract OmronTaskManager is
 
     /* MODIFIERS */
     modifier onlyAggregator() {
-        require(msg.sender == aggregator, "Aggregator must be the caller");
+        require(msg.sender == aggregator);
         _;
     }
 
     // onlyTaskGenerator is used to restrict createNewTask from only being called by a permissioned entity
     // in a real world scenario, this would be removed by instead making createNewTask a payable function
     modifier onlyTaskGenerator() {
-        require(msg.sender == generator, "Task generator must be the caller");
+        require(msg.sender == generator);
         _;
     }
 
@@ -116,18 +119,15 @@ contract OmronTaskManager is
         // check that the task is valid, hasn't been responsed yet, and is being responsed in time
         require(
             keccak256(abi.encode(task)) ==
-                allTaskHashes[taskResponse.referenceTaskIndex],
-            "supplied task does not match the one recorded in the contract"
+                allTaskHashes[taskResponse.referenceTaskIndex]
         );
         // some logical checks
         require(
-            allTaskResponses[taskResponse.referenceTaskIndex] == bytes32(0),
-            "Aggregator has already responded to the task"
+            allTaskResponses[taskResponse.referenceTaskIndex] == bytes32(0)
         );
         require(
             uint32(block.number) <=
                 taskCreatedBlock + TASK_RESPONSE_WINDOW_BLOCK
-            //"1" // Aggregator has responded to the task too late
         );
 
         /* CHECKING SIGNATURES & WHETHER THRESHOLD IS MET OR NOT */
@@ -153,8 +153,7 @@ contract OmronTaskManager is
                 quorumStakeTotals.signedStakeForQuorum[i] *
                     _THRESHOLD_DENOMINATOR >=
                     quorumStakeTotals.totalStakeForQuorum[i] *
-                        uint8(quorumThresholdPercentage),
-                "Signatories do not own at least threshold percentage of a quorum"
+                        uint8(quorumThresholdPercentage)
             );
         }
 
@@ -175,65 +174,81 @@ contract OmronTaskManager is
         return latestTaskNum;
     }
 
-    // NOTE: this function enables a challenger to raise and resolve a challenge.
-    // TODO: require challenger to pay a bond for raising a challenge
-    // TODO(samlaf): should we check that quorumNumbers is same as the one recorded in the task?
-    function raiseAndResolveChallenge(
+    function raiseChallenger(
         Task calldata task,
         TaskResponse calldata taskResponse,
-        TaskResponseMetadata calldata taskResponseMetadata,
-        BN254.G1Point[] memory pubkeysOfNonSigningOperators,
-        uint256[] calldata instances,
-        bytes calldata proof
+        TaskResponseMetadata calldata taskResponseMetadata
     ) external {
         uint32 referenceTaskIndex = taskResponse.referenceTaskIndex;
         // some logical checks
-        require(
-            allTaskResponses[referenceTaskIndex] != bytes32(0)
-            //"2" // "Task hasn't been responded to yet"
-        );
+        require(allTaskResponses[referenceTaskIndex] != bytes32(0));
         require(
             allTaskResponses[referenceTaskIndex] ==
                 keccak256(abi.encode(taskResponse, taskResponseMetadata))
-            //"3" // "Task response does not match the one recorded in the contract"
-        );
-        require(
-            taskSuccesfullyChallenged[referenceTaskIndex] == false
-            //"4" // "The response to this task has already been challenged successfully."
         );
 
         require(
             uint32(block.number) <=
                 taskResponseMetadata.taskResponsedBlock +
-                    TASK_CHALLENGE_WINDOW_BLOCK,
-            "5" // "The challenge period for this task has already expired."
+                    TASK_CHALLENGE_WINDOW_BLOCK
         );
 
-        for (uint8 i = 0; i < task.inputs.length; i++) {
-            require(
-                instances[i] == task.inputs[i],
-                "6" // "Challenger inputs not the same as task inputs"
-            );
-        }
-        // ZK proof of challenger output
         require(
-            zkVerifier.verifyProof(proof, instances),
-            "7" // "Challenger ZK proof invalid"
+            challengeData[referenceTaskIndex].taskProven ==
+                ChallengeStatus.NotChallenged
         );
 
-        bool isResponseCorrect = instances[instances.length - 1] ==
-            taskResponse.output; // Challenger output is the same as response output
-
-        // if response was correct, no slashing happens so we return
-        if (isResponseCorrect == true) {
-            emit TaskChallengedUnsuccessfully(referenceTaskIndex, msg.sender);
-            return;
+        for (uint i = 0; i < task.inputs.length; i++) {
+            challengeInstances[referenceTaskIndex][i] = task.inputs[i];
         }
 
+        challengeInstances[referenceTaskIndex][5] = taskResponse.output;
+
+        challengeData[referenceTaskIndex].challenger = msg.sender;
+        challengeData[referenceTaskIndex].timeChallenged = block.timestamp;
+        challengeData[referenceTaskIndex].taskProven = ChallengeStatus
+            .ChallengedAndPendingConfirmation;
+
+        emit TaskChallenged(referenceTaskIndex);
+    }
+
+    function proveResultAccurate(
+        uint32 taskId,
+        uint256[] calldata instances,
+        bytes calldata proof
+    ) external {
+        TaskChallengeMetadata storage challengeMetadata = challengeData[taskId];
+
+        for (uint256 i = 0; i < 6; i++) {
+            require(challengeInstances[taskId][i] == instances[i]);
+        }
+
+        require(zkVerifier.verifyProof(proof, instances));
+
+        challengeMetadata.taskProven = ChallengeStatus.ProofConfirmed;
+
+        emit TaskChallengedUnsuccessfully(taskId, challengeMetadata.challenger);
+    }
+
+    function confirmChallenge(
+        Task calldata task,
+        TaskResponse calldata taskResponse,
+        TaskResponseMetadata calldata taskResponseMetadata,
+        BN254.G1Point[] memory pubkeysOfNonSigningOperators
+    ) external {
+        uint32 referenceTaskIndex = taskResponse.referenceTaskIndex;
+
+        require(
+            challengeData[referenceTaskIndex].taskProven ==
+                ChallengeStatus.ChallengedAndPendingConfirmation &&
+                challengeData[referenceTaskIndex].timeChallenged <=
+                block.timestamp
+        );
         // get the list of hash of pubkeys of operators who weren't part of the task response submitted by the aggregator
         bytes32[] memory hashesOfPubkeysOfNonSigningOperators = new bytes32[](
             pubkeysOfNonSigningOperators.length
         );
+
         for (uint i = 0; i < pubkeysOfNonSigningOperators.length; i++) {
             hashesOfPubkeysOfNonSigningOperators[
                 i
@@ -251,10 +266,7 @@ contract OmronTaskManager is
                 hashesOfPubkeysOfNonSigningOperators
             )
         );
-        require(
-            signatoryRecordHash == taskResponseMetadata.hashOfNonSigners,
-            "8" // "The pubkeys of non-signing operators supplied by the challenger are not correct."
-        );
+        require(signatoryRecordHash == taskResponseMetadata.hashOfNonSigners);
 
         // get the address of operators who didn't sign
         address[] memory addresssOfNonSigningOperators = new address[](
@@ -265,6 +277,18 @@ contract OmronTaskManager is
                 address(blsApkRegistry)
             ).pubkeyHashToOperator(hashesOfPubkeysOfNonSigningOperators[i]);
         }
+
+        require(
+            challengeData[referenceTaskIndex].timeChallenged < block.timestamp
+        );
+
+        require(
+            challengeData[referenceTaskIndex].taskProven ==
+                ChallengeStatus.ChallengedAndPendingConfirmation
+        );
+
+        challengeData[referenceTaskIndex].taskProven = ChallengeStatus
+            .ProofRejected;
 
         // @dev the below code is commented out for the upcoming M2 release
         //      in which there will be no slashing. The slasher is also being redesigned

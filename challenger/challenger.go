@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
 	_ "embed"
 
@@ -175,7 +176,7 @@ func (c *Challenger) callChallengeModule(taskIndex uint32) error {
 	c.logger.Info("CHALLENGER - OPERATOR-OUTPUT", "response", responce)
 	c.logger.Info("CHALLENGER - REAL-OUTPUT", "output", output)
 	//checking if the answer in the response submitted by aggregator is correct
-	if output.Cmp(responce) != 0 {
+	if output.Cmp(responce) != 0 { // || true {
 		c.logger.Infof("OUTPUT FROM OPERATOR INCORRECT")
 		// raise challenge
 		c.raiseChallenge(taskIndex, output, proof)
@@ -275,14 +276,33 @@ func (c *Challenger) raiseChallenge(taskIndex uint32, output *big.Int, proof []b
 		c.tasks[taskIndex],
 		c.taskResponses[taskIndex].TaskResponse,
 		c.taskResponses[taskIndex].TaskResponseMetadata,
-		c.taskResponses[taskIndex].NonSigningOperatorPubKeys,
-		instances[:], // need to convert from array to slice
-		proof,
 	)
+
 	if err != nil {
 		c.logger.Error("Challenger failed to raise challenge:", "err", err)
 		return err
 	}
 	c.logger.Infof("Tx hash of the challenge tx: %v", receipt.TxHash.Hex())
+	go c.confirmChallenge(taskIndex)
+	return nil
+}
+
+func (c *Challenger) confirmChallenge(taskIndex uint32) error {
+	time.Sleep(time.Second * 10)
+
+	receipt, err := c.avsWriter.ConfirmChallenge(
+		context.Background(),
+		c.tasks[taskIndex],
+		c.taskResponses[taskIndex].TaskResponse,
+		c.taskResponses[taskIndex].TaskResponseMetadata,
+		c.taskResponses[taskIndex].NonSigningOperatorPubKeys,
+	)
+
+	if err != nil {
+		c.logger.Error("Challenger failed to confirm challenge:", "err", err)
+		return err
+	}
+	c.logger.Infof("Tx hash of the confirmed challenge tx: %v", receipt.TxHash.Hex())
+
 	return nil
 }

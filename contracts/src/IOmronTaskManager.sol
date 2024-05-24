@@ -26,6 +26,12 @@ interface IOmronTaskManager {
 
     event TaskChallenged(uint32 indexed taskIndex);
 
+    enum ChallengeStatus {
+        NotChallenged,
+        ChallengedAndPendingConfirmation,
+        ProofConfirmed,
+        ProofRejected
+    }
     // STRUCTS
     struct Task {
         uint256[5] inputs;
@@ -57,6 +63,12 @@ interface IOmronTaskManager {
         bytes32 hashOfNonSigners;
     }
 
+    struct TaskChallengeMetadata {
+        address challenger;
+        ChallengeStatus taskProven;
+        uint256 timeChallenged;
+    }
+
     // FUNCTIONS
     // NOTE: this function creates new task.
     function createNewTask(
@@ -67,16 +79,6 @@ interface IOmronTaskManager {
 
     /// @notice Returns the current 'taskNumber' for the middleware
     function taskNumber() external view returns (uint32);
-
-    // // NOTE: this function raises challenge to existing tasks.
-    function raiseAndResolveChallenge(
-        Task calldata task,
-        TaskResponse calldata taskResponse,
-        TaskResponseMetadata calldata taskResponseMetadata,
-        BN254.G1Point[] memory pubkeysOfNonSigningOperators,
-        uint256[] calldata instances,
-        bytes calldata proof
-    ) external;
 
     /// @notice Returns the TASK_RESPONSE_WINDOW_BLOCK
     function getTaskResponseWindowBlock() external view returns (uint32);

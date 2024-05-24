@@ -2,6 +2,7 @@ package operator
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"os"
@@ -50,17 +51,18 @@ type Operator struct {
 	// this way, auditing this operator code makes it obvious that operators don't need to
 	// write to the chain during the course of their normal operations
 	// writing to the chain should be done via the cli only
-	metricsReg       *prometheus.Registry
-	metrics          metrics.Metrics
-	nodeApi          *nodeapi.NodeApi
-	avsWriter        *chainio.AvsWriter
-	avsReader        chainio.AvsReaderer
-	avsSubscriber    chainio.AvsSubscriberer
-	eigenlayerReader sdkelcontracts.ELReader
-	eigenlayerWriter sdkelcontracts.ELWriter
-	blsKeypair       *bls.KeyPair
-	operatorId       sdktypes.OperatorId
-	operatorAddr     common.Address
+	metricsReg            *prometheus.Registry
+	metrics               metrics.Metrics
+	nodeApi               *nodeapi.NodeApi
+	avsWriter             *chainio.AvsWriter
+	avsReader             chainio.AvsReaderer
+	avsSubscriber         chainio.AvsSubscriberer
+	eigenlayerReader      sdkelcontracts.ELReader
+	eigenlayerWriter      sdkelcontracts.ELWriter
+	blsKeypair            *bls.KeyPair
+	operatorId            sdktypes.OperatorId
+	operatorAddr          common.Address
+	newTaskChallengedChan chan *cstaskmanager.ContractOmronTaskManagerTaskChallenged
 	// receive new tasks in this chan (typically from listening to onchain event)
 	newTaskCreatedChan chan *cstaskmanager.ContractOmronTaskManagerNewTaskCreated
 	// ip address of aggregator
@@ -231,6 +233,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		aggregatorServerIpPortAddr: c.AggregatorServerIpPortAddress,
 		aggregatorRpcClient:        aggregatorRpcClient,
 		newTaskCreatedChan:         make(chan *cstaskmanager.ContractOmronTaskManagerNewTaskCreated),
+		newTaskChallengedChan:      make(chan *cstaskmanager.ContractOmronTaskManagerTaskChallenged),
 		omronServiceManagerAddr:    common.HexToAddress(c.AVSRegistryCoordinatorAddress),
 		operatorId:                 [32]byte{0}, // this is set below
 
@@ -284,10 +287,16 @@ func (o *Operator) Start(ctx context.Context) error {
 
 	// TODO(samlaf): wrap this call with increase in avs-node-spec metric
 	sub := o.avsSubscriber.SubscribeToNewTasks(o.newTaskCreatedChan)
+	challengeSub := o.avsSubscriber.SubscribeToTaskChallenge(o.newTaskChallengedChan)
+
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
+		case err := <-challengeSub.Err():
+			o.logger.Error("Error in websocket subscription", "err", err)
+			challengeSub.Unsubscribe()
+			challengeSub = o.avsSubscriber.SubscribeToTaskChallenge(o.newTaskChallengedChan)
 		case err := <-metricsErrChan:
 			// TODO(samlaf); we should also register the service as unhealthy in the node api
 			// https://eigen.nethermind.io/docs/spec/api/
@@ -298,6 +307,9 @@ func (o *Operator) Start(ctx context.Context) error {
 			sub.Unsubscribe()
 			// TODO(samlaf): wrap this call with increase in avs-node-spec metric
 			sub = o.avsSubscriber.SubscribeToNewTasks(o.newTaskCreatedChan)
+		case newTaskChallengedLog := <-o.newTaskChallengedChan:
+			o.logger.Info("CHALLENGE DETECTED", "newTaskChallengedLog", newTaskChallengedLog)
+			o.ProveAndSubmitResponseToChain(newTaskChallengedLog.TaskIndex)
 		case newTaskCreatedLog := <-o.newTaskCreatedChan:
 			o.metrics.IncNumTasksReceived()
 			taskResponse := o.ProcessNewTaskCreatedLog(newTaskCreatedLog)
@@ -367,4 +379,37 @@ func (o *Operator) SignTaskResponse(taskResponse *cstaskmanager.IOmronTaskManage
 	}
 	o.logger.Debug("Signed task response", "signedTaskResponse", signedTaskResponse)
 	return signedTaskResponse, nil
+}
+
+func (o *Operator) ProveAndSubmitResponseToChain(taskId uint32) {
+	var inputs [5]*big.Int
+	callOpts := &bind.CallOpts{Pending: false}
+	for i := 0; i < 5; i++ {
+		inputs[i], _ = o.avsWriter.AvsContractBindings.TaskManager.ChallengeInstances(callOpts, taskId, big.NewInt(int64(i)))
+	}
+	inputString := core.FormatBigIntInputsToString(inputs)
+	output, proof := o.OutputAndProofFromInputs(inputString)
+	instances := append(inputs[:], output)
+
+	tx, err := o.avsWriter.ProveResponseAccurate(context.Background(), taskId, instances, proof)
+	if err != nil {
+		fmt.Println("Error submitting proof", err)
+	}
+	fmt.Println("Transactions for proof submitted", tx)
+}
+
+func (o *Operator) OutputAndProofFromInputs(inputs string) (*big.Int, []byte) {
+	cmd := exec.Command("python", "python/prove.py", "--input", inputs)
+	stdout, err := cmd.Output()
+	if err != nil {
+		o.logger.Error("Challenger failed to prove computation:", "err", err)
+	}
+
+	result := string(stdout)
+	instancesAndProof := strings.Split(result, "\n")
+
+	proof, _ := hex.DecodeString(instancesAndProof[1])
+	output, _ := strconv.ParseInt(instancesAndProof[0], 16, 64)
+
+	return big.NewInt(output), proof
 }

@@ -16,6 +16,7 @@ import (
 type AvsSubscriberer interface {
 	SubscribeToNewTasks(newTaskCreatedChan chan *cstaskmanager.ContractOmronTaskManagerNewTaskCreated) event.Subscription
 	SubscribeToTaskResponses(taskResponseLogs chan *cstaskmanager.ContractOmronTaskManagerTaskResponded) event.Subscription
+	SubscribeToTaskChallenge(taskChallengeLogs chan *cstaskmanager.ContractOmronTaskManagerTaskChallenged) event.Subscription
 	ParseTaskResponded(rawLog types.Log) (*cstaskmanager.ContractOmronTaskManagerTaskResponded, error)
 }
 
@@ -72,6 +73,18 @@ func (s *AvsSubscriber) SubscribeToTaskResponses(taskResponseChan chan *cstaskma
 		s.logger.Error("Failed to subscribe to TaskResponded events", "err", err)
 	}
 	s.logger.Infof("Subscribed to TaskResponded events")
+	return sub
+}
+
+func (s *AvsSubscriber) SubscribeToTaskChallenge(taskChallengedChan chan *cstaskmanager.ContractOmronTaskManagerTaskChallenged) event.Subscription {
+	var taskIndexes []uint32
+	sub, err := s.AvsContractBindings.TaskManager.WatchTaskChallenged(
+		&bind.WatchOpts{}, taskChallengedChan, taskIndexes,
+	)
+	if err != nil {
+		s.logger.Error("Failed to subscribe to TaskChallenged events", "err", err)
+	}
+	s.logger.Infof("Subscribed to TaskChallenged events")
 	return sub
 }
 
