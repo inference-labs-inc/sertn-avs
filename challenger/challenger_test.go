@@ -66,9 +66,6 @@ func TestCallChallengeModule(t *testing.T) {
 		challenger.tasks[TASK_INDEX],
 		challenger.taskResponses[TASK_INDEX].TaskResponse,
 		challenger.taskResponses[TASK_INDEX].TaskResponseMetadata,
-		challenger.taskResponses[TASK_INDEX].NonSigningOperatorPubKeys,
-		tests.GoodOutput(),
-		"",
 	).Return(mocks.MockRaiseAndResolveChallengeCall(BLOCK_NUMBER, TASK_INDEX), nil)
 
 	msg := challenger.callChallengeModule(TASK_INDEX)
@@ -110,9 +107,6 @@ func TestRaiseChallenge(t *testing.T) {
 		challenger.tasks[TASK_INDEX],
 		challenger.taskResponses[TASK_INDEX].TaskResponse,
 		challenger.taskResponses[TASK_INDEX].TaskResponseMetadata,
-		challenger.taskResponses[TASK_INDEX].NonSigningOperatorPubKeys,
-		OUTPUT,
-		PROOF,
 	).Return(mocks.MockRaiseAndResolveChallengeCall(BLOCK_NUMBER, TASK_INDEX), nil)
 	err = challenger.raiseChallenge(TASK_INDEX, OUTPUT, PROOF)
 	assert.Nil(t, err)
