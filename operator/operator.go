@@ -393,9 +393,10 @@ func (o *Operator) ProveAndSubmitResponseToChain(taskId uint32) {
 
 	tx, err := o.avsWriter.ProveResponseAccurate(context.Background(), taskId, instances, proof)
 	if err != nil {
-		fmt.Println("Error submitting proof", err)
+		o.logger.Error("Error submitting proof", "error", err)
+		return
 	}
-	fmt.Println("Transactions for proof submitted", tx)
+	o.logger.Info("Transaction for proof submitted", "txHash", tx.TxHash)
 }
 
 func (o *Operator) OutputAndProofFromInputs(inputs string) (*big.Int, []byte) {
