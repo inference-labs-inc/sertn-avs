@@ -163,8 +163,15 @@ func (c *Challenger) OutputAndProofFromInputs(inputs string) (*big.Int, []byte) 
 	result := string(stdout)
 	instancesAndProof := strings.Split(result, "\n")
 
-	proof, _ := hex.DecodeString(instancesAndProof[1])
-	output, _ := strconv.ParseInt(instancesAndProof[0], 16, 64)
+	proof, err := hex.DecodeString(instancesAndProof[1])
+	if err != nil {
+		c.logger.Error("Challenger failed to decode hex of proof:", "err", err, "hex", instancesAndProof[1])
+	}
+
+	output, err := strconv.ParseInt(instancesAndProof[0], 16, 64)
+	if err != nil {
+		c.logger.Error("Challenger failed to decode hex of output:", "err", err, "hex", instancesAndProof[0])
+	}
 
 	return big.NewInt(output), proof
 }

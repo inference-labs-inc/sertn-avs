@@ -385,7 +385,11 @@ func (o *Operator) ProveAndSubmitResponseToChain(taskId uint32) {
 	var inputs [5]*big.Int
 	callOpts := &bind.CallOpts{Pending: false}
 	for i := 0; i < 5; i++ {
-		inputs[i], _ = o.avsWriter.AvsContractBindings.TaskManager.ChallengeInstances(callOpts, taskId, big.NewInt(int64(i)))
+		currentInput, err := o.avsWriter.AvsContractBindings.TaskManager.ChallengeInstances(callOpts, taskId, big.NewInt(int64(i)))
+		if err != nil {
+			o.logger.Error("Error getting inputs from chain to prove", "index", i)
+		}
+		inputs[i] = currentInput
 	}
 	inputString := core.FormatBigIntInputsToString(inputs)
 	output, proof := o.OutputAndProofFromInputs(inputString)
@@ -409,8 +413,15 @@ func (o *Operator) OutputAndProofFromInputs(inputs string) (*big.Int, []byte) {
 	result := string(stdout)
 	instancesAndProof := strings.Split(result, "\n")
 
-	proof, _ := hex.DecodeString(instancesAndProof[1])
-	output, _ := strconv.ParseInt(instancesAndProof[0], 16, 64)
+	proof, err := hex.DecodeString(instancesAndProof[1])
+	if err != nil {
+		o.logger.Error("Error parsing proof", "err", err, "proof", instancesAndProof[1])
+	}
+
+	output, err := strconv.ParseInt(instancesAndProof[0], 16, 64)
+	if err != nil {
+		o.logger.Error("Error parsing output for proof", "err", err, "output", instancesAndProof[0])
+	}
 
 	return big.NewInt(output), proof
 }
