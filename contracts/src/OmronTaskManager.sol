@@ -305,6 +305,9 @@ contract OmronTaskManager is
         //     }
         // }
 
+        // the task response has been challenged successfully
+        //taskSuccesfullyChallenged[referenceTaskIndex] = true;
+
         emit TaskChallengedSuccessfully(referenceTaskIndex, msg.sender);
     }
 
