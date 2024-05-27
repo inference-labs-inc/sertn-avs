@@ -21,17 +21,10 @@ interface IOmronTaskManager {
 
     event TaskChallengedUnsuccessfully(
         uint32 indexed taskIndex,
-        address indexed challenger
+        address indexed prover
     );
 
     event TaskChallenged(uint32 indexed taskIndex);
-
-    enum ChallengeStatus {
-        NotChallenged,
-        ChallengedAndPendingConfirmation,
-        ProofConfirmed,
-        ProofRejected
-    }
     // STRUCTS
     struct Task {
         uint256[5] inputs;
@@ -61,12 +54,6 @@ interface IOmronTaskManager {
     struct TaskResponseMetadata {
         uint32 taskResponsedBlock;
         bytes32 hashOfNonSigners;
-    }
-
-    struct TaskChallengeMetadata {
-        address challenger;
-        ChallengeStatus taskProven;
-        uint256 timeChallenged;
     }
 
     // FUNCTIONS

@@ -11,7 +11,7 @@ import {BLSSignatureChecker, IRegistryCoordinator} from "@eigenlayer-middleware/
 import {OperatorStateRetriever} from "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 import "@eigenlayer-middleware/src/libraries/BN254.sol";
 import "./IOmronTaskManager.sol";
-import {IZKVerifier} from "./IZKVerifier.sol";
+import {IInferenceDB} from "./IInferenceDB.sol";
 
 contract OmronTaskManager is
     Initializable,
@@ -42,16 +42,10 @@ contract OmronTaskManager is
     // mapping of task indices to hash of abi.encode(taskResponse, taskResponseMetadata)
     mapping(uint32 => bytes32) public allTaskResponses;
 
-    mapping(uint32 => bool) public taskSuccesfullyChallenged;
-
-    mapping(uint32 => TaskChallengeMetadata) public challengeData;
-    mapping(uint32 => mapping(uint256 => uint256)) public challengeInstances;
-
     address public aggregator;
     address public generator;
 
-    IZKVerifier zkVerifier;
-
+    IInferenceDB inferenceDB;
     /* MODIFIERS */
     modifier onlyAggregator() {
         require(msg.sender == aggregator);
@@ -77,13 +71,13 @@ contract OmronTaskManager is
         address initialOwner,
         address _aggregator,
         address _generator,
-        address _zkVerifier
+        address _inferenceDB
     ) public initializer {
         _initializePauser(_pauserRegistry, UNPAUSE_ALL);
         _transferOwnership(initialOwner);
         aggregator = _aggregator;
         generator = _generator;
-        zkVerifier = IZKVerifier(_zkVerifier);
+        inferenceDB = IInferenceDB(_inferenceDB);
     }
 
     /* FUNCTIONS */
@@ -193,22 +187,11 @@ contract OmronTaskManager is
                     TASK_CHALLENGE_WINDOW_BLOCK
         );
 
-        require(
-            challengeData[referenceTaskIndex].taskProven ==
-                ChallengeStatus.NotChallenged
+        inferenceDB.challenge(
+            referenceTaskIndex,
+            task.inputs,
+            taskResponse.output
         );
-
-        for (uint i = 0; i < task.inputs.length; i++) {
-            challengeInstances[referenceTaskIndex][i] = task.inputs[i];
-        }
-
-        challengeInstances[referenceTaskIndex][5] = taskResponse.output;
-
-        challengeData[referenceTaskIndex].challenger = msg.sender;
-        challengeData[referenceTaskIndex].timeChallenged = block.timestamp;
-        challengeData[referenceTaskIndex].taskProven = ChallengeStatus
-            .ChallengedAndPendingConfirmation;
-
         emit TaskChallenged(referenceTaskIndex);
     }
 
@@ -217,17 +200,8 @@ contract OmronTaskManager is
         uint256[] calldata instances,
         bytes calldata proof
     ) external {
-        TaskChallengeMetadata storage challengeMetadata = challengeData[taskId];
-
-        for (uint256 i = 0; i < 6; i++) {
-            require(challengeInstances[taskId][i] == instances[i]);
-        }
-
-        require(zkVerifier.verifyProof(proof, instances));
-
-        challengeMetadata.taskProven = ChallengeStatus.ProofConfirmed;
-
-        emit TaskChallengedUnsuccessfully(taskId, challengeMetadata.challenger);
+        inferenceDB.proveResultAccurate(taskId, instances, proof);
+        emit TaskChallengedUnsuccessfully(taskId, msg.sender);
     }
 
     function confirmChallenge(
@@ -237,13 +211,6 @@ contract OmronTaskManager is
         BN254.G1Point[] memory pubkeysOfNonSigningOperators
     ) external {
         uint32 referenceTaskIndex = taskResponse.referenceTaskIndex;
-
-        require(
-            challengeData[referenceTaskIndex].taskProven ==
-                ChallengeStatus.ChallengedAndPendingConfirmation &&
-                challengeData[referenceTaskIndex].timeChallenged <=
-                block.timestamp
-        );
         // get the list of hash of pubkeys of operators who weren't part of the task response submitted by the aggregator
         bytes32[] memory hashesOfPubkeysOfNonSigningOperators = new bytes32[](
             pubkeysOfNonSigningOperators.length
@@ -278,17 +245,7 @@ contract OmronTaskManager is
             ).pubkeyHashToOperator(hashesOfPubkeysOfNonSigningOperators[i]);
         }
 
-        require(
-            challengeData[referenceTaskIndex].timeChallenged < block.timestamp
-        );
-
-        require(
-            challengeData[referenceTaskIndex].taskProven ==
-                ChallengeStatus.ChallengedAndPendingConfirmation
-        );
-
-        challengeData[referenceTaskIndex].taskProven = ChallengeStatus
-            .ProofRejected;
+        inferenceDB.confirmChallenge(referenceTaskIndex);
 
         // @dev the below code is commented out for the upcoming M2 release
         //      in which there will be no slashing. The slasher is also being redesigned
@@ -347,9 +304,6 @@ contract OmronTaskManager is
         //         }
         //     }
         // }
-
-        // the task response has been challenged successfully
-        //taskSuccesfullyChallenged[referenceTaskIndex] = true;
 
         emit TaskChallengedSuccessfully(referenceTaskIndex, msg.sender);
     }

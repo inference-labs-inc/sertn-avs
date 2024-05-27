@@ -2,10 +2,12 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
+import {IZKVerifier} from "./IZKVerifier.sol";
+import {IInferenceDB} from "./IInferenceDB.sol";
 
-contract InferenceDB is OwnableUpgradeable {
+contract InferenceDB is OwnableUpgradeable, IInferenceDB {
     uint32 TASK_RESPONSE_WINDOW_BLOCK = 0;
-    address taskManagerAddress;
+    IZKVerifier zkVerifier;
 
     enum ChallengeStatus {
         NotChallenged,
@@ -27,21 +29,15 @@ contract InferenceDB is OwnableUpgradeable {
         taskManagerAddress = _taskManagerAddress;
     }
 
-    modifier onlyTaskManager() {
-        require(
-            msg.sender == taskManagerAddress,
-            "Function restricted to task manager"
-        );
-        _;
+    function initialize(address _zkVerifier) public override initializer {
+        zkVerifier = IZKVerifier(_zkVerifier);
     }
-
-    function initialize() public initializer {}
 
     function challenge(
         uint32 referenceTaskIndex,
         uint256[5] calldata inputs,
         uint256 output
-    ) public onlyTaskManager {
+    ) public override onlyTaskManager {
         require(
             challengeData[referenceTaskIndex].taskProven ==
                 ChallengeStatus.NotChallenged
@@ -63,7 +59,7 @@ contract InferenceDB is OwnableUpgradeable {
         uint32 taskId,
         uint256[] calldata instances,
         bytes calldata proof
-    ) public onlyTaskManager {
+    ) public override onlyTaskManager {
         TaskChallengeMetadata storage challengeMetadata = challengeData[taskId];
 
         for (uint256 i = 0; i < 6; i++) {
@@ -75,11 +71,25 @@ contract InferenceDB is OwnableUpgradeable {
         challengeMetadata.taskProven = ChallengeStatus.ProofConfirmed;
     }
 
-    function proveChallenge() public onlyTaskManager {}
+    function confirmChallenge(
+        uint32 referenceTaskIndex
+    ) public override onlyTaskManager {
+        require(
+            challengeData[referenceTaskIndex].timeChallenged < block.timestamp
+        );
+
+        require(
+            challengeData[referenceTaskIndex].taskProven ==
+                ChallengeStatus.ChallengedAndPendingConfirmation
+        );
+
+        challengeData[referenceTaskIndex].taskProven = ChallengeStatus
+            .ProofRejected;
+    }
 
     function updateTaskManager(
         address newTaskManagerAddress
-    ) external onlyOwner {
+    ) external override onlyOwner {
         taskManagerAddress = newTaskManagerAddress;
     }
 }
