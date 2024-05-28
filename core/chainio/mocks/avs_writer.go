@@ -46,6 +46,21 @@ func (m *MockAvsWriterer) EXPECT() *MockAvsWritererMockRecorder {
 	return m.recorder
 }
 
+// ConfirmChallenge mocks base method.
+func (m *MockAvsWriterer) ConfirmChallenge(arg0 context.Context, arg1 contractOmronTaskManager.IOmronTaskManagerTask, arg2 contractOmronTaskManager.IOmronTaskManagerTaskResponse, arg3 contractOmronTaskManager.IOmronTaskManagerTaskResponseMetadata, arg4 []contractOmronTaskManager.BN254G1Point) (*types0.Receipt, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConfirmChallenge", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(*types0.Receipt)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConfirmChallenge indicates an expected call of ConfirmChallenge.
+func (mr *MockAvsWritererMockRecorder) ConfirmChallenge(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfirmChallenge", reflect.TypeOf((*MockAvsWriterer)(nil).ConfirmChallenge), arg0, arg1, arg2, arg3, arg4)
+}
+
 // DeregisterOperator mocks base method.
 func (m *MockAvsWriterer) DeregisterOperator(arg0 context.Context, arg1 types.QuorumNums, arg2 contractRegistryCoordinator.BN254G1Point) (*types0.Receipt, error) {
 	m.ctrl.T.Helper()
@@ -61,19 +76,34 @@ func (mr *MockAvsWritererMockRecorder) DeregisterOperator(arg0, arg1, arg2 any) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeregisterOperator", reflect.TypeOf((*MockAvsWriterer)(nil).DeregisterOperator), arg0, arg1, arg2)
 }
 
-// RaiseChallenge mocks base method.
-func (m *MockAvsWriterer) RaiseChallenge(arg0 context.Context, arg1 contractOmronTaskManager.IOmronTaskManagerTask, arg2 contractOmronTaskManager.IOmronTaskManagerTaskResponse, arg3 contractOmronTaskManager.IOmronTaskManagerTaskResponseMetadata, arg4 []contractOmronTaskManager.BN254G1Point, arg5 []*big.Int, arg6 []byte) (*types0.Receipt, error) {
+// ProveResponseAccurate mocks base method.
+func (m *MockAvsWriterer) ProveResponseAccurate(arg0 context.Context, arg1 uint32, arg2 []*big.Int, arg3 []byte) (*types0.Receipt, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RaiseChallenge", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	ret := m.ctrl.Call(m, "ProveResponseAccurate", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(*types0.Receipt)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ProveResponseAccurate indicates an expected call of ProveResponseAccurate.
+func (mr *MockAvsWritererMockRecorder) ProveResponseAccurate(arg0, arg1, arg2, arg3 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProveResponseAccurate", reflect.TypeOf((*MockAvsWriterer)(nil).ProveResponseAccurate), arg0, arg1, arg2, arg3)
+}
+
+// RaiseChallenge mocks base method.
+func (m *MockAvsWriterer) RaiseChallenge(arg0 context.Context, arg1 contractOmronTaskManager.IOmronTaskManagerTask, arg2 contractOmronTaskManager.IOmronTaskManagerTaskResponse, arg3 contractOmronTaskManager.IOmronTaskManagerTaskResponseMetadata) (*types0.Receipt, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RaiseChallenge", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*types0.Receipt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // RaiseChallenge indicates an expected call of RaiseChallenge.
-func (mr *MockAvsWritererMockRecorder) RaiseChallenge(arg0, arg1, arg2, arg3, arg4, arg5, arg6 any) *gomock.Call {
+func (mr *MockAvsWritererMockRecorder) RaiseChallenge(arg0, arg1, arg2, arg3 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RaiseChallenge", reflect.TypeOf((*MockAvsWriterer)(nil).RaiseChallenge), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RaiseChallenge", reflect.TypeOf((*MockAvsWriterer)(nil).RaiseChallenge), arg0, arg1, arg2, arg3)
 }
 
 // RegisterOperatorInQuorumWithAVSRegistryCoordinator mocks base method.

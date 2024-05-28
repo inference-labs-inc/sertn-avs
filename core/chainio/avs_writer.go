@@ -31,14 +31,24 @@ type AvsWriterer interface {
 		task cstaskmanager.IOmronTaskManagerTask,
 		taskResponse cstaskmanager.IOmronTaskManagerTaskResponse,
 		taskResponseMetadata cstaskmanager.IOmronTaskManagerTaskResponseMetadata,
-		pubkeysOfNonSigningOperators []cstaskmanager.BN254G1Point,
-		instances []*big.Int,
-		proof []byte,
 	) (*types.Receipt, error)
 	SendAggregatedResponse(ctx context.Context,
 		task cstaskmanager.IOmronTaskManagerTask,
 		taskResponse cstaskmanager.IOmronTaskManagerTaskResponse,
 		nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
+	) (*types.Receipt, error)
+	ConfirmChallenge(
+		ctx context.Context,
+		task cstaskmanager.IOmronTaskManagerTask,
+		taskResponse cstaskmanager.IOmronTaskManagerTaskResponse,
+		taskResponseMetadata cstaskmanager.IOmronTaskManagerTaskResponseMetadata,
+		pubkeysOfNonSigningOperators []cstaskmanager.BN254G1Point,
+	) (*types.Receipt, error)
+	ProveResponseAccurate(
+		ctx context.Context,
+		taskId uint32,
+		instances []*big.Int,
+		proof []byte,
 	) (*types.Receipt, error)
 }
 
@@ -130,7 +140,28 @@ func (w *AvsWriter) RaiseChallenge(
 	task cstaskmanager.IOmronTaskManagerTask,
 	taskResponse cstaskmanager.IOmronTaskManagerTaskResponse,
 	taskResponseMetadata cstaskmanager.IOmronTaskManagerTaskResponseMetadata,
-	pubkeysOfNonSigningOperators []cstaskmanager.BN254G1Point,
+) (*types.Receipt, error) {
+	txOpts, err := w.TxMgr.GetNoSendTxOpts()
+	if err != nil {
+		w.logger.Errorf("Error getting tx opts")
+		return nil, err
+	}
+	tx, err := w.AvsContractBindings.TaskManager.RaiseChallenger(txOpts, task, taskResponse, taskResponseMetadata)
+	if err != nil {
+		w.logger.Errorf("Error assembling RaiseChallenge tx")
+		return nil, err
+	}
+	receipt, err := w.TxMgr.Send(ctx, tx)
+	if err != nil {
+		w.logger.Errorf("Error submitting RaiseChallenge tx")
+		return nil, err
+	}
+	return receipt, nil
+}
+
+func (w *AvsWriter) ProveResponseAccurate(
+	ctx context.Context,
+	taskId uint32,
 	instances []*big.Int,
 	proof []byte,
 ) (*types.Receipt, error) {
@@ -139,14 +170,39 @@ func (w *AvsWriter) RaiseChallenge(
 		w.logger.Errorf("Error getting tx opts")
 		return nil, err
 	}
-	tx, err := w.AvsContractBindings.TaskManager.RaiseAndResolveChallenge(txOpts, task, taskResponse, taskResponseMetadata, pubkeysOfNonSigningOperators, instances, proof)
+	tx, err := w.AvsContractBindings.TaskManager.ProveResultAccurate(txOpts, taskId, instances[:], proof)
 	if err != nil {
-		w.logger.Errorf("Error assembling RaiseChallenge tx")
+		w.logger.Errorf("Error assembling ProveResultAccurate tx")
 		return nil, err
 	}
 	receipt, err := w.TxMgr.Send(ctx, tx)
 	if err != nil {
-		w.logger.Errorf("Error submitting RaiseChallenge tx")
+		w.logger.Errorf("Error submitting ProveResultAccurate tx")
+		return nil, err
+	}
+	return receipt, nil
+}
+
+func (w *AvsWriter) ConfirmChallenge(
+	ctx context.Context,
+	task cstaskmanager.IOmronTaskManagerTask,
+	taskResponse cstaskmanager.IOmronTaskManagerTaskResponse,
+	taskResponseMetadata cstaskmanager.IOmronTaskManagerTaskResponseMetadata,
+	pubkeysOfNonSigningOperators []cstaskmanager.BN254G1Point,
+) (*types.Receipt, error) {
+	txOpts, err := w.TxMgr.GetNoSendTxOpts()
+	if err != nil {
+		w.logger.Errorf("Error getting tx opts")
+		return nil, err
+	}
+	tx, err := w.AvsContractBindings.TaskManager.ConfirmChallenge(txOpts, task, taskResponse, taskResponseMetadata, pubkeysOfNonSigningOperators)
+	if err != nil {
+		w.logger.Errorf("Error assembling ConfirmChallenge tx")
+		return nil, err
+	}
+	receipt, err := w.TxMgr.Send(ctx, tx)
+	if err != nil {
+		w.logger.Errorf("Error submitting ConfirmChallenge tx")
 		return nil, err
 	}
 	return receipt, nil

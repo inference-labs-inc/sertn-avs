@@ -69,6 +69,20 @@ func (mr *MockAvsSubscribererMockRecorder) SubscribeToNewTasks(arg0 any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeToNewTasks", reflect.TypeOf((*MockAvsSubscriberer)(nil).SubscribeToNewTasks), arg0)
 }
 
+// SubscribeToTaskChallenge mocks base method.
+func (m *MockAvsSubscriberer) SubscribeToTaskChallenge(arg0 chan *contractOmronTaskManager.ContractOmronTaskManagerTaskChallenged) event.Subscription {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubscribeToTaskChallenge", arg0)
+	ret0, _ := ret[0].(event.Subscription)
+	return ret0
+}
+
+// SubscribeToTaskChallenge indicates an expected call of SubscribeToTaskChallenge.
+func (mr *MockAvsSubscribererMockRecorder) SubscribeToTaskChallenge(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeToTaskChallenge", reflect.TypeOf((*MockAvsSubscriberer)(nil).SubscribeToTaskChallenge), arg0)
+}
+
 // SubscribeToTaskResponses mocks base method.
 func (m *MockAvsSubscriberer) SubscribeToTaskResponses(arg0 chan *contractOmronTaskManager.ContractOmronTaskManagerTaskResponded) event.Subscription {
 	m.ctrl.T.Helper()

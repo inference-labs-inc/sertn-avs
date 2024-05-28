@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"math/big"
 	"math/rand"
 	"os/exec"
@@ -112,12 +113,19 @@ func FormatInputsForChain(rawInputs [5]float64) [5]*big.Int {
 	var formattedInputs [len(rawInputs)]*big.Int
 	inputString := FormatFloatInputsToString(rawInputs)
 	cmd := exec.Command("python", "python/format.py", "-i", inputString)
-	stdout, _ := cmd.CombinedOutput()
 
+	stdout, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println("Error: formatting inputs from chain", err, inputString)
+	}
 	output := strings.Split(string(stdout), "\n")[0]
 
 	for i := 0; i < len(rawInputs); i++ {
-		temp, _ := strconv.ParseInt(strings.Split(output, " ")[i], 10, 64)
+		input := strings.Split(output, " ")[i]
+		temp, err := strconv.ParseInt(input, 10, 64)
+		if err != nil {
+			fmt.Println("Error: parsing integer from string", "Error:", err, "Input: ", input)
+		}
 		formattedInputs[i] = big.NewInt(temp)
 	}
 
