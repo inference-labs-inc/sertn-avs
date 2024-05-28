@@ -59,7 +59,7 @@ The architecture of the AVS contains:
   - aggregates BLS signatures from operators and posts the aggregated response to the task manager
   - For this simple demo, the aggregator is not an operator, and thus does not need to register with eigenlayer or the AVS contract. It's IP address is simply hardcoded into the operators' config.
 - Operators
-  - Square the number sent to the task manager by the task generator, sign it, and send it to the aggregator
+  - Computer the inference given input sent to the task manager by the task generator, sign it, and send it to the aggregator
 
 ![](./diagrams/architecture.png)
 
