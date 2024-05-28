@@ -1,13 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
 import {IZKVerifier} from "./IZKVerifier.sol";
 
-abstract contract IInferenceDB is OwnableUpgradeable {
+abstract contract IInferenceDB is Ownable {
     address taskManagerAddress;
+    mapping(uint32 => TaskChallengeMetadata) public challengeData;
+    mapping(uint32 => mapping(uint256 => uint256)) public challengeInstances;
 
-    function initialize(address _zkVerifier) public virtual;
+    enum ChallengeStatus {
+        NotChallenged,
+        ChallengedAndPendingConfirmation,
+        ProofConfirmed,
+        ProofRejected
+    }
+
+    struct TaskChallengeMetadata {
+        address challenger;
+        ChallengeStatus taskProven;
+        uint256 timeChallenged;
+    }
 
     function challenge(
         uint32 referenceTaskIndex,

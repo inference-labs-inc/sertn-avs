@@ -1,35 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
 import {IZKVerifier} from "./IZKVerifier.sol";
 import {IInferenceDB} from "./IInferenceDB.sol";
 
-contract InferenceDB is OwnableUpgradeable, IInferenceDB {
-    uint32 TASK_RESPONSE_WINDOW_BLOCK = 0;
+contract InferenceDB is IInferenceDB {
+    uint32 TASK_CHALLENG_RESPONSE_WINDOW_BLOCK = 0;
     IZKVerifier zkVerifier;
 
-    enum ChallengeStatus {
-        NotChallenged,
-        ChallengedAndPendingConfirmation,
-        ProofConfirmed,
-        ProofRejected
-    }
-
-    struct TaskChallengeMetadata {
-        address challenger;
-        ChallengeStatus taskProven;
-        uint256 timeChallenged;
-    }
-    mapping(uint32 => TaskChallengeMetadata) challengeData;
-    mapping(uint32 => mapping(uint256 => uint256)) challengeInstances;
-
-    constructor(uint32 _taskResponseWindowBlock, address _taskManagerAddress) {
-        TASK_RESPONSE_WINDOW_BLOCK = _taskResponseWindowBlock;
-        taskManagerAddress = _taskManagerAddress;
-    }
-
-    function initialize(address _zkVerifier) public override initializer {
+    constructor(uint32 _taskChallengeResponseWindowBlock, address _zkVerifier) {
+        TASK_CHALLENG_RESPONSE_WINDOW_BLOCK = _taskChallengeResponseWindowBlock;
         zkVerifier = IZKVerifier(_zkVerifier);
     }
 
@@ -75,7 +55,10 @@ contract InferenceDB is OwnableUpgradeable, IInferenceDB {
         uint32 referenceTaskIndex
     ) public override onlyTaskManager {
         require(
-            challengeData[referenceTaskIndex].timeChallenged < block.timestamp
+            challengeData[referenceTaskIndex].timeChallenged +
+                TASK_CHALLENG_RESPONSE_WINDOW_BLOCK *
+                12 seconds <
+                block.timestamp
         );
 
         require(

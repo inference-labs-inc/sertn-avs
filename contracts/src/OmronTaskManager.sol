@@ -66,6 +66,13 @@ contract OmronTaskManager is
         TASK_RESPONSE_WINDOW_BLOCK = _taskResponseWindowBlock;
     }
 
+    function challengeInstances(
+        uint32 id,
+        uint256 index
+    ) public view returns (uint256) {
+        return inferenceDB.challengeInstances(id, index);
+    }
+
     function initialize(
         IPauserRegistry _pauserRegistry,
         address initialOwner,

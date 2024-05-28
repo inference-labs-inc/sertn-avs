@@ -24,7 +24,7 @@ import {IOmronTaskManager} from "../src/IOmronTaskManager.sol";
 import "../src/ERC20Mock.sol";
 
 import {ZKVerifier} from "../src/ZKVerifier.sol";
-
+import {InferenceDB} from "../src/InferenceDB.sol";
 import {Utils} from "./utils/Utils.sol";
 
 import "forge-std/Test.sol";
@@ -376,6 +376,9 @@ contract OmronDeployer is Script, Utils {
             TASK_RESPONSE_WINDOW_BLOCK
         );
         ZKVerifier zkVerifier = new ZKVerifier();
+        // Todo: opnun change 0 to number of blocks producer has to respond
+        InferenceDB inferenceDB = new InferenceDB(0, address(zkVerifier));
+        inferenceDB.updateTaskManager(address(omronTaskManager));
 
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
         omronProxyAdmin.upgradeAndCall(
@@ -387,7 +390,7 @@ contract OmronDeployer is Script, Utils {
                 omronCommunityMultisig,
                 AGGREGATOR_ADDR,
                 TASK_GENERATOR_ADDR,
-                address(zkVerifier)
+                address(inferenceDB)
             )
         );
 

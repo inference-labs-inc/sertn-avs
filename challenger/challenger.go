@@ -183,7 +183,7 @@ func (c *Challenger) callChallengeModule(taskIndex uint32) error {
 	c.logger.Info("CHALLENGER - OPERATOR-OUTPUT", "response", responce)
 	c.logger.Info("CHALLENGER - REAL-OUTPUT", "output", output)
 	//checking if the answer in the response submitted by aggregator is correct
-	if output.Cmp(responce) != 0 { // || true {
+	if output.Cmp(responce) != 0 || true {
 		c.logger.Infof("OUTPUT FROM OPERATOR INCORRECT")
 		// raise challenge
 		c.raiseChallenge(taskIndex, output, proof)
