@@ -14,7 +14,7 @@ go install github.com/maoueh/zap-pretty@latest
 ```
 You will also need to [install docker](https://docs.docker.com/get-docker/), and build the contracts:
 ```
-make build-contracts
+make build-contracts && make deploy-contracts
 ```
 
 ## Running via make
@@ -24,7 +24,7 @@ This simple session illustrates the basic flow of the AVS. The makefile commands
 Start anvil in a separate terminal:
 
 ```bash
-make start-anvil-chain-with-el-and-avs-deployed
+make start-chain
 ```
 
 The above command starts a local anvil chain from a [saved state](./tests/anvil/avs-and-eigenlayer-deployed-anvil-state.json) with eigenlayer and omron contracts already deployed (but no operator registered).
@@ -63,17 +63,17 @@ The architecture of the AVS contains:
 
 ![](./diagrams/architecture.png)
 
-1. A task generator (in our case, same as the aggregator) publishes tasks once every regular interval (say 10 blocks, you are free to set your own interval) to the OmronTaskManager contract's [createNewTask](contracts/src/OmronTaskManager.sol#L83) function. Each task specifies an integer `numberToBeSquared` for which it wants the currently opted-in operators to determine its square `numberToBeSquared^2`. `createNewTask` also takes `quorumNumbers` and `quorumThresholdPercentage` which requests that each listed quorum (we only use quorumNumber 0 in incredible-squaring) needs to reach at least thresholdPercentage of operator signatures.
+1. A task generator (in our case, same as the aggregator) publishes tasks once every regular interval (say 10 blocks, you are free to set your own interval) to the OmronTaskManager contract's [createNewTask](contracts/src/OmronTaskManager.sol#L83) function. Each task specifies an array of 5 uin256s `inputs` for which it wants the currently opted-in operators to determine its inference. `createNewTask` also takes `quorumNumbers` and `quorumThresholdPercentage` which requests that each listed quorum (we only use quorumNumber 0 in omron) needs to reach at least thresholdPercentage of operator signatures.
 
 2. A [registry](https://github.com/Layr-Labs/eigenlayer-middleware/blob/master/src/BLSRegistryCoordinatorWithIndices.sol) contract is deployed that allows any eigenlayer operator with at least 1 delegated [mockerc20](contracts/src/ERC20Mock.sol) token to opt-in to this AVS and also de-register from this AVS.
 
-3. [Operator] The operators who are currently opted-in with the AVS need to read the task number from the Task contract, compute its square, sign on that computed result (over the BN254 curve) and send their taskResponse and signature to the aggregator.
+3. [Operator] The operators who are currently opted-in with the AVS need to read the inputs from the Task contract, compute its inference, sign on that computed result (over the BN254 curve) and send their taskResponse and signature to the aggregator.
 
 4. [Aggregator] The aggregator collects the signatures from the operators and aggregates them using BLS aggregation. If any response passes the [quorumThresholdPercentage](contracts/src/IOmronTaskManager.sol#L36) set by the task generator when posting the task, the aggregator posts the aggregated response to the Task contract.
 
 5. If a response was sent within the [response window](contracts/src/OmronTaskManager.sol#L119), we enter the [Dispute resolution] period.
    - [Off-chain] A challenge window is launched during which anyone can [raise a dispute](contracts/src/OmronTaskManager.sol#L171) in a DisputeResolution contract (in our case, this is the same as the TaskManager contract)
-   - [On-chain] The DisputeResolution contract resolves that a particular operator’s response is not the correct response (that is, not the square of the integer specified in the task) or the opted-in operator didn’t respond during the response window. If the dispute is resolved, the operator will be frozen in the Registration contract and the veto committee will decide whether to veto the freezing request or not.
+   - [On-chain] The DisputeResolution contract resolves that a particular operator’s response is not the correct response (that is, not the inference of the integers specified in the task) or the opted-in operator didn’t respond during the response window. If the dispute is resolved, the operator will be frozen in the Registration contract and the veto committee will decide whether to veto the freezing request or not.
 
 Below is a more detailed uml diagram of the aggregator and operator processes:
 
@@ -108,4 +108,4 @@ When running on anvil, a typical log for the operator is
 [2024-04-09 18:25:10.679 PDT] INFO (logging/zap_logger.go:49) Signed task response header accepted by aggregator. {"reply":false}
 ```
 
-The error `task 2 not initialized or already completed` is expected behavior. This is because the aggregator needs to setup its data structures before it can accept responses. But on a local anvil setup, the operator had time to receive the websocket event for the new task, square the number, sign the response, and send it to the aggregator process before the aggregator has finalized its setup. Hence, the operator retries sending the response 2 seconds later and it is accepted.
+The error `task 2 not initialized or already completed` is expected behavior. This is because the aggregator needs to setup its data structures before it can accept responses. But on a local anvil setup, the operator had time to receive the websocket event for the new task, run the inference, sign the response, and send it to the aggregator process before the aggregator has finalized its setup. Hence, the operator retries sending the response 2 seconds later and it is accepted.
