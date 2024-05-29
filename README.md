@@ -63,7 +63,7 @@ The architecture of the AVS contains:
 
 ![](./diagrams/architecture.png)
 
-1. A task generator (in our case, same as the aggregator) publishes tasks once every regular interval (say 10 blocks, you are free to set your own interval) to the OmronTaskManager contract's [createNewTask](contracts/src/OmronTaskManager.sol#L83) function. Each task specifies an array of 5 uin256s `inputs` for which it wants the currently opted-in operators to determine its inference. `createNewTask` also takes `quorumNumbers` and `quorumThresholdPercentage` which requests that each listed quorum (we only use quorumNumber 0 in omron) needs to reach at least thresholdPercentage of operator signatures.
+1. A task generator (in our case, same as the aggregator) publishes tasks once every regular interval (say 10 blocks, you are free to set your own interval) to the OmronTaskManager contract's [createNewTask](contracts/src/OmronTaskManager.sol#L83) function. Each task specifies an array of 5 uint256s `inputs` for which it wants the currently opted-in operators to determine its inference. `createNewTask` also takes `quorumNumbers` and `quorumThresholdPercentage` which requests that each listed quorum (we only use quorumNumber 0 in omron) needs to reach at least thresholdPercentage of operator signatures.
 
 2. A [registry](https://github.com/Layr-Labs/eigenlayer-middleware/blob/master/src/BLSRegistryCoordinatorWithIndices.sol) contract is deployed that allows any eigenlayer operator with at least 1 delegated [mockerc20](contracts/src/ERC20Mock.sol) token to opt-in to this AVS and also de-register from this AVS.
 

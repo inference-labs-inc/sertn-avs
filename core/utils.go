@@ -101,13 +101,14 @@ func FormatFloatInputsToString(rawInputs [5]float64) string {
 	return strings.Join(inputs, " ")
 }
 
-func RandomInputs() [5]*big.Int {
-	var inputs [5]float64
-	for i := 0; i < 5; i++ {
-		r := rand.Float64() * 2
-		inputs[i] = r
+func RelativeUrl(pathFromRoot string) string {
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		fmt.Println("Error")
 	}
-	return FormatInputsForChain(inputs)
+	dirname := filepath.Dir(filename)
+	dirname = filepath.Join(dirname, "../", pathFromRoot)
+	return dirname
 }
 
 // TODO:(opnun) Do in golang
@@ -134,12 +135,11 @@ func FormatInputsForChain(rawInputs [5]float64) [5]*big.Int {
 	return formattedInputs
 }
 
-func RelativeUrl(pathFromRoot string) string {
-	_, filename, _, ok := runtime.Caller(0)
-	if !ok {
-		fmt.Println("Error")
+func RandomInputs() [5]*big.Int {
+	var inputs [5]float64
+	for i := 0; i < 5; i++ {
+		r := rand.Float64() * 2
+		inputs[i] = r
 	}
-	dirname := filepath.Dir(filename)
-	dirname = filepath.Join(dirname, "../", pathFromRoot)
-	return dirname
+	return FormatInputsForChain(inputs)
 }

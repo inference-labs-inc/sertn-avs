@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.12;
 
+import "forge-std/Test.sol";
 import "../src/OmronServiceManager.sol" as omrm;
+import {InferenceDB} from "../src/InferenceDb.sol";
 import {OmronTaskManager} from "../src/OmronTaskManager.sol";
 import {BLSMockAVSDeployer} from "@eigenlayer-middleware/test/utils/BLSMockAVSDeployer.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
-contract OmronTaskManagerTest is BLSMockAVSDeployer {
+contract OmronTaskManagerTest is Test, BLSMockAVSDeployer {
     omrm.OmronServiceManager sm;
     omrm.OmronServiceManager smImplementation;
     OmronTaskManager tm;
@@ -20,6 +22,7 @@ contract OmronTaskManagerTest is BLSMockAVSDeployer {
 
     function setUp() public {
         _setUpBLSMockAVSDeployer();
+        InferenceDB inferenceDB = new InferenceDB(0, address(0));
 
         tmImplementation = new OmronTaskManager(
             omrm.IRegistryCoordinator(address(registryCoordinator)),
@@ -37,7 +40,8 @@ contract OmronTaskManagerTest is BLSMockAVSDeployer {
                         pauserRegistry,
                         registryCoordinatorOwner,
                         aggregator,
-                        generator
+                        generator,
+                        address(inferenceDB)
                     )
                 )
             )
@@ -46,9 +50,16 @@ contract OmronTaskManagerTest is BLSMockAVSDeployer {
 
     function testCreateNewTask() public {
         bytes memory quorumNumbers = new bytes(0);
-        cheats.prank(generator, generator);
+        cheats.prank(generator);
+
         uint256[5] memory input = [0, 0, 0, 0, uint256(2)];
         tm.createNewTask(input, 100, quorumNumbers);
         assertEq(tm.latestTaskNum(), 1);
     }
+
+    function testChallengeNewTask() public {}
+
+    function testProof() public {}
+
+    function testConfirmChallenge() public {}
 }
