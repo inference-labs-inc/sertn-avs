@@ -56,10 +56,4 @@ contract OmronTaskManagerTest is Test, BLSMockAVSDeployer {
         tm.createNewTask(input, 100, quorumNumbers);
         assertEq(tm.latestTaskNum(), 1);
     }
-
-    function testChallengeNewTask() public {}
-
-    function testProof() public {}
-
-    function testConfirmChallenge() public {}
 }
