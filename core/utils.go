@@ -5,6 +5,8 @@ import (
 	"math/big"
 	"math/rand"
 	"os/exec"
+	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -112,7 +114,7 @@ func RandomInputs() [5]*big.Int {
 func FormatInputsForChain(rawInputs [5]float64) [5]*big.Int {
 	var formattedInputs [len(rawInputs)]*big.Int
 	inputString := FormatFloatInputsToString(rawInputs)
-	cmd := exec.Command("python", "python/format.py", "-i", inputString)
+	cmd := exec.Command("python", RelativeUrl("python/format.py"), "-i", inputString)
 
 	stdout, err := cmd.CombinedOutput()
 	if err != nil {
@@ -130,4 +132,14 @@ func FormatInputsForChain(rawInputs [5]float64) [5]*big.Int {
 	}
 
 	return formattedInputs
+}
+
+func RelativeUrl(pathFromRoot string) string {
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		fmt.Println("Error")
+	}
+	dirname := filepath.Dir(filename)
+	dirname = filepath.Join(dirname, "../", pathFromRoot)
+	return dirname
 }

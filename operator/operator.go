@@ -324,7 +324,7 @@ func (o *Operator) Start(ctx context.Context) error {
 
 func (o *Operator) RunModelFromBigIntInputs(rawInputs [5]*big.Int) *big.Int {
 	inputs := core.FormatBigIntInputsToString(rawInputs)
-	cmd := exec.Command("python", "python/run.py", "-i", inputs)
+	cmd := exec.Command("python", core.RelativeUrl("python/run.py"), "-i", inputs)
 
 	stdout, err := cmd.CombinedOutput()
 	if err != nil {
@@ -404,8 +404,9 @@ func (o *Operator) ProveAndSubmitResponseToChain(taskId uint32) {
 }
 
 func (o *Operator) OutputAndProofFromInputs(inputs string) (*big.Int, []byte) {
-	cmd := exec.Command("python", "python/prove.py", "--input", inputs)
-	stdout, err := cmd.Output()
+	cmd := exec.Command("python", core.RelativeUrl("python/prove.py"), "--input", inputs)
+
+	stdout, err := cmd.CombinedOutput()
 	if err != nil {
 		o.logger.Error("Challenger failed to prove computation:", "err", err)
 	}

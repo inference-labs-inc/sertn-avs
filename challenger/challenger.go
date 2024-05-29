@@ -154,8 +154,8 @@ func (c *Challenger) FormatInstancesForSolidity(inputs [5]*big.Int, output *big.
 }
 
 func (c *Challenger) OutputAndProofFromInputs(inputs string) (*big.Int, []byte) {
-	cmd := exec.Command("python", "python/prove.py", "--input", inputs)
-	stdout, err := cmd.Output()
+	cmd := exec.Command("python", core.RelativeUrl("python/prove.py"), "--input", inputs)
+	stdout, err := cmd.CombinedOutput()
 	if err != nil {
 		c.logger.Error("Challenger failed to prove computation:", "err", err)
 	}
