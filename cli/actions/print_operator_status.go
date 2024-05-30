@@ -5,9 +5,9 @@ import (
 	"log"
 
 	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
-	"github.com/inference-labs-inc/omron-avs/core/config"
-	"github.com/inference-labs-inc/omron-avs/operator"
-	"github.com/inference-labs-inc/omron-avs/types"
+	"github.com/inference-labs-inc/zklayer-avs/core/config"
+	"github.com/inference-labs-inc/zklayer-avs/operator"
+	"github.com/inference-labs-inc/zklayer-avs/types"
 	"github.com/urfave/cli"
 )
 

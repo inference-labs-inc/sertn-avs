@@ -20,7 +20,7 @@ import (
 	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
 )
 
-// Config contains all of the configuration information for a omron aggregators and challengers.
+// Config contains all of the configuration information for a zklayer aggregators and challengers.
 // Operators use a separate config. (see config-files/operator.anvil.yaml)
 type Config struct {
 	EcdsaPrivateKey           *ecdsa.PrivateKey
@@ -29,14 +29,14 @@ type Config struct {
 	EigenMetricsIpPortAddress string
 	// we need the url for the eigensdk currently... eventually standardize api so as to
 	// only take an ethclient or an rpcUrl (and build the ethclient at each constructor site)
-	EthHttpRpcUrl                string
-	EthWsRpcUrl                  string
-	EthHttpClient                eth.Client
-	EthWsClient                  eth.Client
-	OperatorStateRetrieverAddr   common.Address
-	OmronRegistryCoordinatorAddr common.Address
-	AggregatorServerIpPortAddr   string
-	RegisterOperatorOnStartup    bool
+	EthHttpRpcUrl                  string
+	EthWsRpcUrl                    string
+	EthHttpClient                  eth.Client
+	EthWsClient                    eth.Client
+	OperatorStateRetrieverAddr     common.Address
+	ZklayerRegistryCoordinatorAddr common.Address
+	AggregatorServerIpPortAddr     string
+	RegisterOperatorOnStartup      bool
 	// json:"-" skips this field when marshaling (only used for logging to stdout), since SignerFn doesnt implement marshalJson
 	SignerFn          signerv2.SignerFn `json:"-"`
 	TxMgr             txmgr.TxManager
@@ -52,11 +52,11 @@ type ConfigRaw struct {
 	RegisterOperatorOnStartup  bool                `yaml:"register_operator_on_startup"`
 }
 
-// These are read from OmronDeploymentFileFlag
-type OmronDeploymentRaw struct {
-	Addresses OmronContractsRaw `json:"addresses"`
+// These are read from ZklayerDeploymentFileFlag
+type ZklayerDeploymentRaw struct {
+	Addresses ZklayerContractsRaw `json:"addresses"`
 }
-type OmronContractsRaw struct {
+type ZklayerContractsRaw struct {
 	RegistryCoordinatorAddr    string `json:"registryCoordinator"`
 	OperatorStateRetrieverAddr string `json:"operatorStateRetriever"`
 }
@@ -72,12 +72,12 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 		sdkutils.ReadYamlConfig(configFilePath, &configRaw)
 	}
 
-	var omronDeploymentRaw OmronDeploymentRaw
-	omronDeploymentFilePath := ctx.GlobalString(OmronDeploymentFileFlag.Name)
-	if _, err := os.Stat(omronDeploymentFilePath); errors.Is(err, os.ErrNotExist) {
-		panic("Path " + omronDeploymentFilePath + " does not exist")
+	var zklayerDeploymentRaw ZklayerDeploymentRaw
+	zklayerDeploymentFilePath := ctx.GlobalString(ZklayerDeploymentFileFlag.Name)
+	if _, err := os.Stat(zklayerDeploymentFilePath); errors.Is(err, os.ErrNotExist) {
+		panic("Path " + zklayerDeploymentFilePath + " does not exist")
 	}
-	sdkutils.ReadJsonConfig(omronDeploymentFilePath, &omronDeploymentRaw)
+	sdkutils.ReadJsonConfig(zklayerDeploymentFilePath, &zklayerDeploymentRaw)
 
 	logger, err := sdklogging.NewZapLogger(configRaw.Environment)
 	if err != nil {
@@ -129,19 +129,19 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 	txMgr := txmgr.NewSimpleTxManager(skWallet, ethRpcClient, logger, aggregatorAddr)
 
 	config := &Config{
-		EcdsaPrivateKey:              ecdsaPrivateKey,
-		Logger:                       logger,
-		EthWsRpcUrl:                  configRaw.EthWsUrl,
-		EthHttpRpcUrl:                configRaw.EthRpcUrl,
-		EthHttpClient:                ethRpcClient,
-		EthWsClient:                  ethWsClient,
-		OperatorStateRetrieverAddr:   common.HexToAddress(omronDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
-		OmronRegistryCoordinatorAddr: common.HexToAddress(omronDeploymentRaw.Addresses.RegistryCoordinatorAddr),
-		AggregatorServerIpPortAddr:   configRaw.AggregatorServerIpPortAddr,
-		RegisterOperatorOnStartup:    configRaw.RegisterOperatorOnStartup,
-		SignerFn:                     signerV2,
-		TxMgr:                        txMgr,
-		AggregatorAddress:            aggregatorAddr,
+		EcdsaPrivateKey:                ecdsaPrivateKey,
+		Logger:                         logger,
+		EthWsRpcUrl:                    configRaw.EthWsUrl,
+		EthHttpRpcUrl:                  configRaw.EthRpcUrl,
+		EthHttpClient:                  ethRpcClient,
+		EthWsClient:                    ethWsClient,
+		OperatorStateRetrieverAddr:     common.HexToAddress(zklayerDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
+		ZklayerRegistryCoordinatorAddr: common.HexToAddress(zklayerDeploymentRaw.Addresses.RegistryCoordinatorAddr),
+		AggregatorServerIpPortAddr:     configRaw.AggregatorServerIpPortAddr,
+		RegisterOperatorOnStartup:      configRaw.RegisterOperatorOnStartup,
+		SignerFn:                       signerV2,
+		TxMgr:                          txMgr,
+		AggregatorAddress:              aggregatorAddr,
 	}
 	config.validate()
 	return config, nil
@@ -152,8 +152,8 @@ func (c *Config) validate() {
 	if c.OperatorStateRetrieverAddr == common.HexToAddress("") {
 		panic("Config: BLSOperatorStateRetrieverAddr is required")
 	}
-	if c.OmronRegistryCoordinatorAddr == common.HexToAddress("") {
-		panic("Config: OmronRegistryCoordinatorAddr is required")
+	if c.ZklayerRegistryCoordinatorAddr == common.HexToAddress("") {
+		panic("Config: ZklayerRegistryCoordinatorAddr is required")
 	}
 }
 
@@ -164,10 +164,10 @@ var (
 		Required: true,
 		Usage:    "Load configuration from `FILE`",
 	}
-	OmronDeploymentFileFlag = cli.StringFlag{
-		Name:     "omron-deployment",
+	ZklayerDeploymentFileFlag = cli.StringFlag{
+		Name:     "zklayer-deployment",
 		Required: true,
-		Usage:    "Load omron contract addresses from `FILE`",
+		Usage:    "Load zklayer contract addresses from `FILE`",
 	}
 	EcdsaPrivateKeyFlag = cli.StringFlag{
 		Name:     "ecdsa-private-key",
@@ -180,7 +180,7 @@ var (
 
 var requiredFlags = []cli.Flag{
 	ConfigFileFlag,
-	OmronDeploymentFileFlag,
+	ZklayerDeploymentFileFlag,
 	EcdsaPrivateKeyFlag,
 }
 

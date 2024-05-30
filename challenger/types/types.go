@@ -3,12 +3,12 @@ package types
 import (
 	"errors"
 
-	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/OmronTaskManager"
+	cstaskmanager "github.com/inference-labs-inc/zklayer-avs/contracts/bindings/ZklayerTaskManager"
 )
 
 type TaskResponseData struct {
-	TaskResponse              cstaskmanager.IOmronTaskManagerTaskResponse
-	TaskResponseMetadata      cstaskmanager.IOmronTaskManagerTaskResponseMetadata
+	TaskResponse              cstaskmanager.IZklayerTaskManagerTaskResponse
+	TaskResponseMetadata      cstaskmanager.IZklayerTaskManagerTaskResponseMetadata
 	NonSigningOperatorPubKeys []cstaskmanager.BN254G1Point
 }
 

@@ -14,12 +14,12 @@ import (
 
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 
-	"github.com/inference-labs-inc/omron-avs/aggregator"
-	aggtypes "github.com/inference-labs-inc/omron-avs/aggregator/types"
-	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/OmronTaskManager"
-	chainiomocks "github.com/inference-labs-inc/omron-avs/core/chainio/mocks"
-	operatormocks "github.com/inference-labs-inc/omron-avs/operator/mocks"
-	"github.com/inference-labs-inc/omron-avs/tests"
+	"github.com/inference-labs-inc/zklayer-avs/aggregator"
+	aggtypes "github.com/inference-labs-inc/zklayer-avs/aggregator/types"
+	cstaskmanager "github.com/inference-labs-inc/zklayer-avs/contracts/bindings/ZklayerTaskManager"
+	chainiomocks "github.com/inference-labs-inc/zklayer-avs/core/chainio/mocks"
+	operatormocks "github.com/inference-labs-inc/zklayer-avs/operator/mocks"
+	"github.com/inference-labs-inc/zklayer-avs/tests"
 )
 
 func TestOperator(t *testing.T) {
@@ -29,9 +29,9 @@ func TestOperator(t *testing.T) {
 
 	t.Run("ProcessNewTaskCreatedLog", func(t *testing.T) {
 		var inputs = tests.TestInputs()
-		newTaskCreatedLog := &cstaskmanager.ContractOmronTaskManagerNewTaskCreated{
+		newTaskCreatedLog := &cstaskmanager.ContractZklayerTaskManagerNewTaskCreated{
 			TaskIndex: taskIndex,
-			Task: cstaskmanager.IOmronTaskManagerTask{
+			Task: cstaskmanager.IZklayerTaskManagerTask{
 				Inputs:                    inputs,
 				TaskCreatedBlock:          1000,
 				QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
@@ -40,7 +40,7 @@ func TestOperator(t *testing.T) {
 			Raw: types.Log{},
 		}
 		got := operator.ProcessNewTaskCreatedLog(newTaskCreatedLog)
-		want := &cstaskmanager.IOmronTaskManagerTaskResponse{
+		want := &cstaskmanager.IZklayerTaskManagerTaskResponse{
 			ReferenceTaskIndex: taskIndex,
 			Output:             tests.GoodOutput(),
 		}
@@ -51,9 +51,9 @@ func TestOperator(t *testing.T) {
 		inputs := tests.TestInputs()
 		output := tests.GoodOutput()
 		// new task event
-		newTaskCreatedEvent := &cstaskmanager.ContractOmronTaskManagerNewTaskCreated{
+		newTaskCreatedEvent := &cstaskmanager.ContractZklayerTaskManagerNewTaskCreated{
 			TaskIndex: taskIndex,
-			Task: cstaskmanager.IOmronTaskManagerTask{
+			Task: cstaskmanager.IZklayerTaskManagerTask{
 				Inputs:                    inputs,
 				TaskCreatedBlock:          1000,
 				QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
@@ -68,7 +68,7 @@ func TestOperator(t *testing.T) {
 		assert.True(t, ok)
 
 		signedTaskResponse := &aggregator.SignedTaskResponse{
-			TaskResponse: cstaskmanager.IOmronTaskManagerTaskResponse{
+			TaskResponse: cstaskmanager.IZklayerTaskManagerTaskResponse{
 				ReferenceTaskIndex: taskIndex,
 				Output:             output,
 			},

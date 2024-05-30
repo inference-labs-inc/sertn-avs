@@ -9,15 +9,15 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 
-	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/OmronTaskManager"
-	"github.com/inference-labs-inc/omron-avs/core/config"
+	cstaskmanager "github.com/inference-labs-inc/zklayer-avs/contracts/bindings/ZklayerTaskManager"
+	"github.com/inference-labs-inc/zklayer-avs/core/config"
 )
 
 type AvsSubscriberer interface {
-	SubscribeToNewTasks(newTaskCreatedChan chan *cstaskmanager.ContractOmronTaskManagerNewTaskCreated) event.Subscription
-	SubscribeToTaskResponses(taskResponseLogs chan *cstaskmanager.ContractOmronTaskManagerTaskResponded) event.Subscription
-	SubscribeToTaskChallenge(taskChallengeLogs chan *cstaskmanager.ContractOmronTaskManagerTaskChallenged) event.Subscription
-	ParseTaskResponded(rawLog types.Log) (*cstaskmanager.ContractOmronTaskManagerTaskResponded, error)
+	SubscribeToNewTasks(newTaskCreatedChan chan *cstaskmanager.ContractZklayerTaskManagerNewTaskCreated) event.Subscription
+	SubscribeToTaskResponses(taskResponseLogs chan *cstaskmanager.ContractZklayerTaskManagerTaskResponded) event.Subscription
+	SubscribeToTaskChallenge(taskChallengeLogs chan *cstaskmanager.ContractZklayerTaskManagerTaskChallenged) event.Subscription
+	ParseTaskResponded(rawLog types.Log) (*cstaskmanager.ContractZklayerTaskManagerTaskResponded, error)
 }
 
 // Subscribers use a ws connection instead of http connection like Readers
@@ -31,7 +31,7 @@ type AvsSubscriber struct {
 
 func BuildAvsSubscriberFromConfig(config *config.Config) (*AvsSubscriber, error) {
 	return BuildAvsSubscriber(
-		config.OmronRegistryCoordinatorAddr,
+		config.ZklayerRegistryCoordinatorAddr,
 		config.OperatorStateRetrieverAddr,
 		config.EthWsClient,
 		config.Logger,
@@ -54,7 +54,7 @@ func NewAvsSubscriber(avsContractBindings *AvsManagersBindings, logger sdkloggin
 	}
 }
 
-func (s *AvsSubscriber) SubscribeToNewTasks(newTaskCreatedChan chan *cstaskmanager.ContractOmronTaskManagerNewTaskCreated) event.Subscription {
+func (s *AvsSubscriber) SubscribeToNewTasks(newTaskCreatedChan chan *cstaskmanager.ContractZklayerTaskManagerNewTaskCreated) event.Subscription {
 	sub, err := s.AvsContractBindings.TaskManager.WatchNewTaskCreated(
 		&bind.WatchOpts{}, newTaskCreatedChan, nil,
 	)
@@ -65,7 +65,7 @@ func (s *AvsSubscriber) SubscribeToNewTasks(newTaskCreatedChan chan *cstaskmanag
 	return sub
 }
 
-func (s *AvsSubscriber) SubscribeToTaskResponses(taskResponseChan chan *cstaskmanager.ContractOmronTaskManagerTaskResponded) event.Subscription {
+func (s *AvsSubscriber) SubscribeToTaskResponses(taskResponseChan chan *cstaskmanager.ContractZklayerTaskManagerTaskResponded) event.Subscription {
 	sub, err := s.AvsContractBindings.TaskManager.WatchTaskResponded(
 		&bind.WatchOpts{}, taskResponseChan,
 	)
@@ -76,7 +76,7 @@ func (s *AvsSubscriber) SubscribeToTaskResponses(taskResponseChan chan *cstaskma
 	return sub
 }
 
-func (s *AvsSubscriber) SubscribeToTaskChallenge(taskChallengedChan chan *cstaskmanager.ContractOmronTaskManagerTaskChallenged) event.Subscription {
+func (s *AvsSubscriber) SubscribeToTaskChallenge(taskChallengedChan chan *cstaskmanager.ContractZklayerTaskManagerTaskChallenged) event.Subscription {
 	var taskIndexes []uint32
 	sub, err := s.AvsContractBindings.TaskManager.WatchTaskChallenged(
 		&bind.WatchOpts{}, taskChallengedChan, taskIndexes,
@@ -88,6 +88,6 @@ func (s *AvsSubscriber) SubscribeToTaskChallenge(taskChallengedChan chan *cstask
 	return sub
 }
 
-func (s *AvsSubscriber) ParseTaskResponded(rawLog types.Log) (*cstaskmanager.ContractOmronTaskManagerTaskResponded, error) {
-	return s.AvsContractBindings.TaskManager.ContractOmronTaskManagerFilterer.ParseTaskResponded(rawLog)
+func (s *AvsSubscriber) ParseTaskResponded(rawLog types.Log) (*cstaskmanager.ContractZklayerTaskManagerTaskResponded, error) {
+	return s.AvsContractBindings.TaskManager.ContractZklayerTaskManagerFilterer.ParseTaskResponded(rawLog)
 }

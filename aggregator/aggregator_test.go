@@ -17,11 +17,11 @@ import (
 	blsaggservmock "github.com/Layr-Labs/eigensdk-go/services/mocks/blsagg"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 
-	"github.com/inference-labs-inc/omron-avs/aggregator/mocks"
-	"github.com/inference-labs-inc/omron-avs/aggregator/types"
-	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/OmronTaskManager"
-	chainiomocks "github.com/inference-labs-inc/omron-avs/core/chainio/mocks"
-	"github.com/inference-labs-inc/omron-avs/tests"
+	"github.com/inference-labs-inc/zklayer-avs/aggregator/mocks"
+	"github.com/inference-labs-inc/zklayer-avs/aggregator/types"
+	cstaskmanager "github.com/inference-labs-inc/zklayer-avs/contracts/bindings/ZklayerTaskManager"
+	chainiomocks "github.com/inference-labs-inc/zklayer-avs/core/chainio/mocks"
+	"github.com/inference-labs-inc/zklayer-avs/tests"
 )
 
 var MOCK_OPERATOR_ID = [32]byte{207, 73, 226, 221, 104, 100, 123, 41, 192, 3, 9, 119, 90, 83, 233, 159, 231, 151, 245, 96, 150, 48, 144, 27, 102, 253, 39, 101, 1, 26, 135, 173}
@@ -87,8 +87,8 @@ func createMockAggregator(
 		logger:                logger,
 		avsWriter:             mockAvsWriter,
 		blsAggregationService: mockBlsAggregationService,
-		tasks:                 make(map[types.TaskIndex]cstaskmanager.IOmronTaskManagerTask),
-		taskResponses:         make(map[types.TaskIndex]map[sdktypes.TaskResponseDigest]cstaskmanager.IOmronTaskManagerTaskResponse),
+		tasks:                 make(map[types.TaskIndex]cstaskmanager.IZklayerTaskManagerTask),
+		taskResponses:         make(map[types.TaskIndex]map[sdktypes.TaskResponseDigest]cstaskmanager.IZklayerTaskManagerTaskResponse),
 	}
 	return aggregator, mockAvsWriter, mockBlsAggregationService, nil
 }

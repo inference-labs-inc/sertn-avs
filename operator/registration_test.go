@@ -9,9 +9,9 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 
-	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/OmronTaskManager"
-	"github.com/inference-labs-inc/omron-avs/metrics"
-	"github.com/inference-labs-inc/omron-avs/tests"
+	cstaskmanager "github.com/inference-labs-inc/zklayer-avs/contracts/bindings/ZklayerTaskManager"
+	"github.com/inference-labs-inc/zklayer-avs/metrics"
+	"github.com/inference-labs-inc/zklayer-avs/tests"
 )
 
 const MOCK_OPERATOR_BLS_PRIVATE_KEY = "69"
@@ -47,7 +47,7 @@ func createMockOperator() (*Operator, error) {
 		blsKeypair:         operatorKeypair,
 		metricsReg:         reg,
 		metrics:            noopMetrics,
-		newTaskCreatedChan: make(chan *cstaskmanager.ContractOmronTaskManagerNewTaskCreated),
+		newTaskCreatedChan: make(chan *cstaskmanager.ContractZklayerTaskManagerNewTaskCreated),
 		operatorId:         MOCK_OPERATOR_ID,
 	}
 	return operator, nil

@@ -2,17 +2,17 @@
 pragma solidity ^0.8.12;
 
 import "forge-std/Test.sol";
-import "../src/OmronServiceManager.sol" as omrm;
+import "../src/ZklayerServiceManager.sol" as zklm;
 import {InferenceDB} from "../src/InferenceDb.sol";
-import {OmronTaskManager} from "../src/OmronTaskManager.sol";
+import {ZklayerTaskManager} from "../src/ZklayerTaskManager.sol";
 import {BLSMockAVSDeployer} from "@eigenlayer-middleware/test/utils/BLSMockAVSDeployer.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
-contract OmronTaskManagerTest is Test, BLSMockAVSDeployer {
-    omrm.OmronServiceManager sm;
-    omrm.OmronServiceManager smImplementation;
-    OmronTaskManager tm;
-    OmronTaskManager tmImplementation;
+contract ZklayerTaskManagerTest is Test, BLSMockAVSDeployer {
+    zklm.ZklayerServiceManager sm;
+    zklm.ZklayerServiceManager smImplementation;
+    ZklayerTaskManager tm;
+    ZklayerTaskManager tmImplementation;
 
     uint32 public constant TASK_RESPONSE_WINDOW_BLOCK = 30;
     address aggregator =
@@ -24,13 +24,13 @@ contract OmronTaskManagerTest is Test, BLSMockAVSDeployer {
         _setUpBLSMockAVSDeployer();
         InferenceDB inferenceDB = new InferenceDB(0, address(0));
 
-        tmImplementation = new OmronTaskManager(
-            omrm.IRegistryCoordinator(address(registryCoordinator)),
+        tmImplementation = new ZklayerTaskManager(
+            zklm.IRegistryCoordinator(address(registryCoordinator)),
             TASK_RESPONSE_WINDOW_BLOCK
         );
 
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
-        tm = OmronTaskManager(
+        tm = ZklayerTaskManager(
             address(
                 new TransparentUpgradeableProxy(
                     address(tmImplementation),

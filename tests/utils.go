@@ -22,7 +22,7 @@ func StartAnvilChainAndDeployContracts() *exec.Cmd {
 	time.Sleep(2 * time.Second)
 
 	fmt.Println("Deploying contracts...")
-	cmd := exec.Command("forge", "script", "script/OmronDeployer.s.sol",
+	cmd := exec.Command("forge", "script", "script/ZklayerDeployer.s.sol",
 		"--rpc-url", "http://localhost:8545",
 		"--private-key", "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
 		"--broadcast",

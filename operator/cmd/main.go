@@ -8,9 +8,9 @@ import (
 
 	"github.com/urfave/cli"
 
-	"github.com/inference-labs-inc/omron-avs/core/config"
-	"github.com/inference-labs-inc/omron-avs/operator"
-	"github.com/inference-labs-inc/omron-avs/types"
+	"github.com/inference-labs-inc/zklayer-avs/core/config"
+	"github.com/inference-labs-inc/zklayer-avs/operator"
+	"github.com/inference-labs-inc/zklayer-avs/types"
 
 	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
 )
@@ -18,8 +18,8 @@ import (
 func main() {
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{config.ConfigFileFlag}
-	app.Name = "omron-operator"
-	app.Usage = "Omron Operator"
+	app.Name = "zklayer-operator"
+	app.Usage = "Zklayer Operator"
 	app.Description = "Service that reads numbers onchain, squares, signs, and sends them to the aggregator."
 
 	app.Action = operatorMain

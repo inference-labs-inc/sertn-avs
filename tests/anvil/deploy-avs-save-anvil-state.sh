@@ -29,7 +29,7 @@ trap 'cleanup $LINENO "$BASH_COMMAND"' EXIT
 start_anvil_docker $parent_path/eigenlayer-deployed-anvil-state.json $parent_path/avs-and-eigenlayer-deployed-anvil-state.json
 
 cd ../../contracts
-forge script script/OmronDeployer.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast -v
+forge script script/ZklayerDeployer.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast -v
 # save the block-number in the genesis file which we also need to restart the anvil chain at the correct block
 # otherwise the indexRegistry has a quorumUpdate at a high block number, and when we restart a clean anvil (without genesis.json) file
 # it starts at block 0, and so calling getOperatorListAtBlockNumber reverts because it thinks there are no quorums registered at block 0

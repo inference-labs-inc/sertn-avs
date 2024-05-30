@@ -8,7 +8,7 @@ remappings = [
     "@eigenlayer/=lib/eigenlayer-middleware/lib/eigenlayer-contracts/src/",
     "@eigenlayer-scripts/=lib/eigenlayer-middleware/lib/eigenlayer-contracts/script/",
     "@eigenlayer-middleware/=lib/eigenlayer-middleware/",
-    "@omron/=src/",
+    "@zklayer/=src/",
     "@openzeppelin/=lib/eigenlayer-middleware/lib/eigenlayer-contracts/lib/openzeppelin-contracts/",
     "@openzeppelin-upgrades/=lib/eigenlayer-middleware/lib/eigenlayer-contracts/lib/openzeppelin-contracts-upgradeable/",
     "forge-std/=lib/forge-std/src/"
@@ -21,7 +21,7 @@ gas_reports = ["*"]
 # Enables or disables the optimizer
 optimizer = true
 # The number of optimizer runs
-optimizer_runs = 0
+optimizer_runs = 200
 # Whether or not to use the Yul intermediate representation compilation pipeline
 via_ir = false
 # Override the Solidity version (this overrides `auto_detect_solc`)

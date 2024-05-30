@@ -3,7 +3,7 @@ from utils import parse_input, input_to_field_element
 
 try:
     parser = argparse.ArgumentParser(
-                        prog='Omron AVS ezkl operator formatted')
+                        prog='Zklayer AVS ezkl operator formatted')
 
     parser.add_argument('-i','--input', nargs='+', help='input data to run on', required=False)
     args = parser.parse_args()

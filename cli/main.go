@@ -4,8 +4,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/inference-labs-inc/omron-avs/cli/actions"
-	"github.com/inference-labs-inc/omron-avs/core/config"
+	"github.com/inference-labs-inc/zklayer-avs/cli/actions"
+	"github.com/inference-labs-inc/zklayer-avs/core/config"
 	"github.com/urfave/cli"
 )
 
@@ -55,7 +55,7 @@ func main() {
 		{
 			Name:    "print-operator-status",
 			Aliases: []string{"s"},
-			Usage:   "prints operator status as viewed from omron contracts",
+			Usage:   "prints operator status as viewed from zklayer contracts",
 			Action:  actions.PrintOperatorStatus,
 		},
 	}

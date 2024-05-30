@@ -1,4 +1,4 @@
-module github.com/inference-labs-inc/omron-avs
+module github.com/inference-labs-inc/zklayer-avs
 
 go 1.21
 

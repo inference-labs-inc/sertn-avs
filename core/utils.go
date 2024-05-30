@@ -12,15 +12,15 @@ import (
 
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/OmronTaskManager"
+	cstaskmanager "github.com/inference-labs-inc/zklayer-avs/contracts/bindings/ZklayerTaskManager"
 	"golang.org/x/crypto/sha3"
 )
 
-// this hardcodes abi.encode() for cstaskmanager.IOmronTaskManagerTaskResponse
+// this hardcodes abi.encode() for cstaskmanager.IZklayerTaskManagerTaskResponse
 // unclear why abigen doesn't provide this out of the box...
-func AbiEncodeTaskResponse(h *cstaskmanager.IOmronTaskManagerTaskResponse) ([]byte, error) {
+func AbiEncodeTaskResponse(h *cstaskmanager.IZklayerTaskManagerTaskResponse) ([]byte, error) {
 
-	// The order here has to match the field ordering of cstaskmanager.IOmronTaskManagerTaskResponse
+	// The order here has to match the field ordering of cstaskmanager.IZklayerTaskManagerTaskResponse
 	taskResponseType, err := abi.NewType("tuple", "", []abi.ArgumentMarshaling{
 		{
 			Name: "referenceTaskIndex",
@@ -49,7 +49,7 @@ func AbiEncodeTaskResponse(h *cstaskmanager.IOmronTaskManagerTaskResponse) ([]by
 }
 
 // GetTaskResponseDigest returns the hash of the TaskResponse, which is what operators sign over
-func GetTaskResponseDigest(h *cstaskmanager.IOmronTaskManagerTaskResponse) ([32]byte, error) {
+func GetTaskResponseDigest(h *cstaskmanager.IZklayerTaskManagerTaskResponse) ([32]byte, error) {
 
 	encodeTaskResponseByte, err := AbiEncodeTaskResponse(h)
 	if err != nil {

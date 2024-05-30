@@ -5,14 +5,14 @@ import (
 
 	opstateretriever "github.com/Layr-Labs/eigensdk-go/contracts/bindings/OperatorStateRetriever"
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
-	"github.com/inference-labs-inc/omron-avs/aggregator/types"
-	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/OmronTaskManager"
+	"github.com/inference-labs-inc/zklayer-avs/aggregator/types"
+	cstaskmanager "github.com/inference-labs-inc/zklayer-avs/contracts/bindings/ZklayerTaskManager"
 )
 
 // ====== TaskManager Mocks ======
 
-func MockSendNewTaskNumberToSquareCall(blockNum, taskNum uint32, inputs [5]*big.Int) (cstaskmanager.IOmronTaskManagerTask, uint32, error) {
-	task := cstaskmanager.IOmronTaskManagerTask{
+func MockSendNewTaskNumberToSquareCall(blockNum, taskNum uint32, inputs [5]*big.Int) (cstaskmanager.IZklayerTaskManagerTask, uint32, error) {
+	task := cstaskmanager.IZklayerTaskManagerTask{
 		Inputs:                    inputs,
 		TaskCreatedBlock:          blockNum,
 		QuorumNumbers:             types.QUORUM_NUMBERS.UnderlyingType(),

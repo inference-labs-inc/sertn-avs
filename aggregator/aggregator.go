@@ -14,12 +14,12 @@ import (
 	blsagg "github.com/Layr-Labs/eigensdk-go/services/bls_aggregation"
 	oprsinfoserv "github.com/Layr-Labs/eigensdk-go/services/operatorsinfo"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
-	"github.com/inference-labs-inc/omron-avs/aggregator/types"
-	"github.com/inference-labs-inc/omron-avs/core"
-	"github.com/inference-labs-inc/omron-avs/core/chainio"
-	"github.com/inference-labs-inc/omron-avs/core/config"
+	"github.com/inference-labs-inc/zklayer-avs/aggregator/types"
+	"github.com/inference-labs-inc/zklayer-avs/core"
+	"github.com/inference-labs-inc/zklayer-avs/core/chainio"
+	"github.com/inference-labs-inc/zklayer-avs/core/config"
 
-	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/OmronTaskManager"
+	cstaskmanager "github.com/inference-labs-inc/zklayer-avs/contracts/bindings/ZklayerTaskManager"
 )
 
 const (
@@ -28,7 +28,7 @@ const (
 	// ideally be fetched from the contracts
 	taskChallengeWindowBlock = 100
 	blockTimeSeconds         = 12 * time.Second
-	avsName                  = "omron"
+	avsName                  = "zklayer"
 )
 
 // Aggregator sends tasks (numbers to square) onchain, then listens for operator signed TaskResponses.
@@ -70,9 +70,9 @@ type Aggregator struct {
 	avsWriter        chainio.AvsWriterer
 	// aggregation related fields
 	blsAggregationService blsagg.BlsAggregationService
-	tasks                 map[types.TaskIndex]cstaskmanager.IOmronTaskManagerTask
+	tasks                 map[types.TaskIndex]cstaskmanager.IZklayerTaskManagerTask
 	tasksMu               sync.RWMutex
-	taskResponses         map[types.TaskIndex]map[sdktypes.TaskResponseDigest]cstaskmanager.IOmronTaskManagerTaskResponse
+	taskResponses         map[types.TaskIndex]map[sdktypes.TaskResponseDigest]cstaskmanager.IZklayerTaskManagerTaskResponse
 	taskResponsesMu       sync.RWMutex
 }
 
@@ -94,7 +94,7 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 	chainioConfig := sdkclients.BuildAllConfig{
 		EthHttpUrl:                 c.EthHttpRpcUrl,
 		EthWsUrl:                   c.EthWsRpcUrl,
-		RegistryCoordinatorAddr:    c.OmronRegistryCoordinatorAddr.String(),
+		RegistryCoordinatorAddr:    c.ZklayerRegistryCoordinatorAddr.String(),
 		OperatorStateRetrieverAddr: c.OperatorStateRetrieverAddr.String(),
 		AvsName:                    avsName,
 		PromMetricsIpPortAddress:   ":9090",
@@ -114,8 +114,8 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 		serverIpPortAddr:      c.AggregatorServerIpPortAddr,
 		avsWriter:             avsWriter,
 		blsAggregationService: blsAggregationService,
-		tasks:                 make(map[types.TaskIndex]cstaskmanager.IOmronTaskManagerTask),
-		taskResponses:         make(map[types.TaskIndex]map[sdktypes.TaskResponseDigest]cstaskmanager.IOmronTaskManagerTaskResponse),
+		tasks:                 make(map[types.TaskIndex]cstaskmanager.IZklayerTaskManagerTask),
+		taskResponses:         make(map[types.TaskIndex]map[sdktypes.TaskResponseDigest]cstaskmanager.IZklayerTaskManagerTaskResponse),
 	}, nil
 }
 

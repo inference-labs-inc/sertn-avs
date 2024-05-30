@@ -14,12 +14,12 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/inference-labs-inc/omron-avs/aggregator"
-	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/OmronTaskManager"
-	"github.com/inference-labs-inc/omron-avs/core"
-	"github.com/inference-labs-inc/omron-avs/core/chainio"
-	"github.com/inference-labs-inc/omron-avs/metrics"
-	"github.com/inference-labs-inc/omron-avs/types"
+	"github.com/inference-labs-inc/zklayer-avs/aggregator"
+	cstaskmanager "github.com/inference-labs-inc/zklayer-avs/contracts/bindings/ZklayerTaskManager"
+	"github.com/inference-labs-inc/zklayer-avs/core"
+	"github.com/inference-labs-inc/zklayer-avs/core/chainio"
+	"github.com/inference-labs-inc/zklayer-avs/metrics"
+	"github.com/inference-labs-inc/zklayer-avs/types"
 
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	sdkelcontracts "github.com/Layr-Labs/eigensdk-go/chainio/clients/elcontracts"
@@ -39,7 +39,7 @@ import (
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 )
 
-const AVS_NAME = "omron"
+const AVS_NAME = "zklayer"
 const SEM_VER = "0.0.1"
 
 type Operator struct {
@@ -62,15 +62,15 @@ type Operator struct {
 	blsKeypair            *bls.KeyPair
 	operatorId            sdktypes.OperatorId
 	operatorAddr          common.Address
-	newTaskChallengedChan chan *cstaskmanager.ContractOmronTaskManagerTaskChallenged
+	newTaskChallengedChan chan *cstaskmanager.ContractZklayerTaskManagerTaskChallenged
 	// receive new tasks in this chan (typically from listening to onchain event)
-	newTaskCreatedChan chan *cstaskmanager.ContractOmronTaskManagerNewTaskCreated
+	newTaskCreatedChan chan *cstaskmanager.ContractZklayerTaskManagerNewTaskCreated
 	// ip address of aggregator
 	aggregatorServerIpPortAddr string
 	// rpc client to send signed task responses to aggregator
 	aggregatorRpcClient AggregatorRpcClienter
 	// needed when opting in to avs (allow this service manager contract to slash operator)
-	omronServiceManagerAddr common.Address
+	zklayerServiceManagerAddr common.Address
 }
 
 // TODO(samlaf): config is a mess right now, since the chainio client constructors
@@ -232,9 +232,9 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		operatorAddr:               common.HexToAddress(c.OperatorAddress),
 		aggregatorServerIpPortAddr: c.AggregatorServerIpPortAddress,
 		aggregatorRpcClient:        aggregatorRpcClient,
-		newTaskCreatedChan:         make(chan *cstaskmanager.ContractOmronTaskManagerNewTaskCreated),
-		newTaskChallengedChan:      make(chan *cstaskmanager.ContractOmronTaskManagerTaskChallenged),
-		omronServiceManagerAddr:    common.HexToAddress(c.AVSRegistryCoordinatorAddress),
+		newTaskCreatedChan:         make(chan *cstaskmanager.ContractZklayerTaskManagerNewTaskCreated),
+		newTaskChallengedChan:      make(chan *cstaskmanager.ContractZklayerTaskManagerTaskChallenged),
+		zklayerServiceManagerAddr:  common.HexToAddress(c.AVSRegistryCoordinatorAddress),
 		operatorId:                 [32]byte{0}, // this is set below
 
 	}
@@ -341,7 +341,7 @@ func (o *Operator) RunModelFromBigIntInputs(rawInputs [5]*big.Int) *big.Int {
 
 // Takes a NewTaskCreatedLog struct as input and returns a TaskResponseHeader struct.
 // The TaskResponseHeader struct is the struct that is signed and sent to the contract as a task response.
-func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.ContractOmronTaskManagerNewTaskCreated) *cstaskmanager.IOmronTaskManagerTaskResponse {
+func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.ContractZklayerTaskManagerNewTaskCreated) *cstaskmanager.IZklayerTaskManagerTaskResponse {
 	o.logger.Debug("Received new task", "task", newTaskCreatedLog)
 	o.logger.Info("NEW TASK - OPERATOR",
 		"inputs", newTaskCreatedLog.Task.Inputs,
@@ -358,14 +358,14 @@ func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.Con
 		"output", output,
 	)
 
-	taskResponse := &cstaskmanager.IOmronTaskManagerTaskResponse{
+	taskResponse := &cstaskmanager.IZklayerTaskManagerTaskResponse{
 		ReferenceTaskIndex: newTaskCreatedLog.TaskIndex,
 		Output:             output,
 	}
 	return taskResponse
 }
 
-func (o *Operator) SignTaskResponse(taskResponse *cstaskmanager.IOmronTaskManagerTaskResponse) (*aggregator.SignedTaskResponse, error) {
+func (o *Operator) SignTaskResponse(taskResponse *cstaskmanager.IZklayerTaskManagerTaskResponse) (*aggregator.SignedTaskResponse, error) {
 	taskResponseHash, err := core.GetTaskResponseDigest(taskResponse)
 	if err != nil {
 		o.logger.Error("Error getting task response header hash. skipping task (this is not expected and should be investigated)", "err", err)

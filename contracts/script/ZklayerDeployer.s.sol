@@ -18,9 +18,9 @@ import {IndexRegistry} from "@eigenlayer-middleware/src/IndexRegistry.sol";
 import {StakeRegistry} from "@eigenlayer-middleware/src/StakeRegistry.sol";
 import "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 
-import {OmronServiceManager, IServiceManager} from "../src/OmronServiceManager.sol";
-import {OmronTaskManager} from "../src/OmronTaskManager.sol";
-import {IOmronTaskManager} from "../src/IOmronTaskManager.sol";
+import {ZklayerServiceManager, IServiceManager} from "../src/ZklayerServiceManager.sol";
+import {ZklayerTaskManager} from "../src/ZklayerTaskManager.sol";
+import {IZklayerTaskManager} from "../src/IZklayerTaskManager.sol";
 import "../src/ERC20Mock.sol";
 
 import {ZKVerifier} from "../src/ZKVerifier.sol";
@@ -33,8 +33,8 @@ import "forge-std/StdJson.sol";
 import "forge-std/console.sol";
 
 // # To deploy and verify our contract
-// forge script script/OmronDeployer.s.sol:OmronDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
-contract OmronDeployer is Script, Utils {
+// forge script script/ZklayerDeployer.s.sol:ZklayerDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
+contract ZklayerDeployer is Script, Utils {
     // DEPLOYMENT CONSTANTS
     uint256 public constant QUORUM_THRESHOLD_PERCENTAGE = 100;
     uint32 public constant TASK_RESPONSE_WINDOW_BLOCK = 30;
@@ -50,9 +50,9 @@ contract OmronDeployer is Script, Utils {
     ERC20Mock public erc20Mock;
     StrategyBaseTVLLimits public erc20MockStrategy;
 
-    // Omron contracts
-    ProxyAdmin public omronProxyAdmin;
-    PauserRegistry public omronPauserReg;
+    // Zklayer contracts
+    ProxyAdmin public zklayerProxyAdmin;
+    PauserRegistry public zklayerPauserReg;
 
     regcoord.RegistryCoordinator public registryCoordinator;
     regcoord.IRegistryCoordinator public registryCoordinatorImplementation;
@@ -68,11 +68,11 @@ contract OmronDeployer is Script, Utils {
 
     OperatorStateRetriever public operatorStateRetriever;
 
-    OmronServiceManager public omronServiceManager;
-    IServiceManager public omronServiceManagerImplementation;
+    ZklayerServiceManager public zklayerServiceManager;
+    IServiceManager public zklayerServiceManagerImplementation;
 
-    OmronTaskManager public omronTaskManager;
-    IOmronTaskManager public omronTaskManagerImplementation;
+    ZklayerTaskManager public zklayerTaskManager;
+    IZklayerTaskManager public zklayerTaskManagerImplementation;
 
     function run() external {
         // Eigenlayer contracts
@@ -116,8 +116,8 @@ contract OmronDeployer is Script, Utils {
                 )
             );
 
-        address omronCommunityMultisig = msg.sender;
-        address omronPauser = msg.sender;
+        address zklayerCommunityMultisig = msg.sender;
+        address zklayerPauser = msg.sender;
 
         vm.startBroadcast();
         _deployErc20AndStrategyAndWhitelistStrategy(
@@ -126,12 +126,12 @@ contract OmronDeployer is Script, Utils {
             baseStrategyImplementation,
             strategyManager
         );
-        _deployOmronContracts(
+        _deployZklayerContracts(
             delegationManager,
             avsDirectory,
             erc20MockStrategy,
-            omronCommunityMultisig,
-            omronPauser
+            zklayerCommunityMultisig,
+            zklayerPauser
         );
         vm.stopBroadcast();
     }
@@ -170,12 +170,12 @@ contract OmronDeployer is Script, Utils {
         );
     }
 
-    function _deployOmronContracts(
+    function _deployZklayerContracts(
         IDelegationManager delegationManager,
         IAVSDirectory avsDirectory,
         IStrategy strat,
-        address omronCommunityMultisig,
-        address omronPauser
+        address zklayerCommunityMultisig,
+        address zklayerPauser
     ) internal {
         // Adding this as a temporary fix to make the rest of the script work with a single strategy
         // since it was originally written to work with an array of strategies
@@ -183,16 +183,16 @@ contract OmronDeployer is Script, Utils {
         uint numStrategies = deployedStrategyArray.length;
 
         // deploy proxy admin for ability to upgrade proxy contracts
-        omronProxyAdmin = new ProxyAdmin();
+        zklayerProxyAdmin = new ProxyAdmin();
 
         // deploy pauser registry
         {
             address[] memory pausers = new address[](2);
-            pausers[0] = omronPauser;
-            pausers[1] = omronCommunityMultisig;
-            omronPauserReg = new PauserRegistry(
+            pausers[0] = zklayerPauser;
+            pausers[1] = zklayerCommunityMultisig;
+            zklayerPauserReg = new PauserRegistry(
                 pausers,
-                omronCommunityMultisig
+                zklayerCommunityMultisig
             );
         }
 
@@ -204,20 +204,20 @@ contract OmronDeployer is Script, Utils {
          * First, deploy upgradeable proxy contracts that **will point** to the implementations. Since the implementation contracts are
          * not yet deployed, we give these proxies an empty contract as the initial implementation, to act as if they have no code.
          */
-        omronServiceManager = OmronServiceManager(
+        zklayerServiceManager = ZklayerServiceManager(
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
-                    address(omronProxyAdmin),
+                    address(zklayerProxyAdmin),
                     ""
                 )
             )
         );
-        omronTaskManager = OmronTaskManager(
+        zklayerTaskManager = ZklayerTaskManager(
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
-                    address(omronProxyAdmin),
+                    address(zklayerProxyAdmin),
                     ""
                 )
             )
@@ -226,7 +226,7 @@ contract OmronDeployer is Script, Utils {
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
-                    address(omronProxyAdmin),
+                    address(zklayerProxyAdmin),
                     ""
                 )
             )
@@ -235,7 +235,7 @@ contract OmronDeployer is Script, Utils {
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
-                    address(omronProxyAdmin),
+                    address(zklayerProxyAdmin),
                     ""
                 )
             )
@@ -244,7 +244,7 @@ contract OmronDeployer is Script, Utils {
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
-                    address(omronProxyAdmin),
+                    address(zklayerProxyAdmin),
                     ""
                 )
             )
@@ -253,7 +253,7 @@ contract OmronDeployer is Script, Utils {
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
-                    address(omronProxyAdmin),
+                    address(zklayerProxyAdmin),
                     ""
                 )
             )
@@ -268,7 +268,7 @@ contract OmronDeployer is Script, Utils {
                 delegationManager
             );
 
-            omronProxyAdmin.upgrade(
+            zklayerProxyAdmin.upgrade(
                 TransparentUpgradeableProxy(payable(address(stakeRegistry))),
                 address(stakeRegistryImplementation)
             );
@@ -277,7 +277,7 @@ contract OmronDeployer is Script, Utils {
                 registryCoordinator
             );
 
-            omronProxyAdmin.upgrade(
+            zklayerProxyAdmin.upgrade(
                 TransparentUpgradeableProxy(payable(address(blsApkRegistry))),
                 address(blsApkRegistryImplementation)
             );
@@ -286,14 +286,14 @@ contract OmronDeployer is Script, Utils {
                 registryCoordinator
             );
 
-            omronProxyAdmin.upgrade(
+            zklayerProxyAdmin.upgrade(
                 TransparentUpgradeableProxy(payable(address(indexRegistry))),
                 address(indexRegistryImplementation)
             );
         }
 
         registryCoordinatorImplementation = new regcoord.RegistryCoordinator(
-            omronServiceManager,
+            zklayerServiceManager,
             regcoord.IStakeRegistry(address(stakeRegistry)),
             regcoord.IBLSApkRegistry(address(blsApkRegistry)),
             regcoord.IIndexRegistry(address(indexRegistry))
@@ -339,7 +339,7 @@ contract OmronDeployer is Script, Utils {
                         });
                 }
             }
-            omronProxyAdmin.upgradeAndCall(
+            zklayerProxyAdmin.upgradeAndCall(
                 TransparentUpgradeableProxy(
                     payable(address(registryCoordinator))
                 ),
@@ -347,10 +347,10 @@ contract OmronDeployer is Script, Utils {
                 abi.encodeWithSelector(
                     regcoord.RegistryCoordinator.initialize.selector,
                     // we set churnApprover and ejector to communityMultisig because we don't need them
-                    omronCommunityMultisig,
-                    omronCommunityMultisig,
-                    omronCommunityMultisig,
-                    omronPauserReg,
+                    zklayerCommunityMultisig,
+                    zklayerCommunityMultisig,
+                    zklayerCommunityMultisig,
+                    zklayerPauserReg,
                     0, // 0 initialPausedStatus means everything unpaused
                     quorumsOperatorSetParams,
                     quorumsMinimumStake,
@@ -359,35 +359,37 @@ contract OmronDeployer is Script, Utils {
             );
         }
 
-        omronServiceManagerImplementation = new OmronServiceManager(
+        zklayerServiceManagerImplementation = new ZklayerServiceManager(
             avsDirectory,
             registryCoordinator,
             stakeRegistry,
-            omronTaskManager
+            zklayerTaskManager
         );
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
-        omronProxyAdmin.upgrade(
-            TransparentUpgradeableProxy(payable(address(omronServiceManager))),
-            address(omronServiceManagerImplementation)
+        zklayerProxyAdmin.upgrade(
+            TransparentUpgradeableProxy(
+                payable(address(zklayerServiceManager))
+            ),
+            address(zklayerServiceManagerImplementation)
         );
 
-        omronTaskManagerImplementation = new OmronTaskManager(
+        zklayerTaskManagerImplementation = new ZklayerTaskManager(
             registryCoordinator,
             TASK_RESPONSE_WINDOW_BLOCK
         );
         ZKVerifier zkVerifier = new ZKVerifier();
         // Todo: opnun change 0 to number of blocks producer has to respond
         InferenceDB inferenceDB = new InferenceDB(0, address(zkVerifier));
-        inferenceDB.updateTaskManager(address(omronTaskManager));
+        inferenceDB.updateTaskManager(address(zklayerTaskManager));
 
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
-        omronProxyAdmin.upgradeAndCall(
-            TransparentUpgradeableProxy(payable(address(omronTaskManager))),
-            address(omronTaskManagerImplementation),
+        zklayerProxyAdmin.upgradeAndCall(
+            TransparentUpgradeableProxy(payable(address(zklayerTaskManager))),
+            address(zklayerTaskManagerImplementation),
             abi.encodeWithSelector(
-                omronTaskManager.initialize.selector,
-                omronPauserReg,
-                omronCommunityMultisig,
+                zklayerTaskManager.initialize.selector,
+                zklayerPauserReg,
+                zklayerCommunityMultisig,
                 AGGREGATOR_ADDR,
                 TASK_GENERATOR_ADDR,
                 address(inferenceDB)
@@ -410,23 +412,23 @@ contract OmronDeployer is Script, Utils {
         );
         vm.serializeAddress(
             deployed_addresses,
-            "omronServiceManager",
-            address(omronServiceManager)
+            "zklayerServiceManager",
+            address(zklayerServiceManager)
         );
         vm.serializeAddress(
             deployed_addresses,
-            "omronServiceManagerImplementation",
-            address(omronServiceManagerImplementation)
+            "zklayerServiceManagerImplementation",
+            address(zklayerServiceManagerImplementation)
         );
         vm.serializeAddress(
             deployed_addresses,
-            "omronTaskManager",
-            address(omronTaskManager)
+            "zklayerTaskManager",
+            address(zklayerTaskManager)
         );
         vm.serializeAddress(
             deployed_addresses,
-            "omronTaskManagerImplementation",
-            address(omronTaskManagerImplementation)
+            "zklayerTaskManagerImplementation",
+            address(zklayerTaskManagerImplementation)
         );
         vm.serializeAddress(
             deployed_addresses,
@@ -456,6 +458,6 @@ contract OmronDeployer is Script, Utils {
             deployed_addresses_output
         );
 
-        writeOutput(finalJson, "omron_avs_deployment_output");
+        writeOutput(finalJson, "zklayer_avs_deployment_output");
     }
 }

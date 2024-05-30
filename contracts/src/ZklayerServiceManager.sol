@@ -2,23 +2,23 @@
 pragma solidity ^0.8.9;
 
 import "@eigenlayer/contracts/libraries/BytesLib.sol";
-import "./IOmronTaskManager.sol";
+import "./IZklayerTaskManager.sol";
 import "@eigenlayer-middleware/src/ServiceManagerBase.sol";
 
 /**
- * @title Primary entrypoint for procuring services from Omron.
+ * @title Primary entrypoint for procuring services from Zklayer.
  * @author Layr Labs, Inc.
  */
-contract OmronServiceManager is ServiceManagerBase {
+contract ZklayerServiceManager is ServiceManagerBase {
     using BytesLib for bytes;
 
-    IOmronTaskManager public immutable omronTaskManager;
+    IZklayerTaskManager public immutable zklayerTaskManager;
 
     /// @notice when applied to a function, ensures that the function is only callable by the `registryCoordinator`.
-    modifier onlyOmronTaskManager() {
+    modifier onlyZklayerTaskManager() {
         require(
-            msg.sender == address(omronTaskManager),
-            "onlyOmronTaskManager: not from omron task manager"
+            msg.sender == address(zklayerTaskManager),
+            "onlyZklayerTaskManager: not from zklayer task manager"
         );
         _;
     }
@@ -27,7 +27,7 @@ contract OmronServiceManager is ServiceManagerBase {
         IAVSDirectory _avsDirectory,
         IRegistryCoordinator _registryCoordinator,
         IStakeRegistry _stakeRegistry,
-        IOmronTaskManager _omronTaskManager
+        IZklayerTaskManager _zklayerTaskManager
     )
         ServiceManagerBase(
             _avsDirectory,
@@ -36,7 +36,7 @@ contract OmronServiceManager is ServiceManagerBase {
             _stakeRegistry
         )
     {
-        omronTaskManager = _omronTaskManager;
+        zklayerTaskManager = _zklayerTaskManager;
     }
 
     /// @notice Called in the event of challenge resolution, in order to forward a call to the Slasher, which 'freezes' the `operator`.
@@ -44,7 +44,7 @@ contract OmronServiceManager is ServiceManagerBase {
     ///      We recommend writing slashing logic without integrating with the Slasher at this point in time.
     function freezeOperator(
         address operatorAddr
-    ) external onlyOmronTaskManager {
+    ) external onlyZklayerTaskManager {
         // slasher.freezeOperator(operatorAddr);
     }
 }

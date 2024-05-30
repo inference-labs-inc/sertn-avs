@@ -10,10 +10,10 @@ import (
 
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
-	"github.com/inference-labs-inc/omron-avs/aggregator/types"
-	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/OmronTaskManager"
-	"github.com/inference-labs-inc/omron-avs/core"
-	"github.com/inference-labs-inc/omron-avs/tests"
+	"github.com/inference-labs-inc/zklayer-avs/aggregator/types"
+	cstaskmanager "github.com/inference-labs-inc/zklayer-avs/contracts/bindings/ZklayerTaskManager"
+	"github.com/inference-labs-inc/zklayer-avs/core"
+	"github.com/inference-labs-inc/zklayer-avs/tests"
 )
 
 func TestProcessSignedTaskResponse(t *testing.T) {
@@ -62,7 +62,7 @@ func TestProcessSignedTaskResponse(t *testing.T) {
 
 // mocks an operator signing on a task response
 func createMockSignedTaskResponse(mockTask MockTask, keypair bls.KeyPair) (*SignedTaskResponse, error) {
-	taskResponse := &cstaskmanager.IOmronTaskManagerTaskResponse{
+	taskResponse := &cstaskmanager.IZklayerTaskManagerTaskResponse{
 		ReferenceTaskIndex: mockTask.TaskNum,
 		Output:             tests.GoodOutput(),
 	}

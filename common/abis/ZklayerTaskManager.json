@@ -37,7 +37,7 @@
                 "indexed": true
             },
             {
-                "internalType": "struct IOmronTaskManager.Task",
+                "internalType": "struct IZklayerTaskManager.Task",
                 "name": "task",
                 "type": "tuple",
                 "components": [
@@ -206,7 +206,7 @@
     {
         "inputs": [
             {
-                "internalType": "struct IOmronTaskManager.TaskResponse",
+                "internalType": "struct IZklayerTaskManager.TaskResponse",
                 "name": "taskResponse",
                 "type": "tuple",
                 "components": [
@@ -224,7 +224,7 @@
                 "indexed": false
             },
             {
-                "internalType": "struct IOmronTaskManager.TaskResponseMetadata",
+                "internalType": "struct IZklayerTaskManager.TaskResponseMetadata",
                 "name": "taskResponseMetadata",
                 "type": "tuple",
                 "components": [
@@ -911,7 +911,7 @@
     {
         "inputs": [
             {
-                "internalType": "struct IOmronTaskManager.Task",
+                "internalType": "struct IZklayerTaskManager.Task",
                 "name": "task",
                 "type": "tuple",
                 "components": [
@@ -938,7 +938,7 @@
                 ]
             },
             {
-                "internalType": "struct IOmronTaskManager.TaskResponse",
+                "internalType": "struct IZklayerTaskManager.TaskResponse",
                 "name": "taskResponse",
                 "type": "tuple",
                 "components": [
@@ -955,7 +955,7 @@
                 ]
             },
             {
-                "internalType": "struct IOmronTaskManager.TaskResponseMetadata",
+                "internalType": "struct IZklayerTaskManager.TaskResponseMetadata",
                 "name": "taskResponseMetadata",
                 "type": "tuple",
                 "components": [
@@ -1025,7 +1025,7 @@
     {
         "inputs": [
             {
-                "internalType": "struct IOmronTaskManager.Task",
+                "internalType": "struct IZklayerTaskManager.Task",
                 "name": "task",
                 "type": "tuple",
                 "components": [
@@ -1052,7 +1052,7 @@
                 ]
             },
             {
-                "internalType": "struct IOmronTaskManager.TaskResponse",
+                "internalType": "struct IZklayerTaskManager.TaskResponse",
                 "name": "taskResponse",
                 "type": "tuple",
                 "components": [

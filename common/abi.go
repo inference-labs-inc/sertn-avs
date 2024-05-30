@@ -4,5 +4,5 @@ import (
 	_ "embed"
 )
 
-//go:embed abis/OmronTaskManager.json
+//go:embed abis/ZklayerTaskManager.json
 var TaskManagerAbi []byte

@@ -9,14 +9,14 @@ import (
 	gethcommon "github.com/ethereum/go-ethereum/common"
 
 	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/RegistryCoordinator"
-	erc20mock "github.com/inference-labs-inc/omron-avs/contracts/bindings/ERC20Mock"
-	csservicemanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/OmronServiceManager"
-	cstaskmanager "github.com/inference-labs-inc/omron-avs/contracts/bindings/OmronTaskManager"
+	erc20mock "github.com/inference-labs-inc/zklayer-avs/contracts/bindings/ERC20Mock"
+	csservicemanager "github.com/inference-labs-inc/zklayer-avs/contracts/bindings/ZklayerServiceManager"
+	cstaskmanager "github.com/inference-labs-inc/zklayer-avs/contracts/bindings/ZklayerTaskManager"
 )
 
 type AvsManagersBindings struct {
-	TaskManager    *cstaskmanager.ContractOmronTaskManager
-	ServiceManager *csservicemanager.ContractOmronServiceManager
+	TaskManager    *cstaskmanager.ContractZklayerTaskManager
+	ServiceManager *csservicemanager.ContractZklayerServiceManager
 	ethClient      eth.Client
 	logger         logging.Logger
 }
@@ -30,20 +30,20 @@ func NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr 
 	if err != nil {
 		return nil, err
 	}
-	contractServiceManager, err := csservicemanager.NewContractOmronServiceManager(serviceManagerAddr, ethclient)
+	contractServiceManager, err := csservicemanager.NewContractZklayerServiceManager(serviceManagerAddr, ethclient)
 	if err != nil {
 		logger.Error("Failed to fetch IServiceManager contract", "err", err)
 		return nil, err
 	}
 
-	taskManagerAddr, err := contractServiceManager.OmronTaskManager(&bind.CallOpts{})
+	taskManagerAddr, err := contractServiceManager.ZklayerTaskManager(&bind.CallOpts{})
 	if err != nil {
 		logger.Error("Failed to fetch TaskManager address", "err", err)
 		return nil, err
 	}
-	contractTaskManager, err := cstaskmanager.NewContractOmronTaskManager(taskManagerAddr, ethclient)
+	contractTaskManager, err := cstaskmanager.NewContractZklayerTaskManager(taskManagerAddr, ethclient)
 	if err != nil {
-		logger.Error("Failed to fetch IOmronTaskManager contract", "err", err)
+		logger.Error("Failed to fetch IZklayerTaskManager contract", "err", err)
 		return nil, err
 	}
 
