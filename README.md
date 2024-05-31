@@ -2,7 +2,7 @@
 
 <b> Do not use it in Production, testnet only. </b>
 
-Basic repo demoing a simple AVS middleware with full eigenlayer integration. See this [video walkthrough](https://www.loom.com/share/50314b3ec0f34e2ba386d45724602d76?sid=9d68d8cb-d2d5-4123-bd06-776de2076de0).
+Repository for AVS middleware with full EigenLayer integration.
 
 ## Dependencies
 

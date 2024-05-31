@@ -113,8 +113,14 @@ func RelativeUrl(pathFromRoot string) string {
 
 // TODO:(opnun) Do in golang
 func FormatInputsForChain(rawInputs [5]float64) [5]*big.Int {
-	var formattedInputs [len(rawInputs)]*big.Int
 	inputString := FormatFloatInputsToString(rawInputs)
+	formattedInputs := FormatFloatStringForChain(inputString)
+	return formattedInputs
+}
+
+func FormatFloatStringForChain(inputString string) [5]*big.Int {
+	var formattedInputs [5]*big.Int
+
 	cmd := exec.Command("python", RelativeUrl("python/format.py"), "-i", inputString)
 
 	stdout, err := cmd.CombinedOutput()
@@ -123,7 +129,7 @@ func FormatInputsForChain(rawInputs [5]float64) [5]*big.Int {
 	}
 	output := strings.Split(string(stdout), "\n")[0]
 
-	for i := 0; i < len(rawInputs); i++ {
+	for i := 0; i < 5; i++ {
 		input := strings.Split(output, " ")[i]
 		temp, err := strconv.ParseInt(input, 10, 64)
 		if err != nil {
@@ -131,7 +137,6 @@ func FormatInputsForChain(rawInputs [5]float64) [5]*big.Int {
 		}
 		formattedInputs[i] = big.NewInt(temp)
 	}
-
 	return formattedInputs
 }
 
