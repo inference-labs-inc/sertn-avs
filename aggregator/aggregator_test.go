@@ -72,7 +72,7 @@ func TestSendNewTask(t *testing.T) {
 	// see https://hynek.me/articles/what-to-mock-in-5-mins/
 	mockBlsAggService.EXPECT().InitializeNewTask(TASK_INDEX, BLOCK_NUMBER, types.QUORUM_NUMBERS, sdktypes.QuorumThresholdPercentages{types.QUORUM_THRESHOLD_NUMERATOR}, taskTimeToExpiry)
 
-	err = aggregator.sendNewTask(INPUTS)
+	_, err = aggregator.sendNewTask(INPUTS)
 	assert.Nil(t, err)
 }
 
