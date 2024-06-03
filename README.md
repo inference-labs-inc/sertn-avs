@@ -2,7 +2,9 @@
 
 <b> Do not use it in Production, testnet only. </b>
 
-Repository for AVS middleware with full EigenLayer integration.
+Repository for AVS middleware with full EigenLayer integration. 
+
+Based on the work [github.com/Layr-Labs/incredible-squaring-avs](https://github.com/Layr-Labs/incredible-squaring-avs)
 
 ## Dependencies
 
