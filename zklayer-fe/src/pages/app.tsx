@@ -56,11 +56,12 @@ const App = () => {
           index: number,
           blockNumber: string
         ) => {
-          // terrible hack because I hate react
           setLogs((logs) =>
-            logs[logs.length - 1].message === message
-              ? logs
-              : [...logs, { level, message, blockNumber, taskIndex: index }]
+            [...logs, { level, message, blockNumber, taskIndex: index }]
+              .sort((a, b) => +a.blockNumber - +b.blockNumber)
+              .filter(
+                (log, i, logs) => i == 0 || log.message !== logs[i - 1].message
+              )
           );
         },
         [logs]
@@ -197,21 +198,14 @@ const App = () => {
                       !!log.message.length &&
                       log.taskIndex === inference.taskIndex
                   )
-                  .sort((a, b) => +a.blockNumber - +b.blockNumber)
-                  .map((log, i, logs) => (
-                    <>
-                      {i == 0 || logs[i - 1].message !== log.message ? (
-                        <div key={log.message + "" + i}>
-                          <span class={LogStyles[log.level]}>
-                            {log.level}: [Block Number - {log.blockNumber}]
-                            [TaskIndex - {log.taskIndex}]
-                          </span>
-                          {" " + log.message}
-                        </div>
-                      ) : (
-                        <></>
-                      )}
-                    </>
+                  .map((log, i) => (
+                    <div key={log.message + "" + i}>
+                      <span class={LogStyles[log.level]}>
+                        {log.level}: [Block Number - {log.blockNumber}]
+                        [TaskIndex - {log.taskIndex}]
+                      </span>
+                      {" " + log.message}
+                    </div>
                   ))}
               </div>
               <div class="flex justify-center gap-4 w-full">
