@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
-import { backendUrl, config, taskManagerAddress } from "../common/constants";
+import { config, taskManagerAddress } from "../common/constants";
 import { useAccount, useConnect, usePublicClient } from "wagmi";
-import { connectWallet, formatAddress } from "../common/eth";
+import { formatAddress } from "../common/eth";
 import { zkLayer } from "../ABI/TaskManager.abi";
 import {
   InferenceForm,
@@ -9,22 +9,12 @@ import {
   Log,
   LogLevel,
   LogMessage,
-  LogStyles,
-  NewTaskArgs,
   ProofTypes,
-  TaskChallengedArgs,
-  TaskChallengedSuccessfullyArgs,
-  TaskChallengedUnsuccessfullyArgs,
-  TaskResponseArgs,
 } from "../common/types";
+import { fetchInference, handleEvents } from "../common/utils";
+import Logger from "../components/Logger";
 
 let blockNumber = 0n;
-
-const fetchInference = async (inputs: string) => {
-  const response = await fetch(backendUrl + `?inputs=${inputs}`);
-  const text = await response.text();
-  return JSON.parse(text) as InferenceResponse;
-};
 
 const App = () => {
   const [logs, setLogs] = useState([
@@ -82,54 +72,7 @@ const App = () => {
         });
         if (logs.length) {
           blockNumber = logs[logs.length - 1].blockNumber + 1n;
-          logs.map((rawLog) => {
-            const log = rawLog as unknown as Log;
-            if (log.eventName === "NewTaskCreated") {
-              const args = log.args as NewTaskArgs;
-              logger.log(
-                "INFO",
-                "New Task Created " + " ZK Inputs: " + args.task.inputs,
-                args.taskIndex,
-                log.blockNumber
-              );
-            }
-            if (log.eventName === "TaskResponded") {
-              const args = log.args as TaskResponseArgs;
-              logger.log(
-                "INFO",
-                "New Task Response " + "Ouput: " + args.taskResponse.output,
-                args.taskResponse.referenceTaskIndex,
-                log.blockNumber
-              );
-            }
-            if (log.eventName === "TaskChallenged") {
-              const args = log.args as TaskChallengedArgs;
-              logger.log(
-                "WARN",
-                "Task Challenged",
-                args.taskIndex,
-                log.blockNumber
-              );
-            }
-            if (log.eventName === "TaskChallengedUnsuccessfully") {
-              const args = log.args as TaskChallengedUnsuccessfullyArgs;
-              logger.log(
-                "SUCCESS",
-                "Task Proven Prover: " + args.prover,
-                args.taskIndex,
-                log.blockNumber
-              );
-            }
-            if (log.eventName === "TaskChallengedSuccessfully") {
-              const args = log.args as TaskChallengedSuccessfullyArgs;
-              logger.log(
-                "ERROR",
-                "Task Challenge Confirmed: Challenger " + args.challenger,
-                args.taskIndex,
-                log.blockNumber
-              );
-            }
-          });
+          handleEvents(logs as unknown as Log[], logger);
         }
       })();
     }, 2000);
@@ -187,27 +130,7 @@ const App = () => {
                   ))}
                 </select>
               </div>
-              <div
-                class={`${
-                  inference.taskIndex >= 0 ? "h-60 p-6" : "h-0"
-                } text-white bg-slate-800 w-full rounded-sm mb-6 transition-all duration-500 overflow-y-auto scrollbar-hide flex flex-col`}
-              >
-                {logs
-                  .filter(
-                    (log) =>
-                      !!log.message.length &&
-                      log.taskIndex === inference.taskIndex
-                  )
-                  .map((log, i) => (
-                    <div key={log.message + "" + i}>
-                      <span class={LogStyles[log.level]}>
-                        {log.level}: [Block Number - {log.blockNumber}]
-                        [TaskIndex - {log.taskIndex}]
-                      </span>
-                      {" " + log.message}
-                    </div>
-                  ))}
-              </div>
+              <Logger logs={logs} inference={inference} />
               <div class="flex justify-center gap-4 w-full">
                 <button
                   class="shadow bg-slate-200 hover:bg-slate-400 focus:shadow-outline focus:outline-none hover:text-white py-2 px-4 rounded"
