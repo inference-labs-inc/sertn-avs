@@ -16,6 +16,11 @@ DEPLOYMENT_FILES_DIR=contracts/script/output/${CHAINID}
 -----------------------------: ## 
 
 ___CONTRACTS___: ## 
+setup-python:
+	python3 -m venv ./.venv && source ./.venv/bin/activate && pip install -r ./python/requirements.txt
+
+start-interface: ## builds all contracts
+	cd zklayer-fe && npm i && npm run dev
 
 build-contracts: ## builds all contracts
 	cd contracts && forge build
@@ -61,17 +66,17 @@ send-fund: ## sends fund to the operator saved in tests/keys/test.ecdsa.key.json
 # TODO: piping to zap-pretty only works when zapper environment is set to production, unsure why
 ____OFFCHAIN_SOFTWARE___: ## 
 start-aggregator: ## 
-	go run aggregator/cmd/main.go --config config-files/aggregator.yaml \
+	source ./.venv/bin/activate && go run aggregator/cmd/main.go --config config-files/aggregator.yaml \
 		--zklayer-deployment ${DEPLOYMENT_FILES_DIR}/zklayer_avs_deployment_output.json \
 		--ecdsa-private-key ${AGGREGATOR_ECDSA_PRIV_KEY} \
 		2>&1 | zap-pretty
 
 start-operator: ## 
-	go run operator/cmd/main.go --config config-files/operator.anvil.yaml \
+	source ./.venv/bin/activate && go run operator/cmd/main.go --config config-files/operator.anvil.yaml \
 		2>&1 | zap-pretty
 
 start-challenger: ## 
-	go run challenger/cmd/main.go --config config-files/challenger.yaml \
+	source ./.venv/bin/activate && go run challenger/cmd/main.go --config config-files/challenger.yaml \
 		--zklayer-deployment ${DEPLOYMENT_FILES_DIR}/zklayer_avs_deployment_output.json \
 		--ecdsa-private-key ${CHALLENGER_ECDSA_PRIV_KEY} \
 		2>&1 | zap-pretty

@@ -5,11 +5,11 @@ import {IZKVerifier} from "./IZKVerifier.sol";
 import {IInferenceDB} from "./IInferenceDB.sol";
 
 contract InferenceDB is IInferenceDB {
-    uint32 TASK_CHALLENG_RESPONSE_WINDOW_BLOCK = 0;
+    uint32 TASK_CHALLENGE_RESPONSE_WINDOW_BLOCK = 0;
     IZKVerifier zkVerifier;
 
     constructor(uint32 _taskChallengeResponseWindowBlock, address _zkVerifier) {
-        TASK_CHALLENG_RESPONSE_WINDOW_BLOCK = _taskChallengeResponseWindowBlock;
+        TASK_CHALLENGE_RESPONSE_WINDOW_BLOCK = _taskChallengeResponseWindowBlock;
         zkVerifier = IZKVerifier(_zkVerifier);
     }
 
@@ -56,7 +56,7 @@ contract InferenceDB is IInferenceDB {
     ) public override onlyTaskManager {
         require(
             challengeData[referenceTaskIndex].timeChallenged +
-                TASK_CHALLENG_RESPONSE_WINDOW_BLOCK *
+                TASK_CHALLENGE_RESPONSE_WINDOW_BLOCK *
                 12 seconds <
                 block.timestamp
         );

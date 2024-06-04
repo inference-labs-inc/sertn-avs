@@ -3,17 +3,19 @@ package aggregator
 import (
 	"context"
 	"math/big"
+	"net/http"
 	"sync"
 	"time"
 
-	"github.com/Layr-Labs/eigensdk-go/logging"
-
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	sdkclients "github.com/Layr-Labs/eigensdk-go/chainio/clients"
+	"github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/Layr-Labs/eigensdk-go/services/avsregistry"
 	blsagg "github.com/Layr-Labs/eigensdk-go/services/bls_aggregation"
 	oprsinfoserv "github.com/Layr-Labs/eigensdk-go/services/operatorsinfo"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	"github.com/inference-labs-inc/zklayer-avs/aggregator/types"
 	"github.com/inference-labs-inc/zklayer-avs/core"
 	"github.com/inference-labs-inc/zklayer-avs/core/chainio"
@@ -128,12 +130,30 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 	ticker := time.NewTicker(10 * time.Second)
 	agg.logger.Infof("Aggregator set to send new task every 10 seconds...")
 	defer ticker.Stop()
-	taskNum := int64(0)
+
 	// ticker doesn't tick immediately, so we send the first task here
 	// see https://github.com/golang/go/issues/17601
 	inputs := core.RandomInputs()
-	_ = agg.sendNewTask(inputs)
-	taskNum++
+	_, _ = agg.sendNewTask(inputs)
+
+	go func() {
+		router := gin.Default()
+		config := cors.Default()
+		router.Use(config)
+
+		router.GET("/inference", func(c *gin.Context) {
+			inputs, _ := c.GetQuery("inputs")
+			formattedInputs := core.FormatFloatStringForChain(inputs)
+			taskIndex, _ := agg.sendNewTask(formattedInputs)
+
+			c.JSON(http.StatusOK, gin.H{
+				"message":   inputs,
+				"taskIndex": taskIndex,
+			})
+		})
+
+		router.Run()
+	}()
 
 	for {
 		select {
@@ -143,13 +163,12 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 			agg.logger.Info("Received response from blsAggregationService", "blsAggServiceResp", blsAggServiceResp)
 			agg.sendAggregatedResponseToContract(blsAggServiceResp)
 		case <-ticker.C:
-			err := agg.sendNewTask(inputs)
-			taskNum++
-			inputs = core.RandomInputs()
-			if err != nil {
-				// we log the errors inside sendNewTask() so here we just continue to the next task
-				continue
-			}
+			//_, err := agg.sendNewTask(inputs)
+			//inputs = core.RandomInputs()
+			//if err != nil {
+			// we log the errors inside sendNewTask() so here we just continue to the next task
+			//	continue
+			//}
 		}
 	}
 }
@@ -197,14 +216,16 @@ func (agg *Aggregator) sendAggregatedResponseToContract(blsAggServiceResp blsagg
 
 // sendNewTask sends a new task to the task manager contract, and updates the Task dict struct
 // with the information of operators opted into quorum 0 at the block of task creation.
-func (agg *Aggregator) sendNewTask(input [5]*big.Int) error {
+func (agg *Aggregator) sendNewTask(input [5]*big.Int) (uint32, error) {
 	agg.logger.Info("AGGREGATOR - NEW TASK", "input", input)
-	// Send number to square to the task manager contract
+
 	newTask, taskIndex, err := agg.avsWriter.SendNewTaskInput(context.Background(), input, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS)
 	if err != nil {
 		agg.logger.Error("Aggregator failed to send input", "err", err)
-		return err
+		return 0, err
 	}
+
+	agg.logger.Info("AGGREGATOR - NEW TASK INDEX", "taskIndex", taskIndex, "input", input)
 
 	agg.tasksMu.Lock()
 	agg.tasks[taskIndex] = newTask
@@ -222,5 +243,5 @@ func (agg *Aggregator) sendNewTask(input [5]*big.Int) error {
 		quorumNums = append(quorumNums, sdktypes.QuorumNum(quorumNum))
 	}
 	agg.blsAggregationService.InitializeNewTask(taskIndex, newTask.TaskCreatedBlock, quorumNums, quorumThresholdPercentages, taskTimeToExpiry)
-	return nil
+	return taskIndex, nil
 }

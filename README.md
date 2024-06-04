@@ -1,8 +1,10 @@
-# Zklayer AVS
+# zkLayer AVS
 
 <b> Do not use it in Production, testnet only. </b>
 
-Basic repo demoing a simple AVS middleware with full eigenlayer integration. See this [video walkthrough](https://www.loom.com/share/50314b3ec0f34e2ba386d45724602d76?sid=9d68d8cb-d2d5-4123-bd06-776de2076de0).
+Repository for AVS middleware with full EigenLayer integration.
+
+Based on the work [github.com/Layr-Labs/incredible-squaring-avs](https://github.com/Layr-Labs/incredible-squaring-avs)
 
 ## Dependencies
 
@@ -30,7 +32,7 @@ Start anvil in a separate terminal:
 make start-chain
 ```
 
-The above command starts a local anvil chain from a [saved state](./tests/anvil/avs-and-eigenlayer-deployed-anvil-state.json) with eigenlayer and zklayer contracts already deployed (but no operator registered).
+The above command starts a local anvil chain from a [saved state](./tests/anvil/avs-and-eigenlayer-deployed-anvil-state.json) with eigenlayer and zkLayer contracts already deployed (but no operator registered).
 
 Start the aggregator:
 
@@ -38,7 +40,7 @@ Start the aggregator:
 make start-aggregator
 ```
 
-Register the operator with eigenlayer and zklayer, and then start the process:
+Register the operator with eigenlayer and zkLayer, and then start the process:
 
 ```bash
 make start-operator
@@ -66,7 +68,7 @@ The architecture of the AVS contains:
 
 ![](./diagrams/architecture.png)
 
-1. A task generator (in our case, same as the aggregator) publishes tasks once every regular interval (say 10 blocks, you are free to set your own interval) to the ZklayerTaskManager contract's [createNewTask](contracts/src/ZklayerTaskManager.sol#L83) function. Each task specifies an array of 5 uint256s `inputs` for which it wants the currently opted-in operators to determine its inference. `createNewTask` also takes `quorumNumbers` and `quorumThresholdPercentage` which requests that each listed quorum (we only use quorumNumber 0 in zklayer) needs to reach at least thresholdPercentage of operator signatures.
+1. A task generator (in our case, same as the aggregator) publishes tasks once every regular interval (say 10 blocks, you are free to set your own interval) to the ZklayerTaskManager contract's [createNewTask](contracts/src/ZklayerTaskManager.sol#L83) function. Each task specifies an array of 5 uint256s `inputs` for which it wants the currently opted-in operators to determine its inference. `createNewTask` also takes `quorumNumbers` and `quorumThresholdPercentage` which requests that each listed quorum (we only use quorumNumber 0 in zkLayer) needs to reach at least thresholdPercentage of operator signatures.
 
 2. A [registry](https://github.com/Layr-Labs/eigenlayer-middleware/blob/master/src/BLSRegistryCoordinatorWithIndices.sol) contract is deployed that allows any eigenlayer operator with at least 1 delegated [mockerc20](contracts/src/ERC20Mock.sol) token to opt-in to this AVS and also de-register from this AVS.
 

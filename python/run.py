@@ -12,7 +12,7 @@ try:
     model = Model()
     model.eval()
     # return the answer
-    # print(0) ## bad answer
+    # answer = 0 ## bad answer
     answer = float(model(input)[0])
     print(input_to_field_element(answer)) ## good answer
 except:
