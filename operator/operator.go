@@ -408,7 +408,7 @@ func (o *Operator) OutputAndProofFromInputs(inputs string) (*big.Int, []byte) {
 
 	stdout, err := cmd.CombinedOutput()
 	if err != nil {
-		o.logger.Error("Challenger failed to prove computation:", "err", err)
+		o.logger.Error("Challenger failed to prove computation:", "err", err, "stdout", string(stdout))
 	}
 
 	result := string(stdout)

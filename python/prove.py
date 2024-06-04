@@ -1,6 +1,6 @@
 import ezkl
 import argparse
-from utils import relative_file_path, parse_input, field_element_to_input, input_to_field_element
+from utils import relative_file_path, parse_input
 import json
 
 parser = argparse.ArgumentParser(
@@ -26,8 +26,10 @@ proof_path =    relative_file_path('proof/proof.json')
 data = dict(input_data = [data_array])
 json.dump(data, open(data_path, 'w'))
 
+
 # Generate the Witness for the proof
 ezkl.gen_witness(data_path, compiled_model_path, witness_path)
+
 
 # Generate the proof
 proof = ezkl.prove(
@@ -37,6 +39,7 @@ proof = ezkl.prove(
         proof_path,
         "single",
     )
+
 
 
 onchain_input_array = []

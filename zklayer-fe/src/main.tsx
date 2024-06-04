@@ -2,19 +2,10 @@ import { render } from "preact";
 import App from "./pages/app.tsx";
 import "./styles/index.css";
 import { Router, Route } from "preact-router";
-import { http, createConfig, WagmiConfig } from "wagmi";
-import { localhost } from "wagmi/chains";
-import { injected, metaMask, safe } from "wagmi/connectors";
+import { WagmiConfig } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { config } from "./common/constants.ts";
 const queryClient = new QueryClient();
-
-export const config = createConfig({
-  chains: [localhost],
-  connectors: [injected(), metaMask(), safe()],
-  transports: {
-    [localhost.id]: http(),
-  },
-});
 
 render(
   <WagmiConfig config={config}>

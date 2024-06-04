@@ -1,38 +1,41 @@
-import { useEffect, useRef, useState } from "preact/hooks";
-import { backendUrl } from "../common/constants";
-import { useAccount, useConnect } from "wagmi";
+import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
+import { backendUrl, config, taskManagerAddress } from "../common/constants";
+import { useAccount, useConnect, usePublicClient } from "wagmi";
 import { connectWallet, formatAddress } from "../common/eth";
-
-type InferenceResponse = {
-  inputs: string;
-  taskIndex: number;
-};
-const ProofTypes = ["Challenge", "Pre Prove"] as const;
-
-type InferenceForm = {
-  elements: {
-    type: {
-      value: string;
-    };
-    input: {
-      value: string;
-    };
-  };
-};
-
-const Logger = (setLogs: any) => {};
-
-import { useWatchContractEvent } from "wagmi";
 import { zkLayer } from "../ABI/TaskManager.abi";
+import {
+  InferenceForm,
+  InferenceResponse,
+  Log,
+  LogLevel,
+  LogMessage,
+  LogStyles,
+  NewTaskArgs,
+  ProofTypes,
+  TaskChallengedArgs,
+  TaskChallengedSuccessfullyArgs,
+  TaskChallengedUnsuccessfullyArgs,
+  TaskResponseArgs,
+} from "../common/types";
+
+let blockNumber = 0n;
 
 const fetchInference = async (inputs: string) => {
   const response = await fetch(backendUrl + `?inputs=${inputs}`);
   const text = await response.text();
-  console.log({ text });
   return JSON.parse(text) as InferenceResponse;
 };
 
 const App = () => {
+  const [logs, setLogs] = useState([
+    {
+      level: "ERROR",
+      message: "",
+      blockNumber: "0",
+      taskIndex: 0,
+    } as LogMessage,
+  ]);
+
   const [inference, setInference] = useState({
     inputs: "",
     taskIndex: -1,
@@ -42,29 +45,107 @@ const App = () => {
 
   const [proofType, setProofType] = useState(0);
 
-  useEffect(() => {
-    console.log({ inference });
-  }, [inference.taskIndex]);
-
   const { connectors, connect } = useConnect();
 
   const { address, isConnected } = useAccount();
-  const logsRef = useRef();
+
+  const client = usePublicClient({ config: config });
+
+  const logger = useMemo(
+    () => ({
+      log: useCallback(
+        (
+          level: LogLevel,
+          message: string,
+          index: number,
+          blockNumber: string
+        ) => {
+          // terrible hack because I hate react
+          setLogs((logs) =>
+            logs[logs.length - 1].message === message
+              ? logs
+              : [...logs, { level, message, blockNumber, taskIndex: index }]
+          );
+        },
+        [logs]
+      ),
+    }),
+    []
+  );
+
+  console.log({ logs });
+  useEffect(() => {
+    if (!client) return;
+    //Implementing the setInterval method
+    const interval = setInterval(() => {
+      (async () => {
+        const logs = await client.getLogs({
+          address: taskManagerAddress,
+          events: zkLayer.abi.filter((element) => element.type === "event"),
+          fromBlock: blockNumber,
+        });
+        if (logs.length) {
+          blockNumber = logs[logs.length - 1].blockNumber + 1n;
+          logs.map((rawLog) => {
+            const log = rawLog as unknown as Log;
+            if (log.eventName === "NewTaskCreated") {
+              const args = log.args as NewTaskArgs;
+              logger.log(
+                "INFO",
+                "New Task Created " + " ZK Inputs: " + args.task.inputs,
+                args.taskIndex,
+                log.blockNumber
+              );
+            }
+            if (log.eventName === "TaskResponded") {
+              const args = log.args as TaskResponseArgs;
+              logger.log(
+                "INFO",
+                "New Task Response " + "Ouput: " + args.taskResponse.output,
+                args.taskResponse.referenceTaskIndex,
+                log.blockNumber
+              );
+            }
+            if (log.eventName === "TaskChallenged") {
+              const args = log.args as TaskChallengedArgs;
+              logger.log(
+                "WARN",
+                "Task Challenged",
+                args.taskIndex,
+                log.blockNumber
+              );
+            }
+
+            if (log.eventName === "TaskChallengedUnsuccessfully") {
+              const args = log.args as TaskChallengedUnsuccessfullyArgs;
+              logger.log(
+                "SUCCESS",
+                "Task Proven Prover: " + args.prover,
+                args.taskIndex,
+                log.blockNumber
+              );
+            }
+
+            if (log.eventName === "TaskChallengedSuccessfully") {
+              const args = log.args as TaskChallengedSuccessfullyArgs;
+              logger.log(
+                "ERROR",
+                "Task Challenge Confirmed: Challenger " + args.challenger,
+                args.taskIndex,
+                log.blockNumber
+              );
+            }
+          });
+        }
+      })();
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [client]);
 
   useEffect(() => {
     if (!isConnected) return;
     connectWallet(setSigner);
   }, [isConnected, setSigner]);
-
-  // useWatchContractEvent({
-  //   address: "0x9E545E3C0baAB3E08CdfD552C960A1050f373042",
-  //   abi: zkLayer.abi,
-  //   eventName: "*",
-  //   batch: false,
-  //   onLogs(logs) {
-  //     console.log("New logs!", logs[0]);
-  //   },
-  // });
 
   return (
     <>
@@ -87,7 +168,7 @@ const App = () => {
               ZK<span class="text-slate-500">Layer</span>
             </h1>
             <form
-              class="w-full transition-all"
+              class="w-full transition-all mb-24"
               onSubmit={(e) => {
                 e.preventDefault();
                 (async () => {
@@ -110,23 +191,37 @@ const App = () => {
                   class="appearance-none rounded-l-none bg-white border border-gray-400 hover:border-gray-500  p-2 rounded-sm leading-tight focus:outline-none w-30 h-full"
                   value={ProofTypes[proofType]}
                 >
-                  {ProofTypes.map((proofType) => {
-                    return (
-                      <option key={proofType} value={proofType}>
-                        <span class="text-xs">{proofType}</span>
-                      </option>
-                    );
-                  })}
+                  {ProofTypes.map((proofType) => (
+                    <option key={proofType} value={proofType}>
+                      <span class="text-xs">{proofType}</span>
+                    </option>
+                  ))}
                 </select>
               </div>
               <div
                 class={`${
-                  inference.taskIndex >= 0 ? "h-60" : "h-0"
-                } text-white bg-slate-600 w-full rounded-sm mb-6 transition-all duration-500 overflow-y-auto scrollbar-hide`}
-              ></div>
+                  inference.taskIndex >= 0 ? "h-60 p-6" : "h-0"
+                } text-white bg-slate-800 w-full rounded-sm mb-6 transition-all duration-500 overflow-y-auto scrollbar-hide flex flex-col`}
+              >
+                {logs
+                  .filter(
+                    (log) =>
+                      !!log.message.length &&
+                      log.taskIndex === inference.taskIndex
+                  )
+                  .map((log, i) => (
+                    <div key={log.message + "" + i}>
+                      <span class={LogStyles[log.level]}>
+                        {log.level}: [Block Number - {log.blockNumber}]
+                        [TaskIndex - {log.taskIndex}]
+                      </span>
+                      {" " + log.message}
+                    </div>
+                  ))}
+              </div>
               <div class="flex justify-center gap-4 w-full">
                 <button
-                  class="shadow bg-slate-200 hover:bg-slate-400 focus:shadow-outline focus:outline-none hover:text-white  py-2 px-4 rounded"
+                  class="shadow bg-slate-200 hover:bg-slate-400 focus:shadow-outline focus:outline-none hover:text-white py-2 px-4 rounded"
                   type="submit"
                 >
                   Submit Inference

@@ -163,12 +163,12 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 			agg.logger.Info("Received response from blsAggregationService", "blsAggServiceResp", blsAggServiceResp)
 			agg.sendAggregatedResponseToContract(blsAggServiceResp)
 		case <-ticker.C:
-			_, err := agg.sendNewTask(inputs)
-			inputs = core.RandomInputs()
-			if err != nil {
-				// we log the errors inside sendNewTask() so here we just continue to the next task
-				continue
-			}
+			//_, err := agg.sendNewTask(inputs)
+			//inputs = core.RandomInputs()
+			//if err != nil {
+			// we log the errors inside sendNewTask() so here we just continue to the next task
+			//	continue
+			//}
 		}
 	}
 }
