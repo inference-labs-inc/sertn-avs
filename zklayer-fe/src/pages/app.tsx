@@ -41,12 +41,8 @@ const App = () => {
     taskIndex: -1,
   } as InferenceResponse);
 
-  const [_signer, setSigner] = useState(null);
-
   const [proofType, setProofType] = useState(0);
-
   const { connectors, connect } = useConnect();
-
   const { address, isConnected } = useAccount();
 
   const client = usePublicClient({ config: config });
@@ -73,7 +69,6 @@ const App = () => {
     []
   );
 
-  console.log({ logs });
   useEffect(() => {
     if (!client) return;
     //Implementing the setInterval method
@@ -115,7 +110,6 @@ const App = () => {
                 log.blockNumber
               );
             }
-
             if (log.eventName === "TaskChallengedUnsuccessfully") {
               const args = log.args as TaskChallengedUnsuccessfullyArgs;
               logger.log(
@@ -125,7 +119,6 @@ const App = () => {
                 log.blockNumber
               );
             }
-
             if (log.eventName === "TaskChallengedSuccessfully") {
               const args = log.args as TaskChallengedSuccessfullyArgs;
               logger.log(
@@ -141,11 +134,6 @@ const App = () => {
     }, 2000);
     return () => clearInterval(interval);
   }, [client]);
-
-  useEffect(() => {
-    if (!isConnected) return;
-    connectWallet(setSigner);
-  }, [isConnected, setSigner]);
 
   return (
     <>
@@ -209,14 +197,21 @@ const App = () => {
                       !!log.message.length &&
                       log.taskIndex === inference.taskIndex
                   )
-                  .map((log, i) => (
-                    <div key={log.message + "" + i}>
-                      <span class={LogStyles[log.level]}>
-                        {log.level}: [Block Number - {log.blockNumber}]
-                        [TaskIndex - {log.taskIndex}]
-                      </span>
-                      {" " + log.message}
-                    </div>
+                  .sort((a, b) => +a.blockNumber - +b.blockNumber)
+                  .map((log, i, logs) => (
+                    <>
+                      {i == 0 || logs[i - 1].message !== log.message ? (
+                        <div key={log.message + "" + i}>
+                          <span class={LogStyles[log.level]}>
+                            {log.level}: [Block Number - {log.blockNumber}]
+                            [TaskIndex - {log.taskIndex}]
+                          </span>
+                          {" " + log.message}
+                        </div>
+                      ) : (
+                        <></>
+                      )}
+                    </>
                   ))}
               </div>
               <div class="flex justify-center gap-4 w-full">
