@@ -146,7 +146,7 @@ func (w *AvsWriter) RaiseChallenge(
 		w.logger.Errorf("Error getting tx opts")
 		return nil, err
 	}
-	tx, err := w.AvsContractBindings.TaskManager.RaiseChallenger(txOpts, task, taskResponse, taskResponseMetadata)
+	tx, err := w.AvsContractBindings.TaskManager.RaiseChallenge(txOpts, task, taskResponse, taskResponseMetadata)
 	if err != nil {
 		w.logger.Errorf("Error assembling RaiseChallenge tx")
 		return nil, err

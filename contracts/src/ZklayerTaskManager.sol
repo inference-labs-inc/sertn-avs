@@ -175,7 +175,7 @@ contract ZklayerTaskManager is
         return latestTaskNum;
     }
 
-    function raiseChallenger(
+    function raiseChallenge(
         Task calldata task,
         TaskResponse calldata taskResponse,
         TaskResponseMetadata calldata taskResponseMetadata

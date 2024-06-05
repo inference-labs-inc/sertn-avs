@@ -511,7 +511,7 @@ export const zkLayer = {
     },
     {
       type: "function",
-      name: "raiseChallenger",
+      name: "raiseChallenge",
       inputs: [
         {
           name: "task",
