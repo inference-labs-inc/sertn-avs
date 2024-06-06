@@ -62,7 +62,7 @@ func TestProcessSignedTaskResponse(t *testing.T) {
 
 // mocks an operator signing on a task response
 func createMockSignedTaskResponse(mockTask MockTask, keypair bls.KeyPair) (*SignedTaskResponse, error) {
-	taskResponse := &cstaskmanager.IZklayerTaskManagerTaskResponse{
+	taskResponse := &cstaskmanager.ITaskStructTaskResponse{
 		ReferenceTaskIndex: mockTask.TaskNum,
 		Output:             tests.GoodOutput(),
 	}

@@ -25,23 +25,24 @@ type AvsWriterer interface {
 		inputs [5]*big.Int,
 		quorumThresholdPercentage sdktypes.QuorumThresholdPercentage,
 		quorumNumbers sdktypes.QuorumNums,
-	) (cstaskmanager.IZklayerTaskManagerTask, uint32, error)
+		provenOnResponse bool,
+	) (cstaskmanager.ITaskStructTask, uint32, error)
 	RaiseChallenge(
 		ctx context.Context,
-		task cstaskmanager.IZklayerTaskManagerTask,
-		taskResponse cstaskmanager.IZklayerTaskManagerTaskResponse,
-		taskResponseMetadata cstaskmanager.IZklayerTaskManagerTaskResponseMetadata,
+		task cstaskmanager.ITaskStructTask,
+		taskResponse cstaskmanager.ITaskStructTaskResponse,
+		taskResponseMetadata cstaskmanager.ITaskStructTaskResponseMetadata,
 	) (*types.Receipt, error)
 	SendAggregatedResponse(ctx context.Context,
-		task cstaskmanager.IZklayerTaskManagerTask,
-		taskResponse cstaskmanager.IZklayerTaskManagerTaskResponse,
+		task cstaskmanager.ITaskStructTask,
+		taskResponse cstaskmanager.ITaskStructTaskResponse,
 		nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
 	) (*types.Receipt, error)
 	ConfirmChallenge(
 		ctx context.Context,
-		task cstaskmanager.IZklayerTaskManagerTask,
-		taskResponse cstaskmanager.IZklayerTaskManagerTaskResponse,
-		taskResponseMetadata cstaskmanager.IZklayerTaskManagerTaskResponseMetadata,
+		task cstaskmanager.ITaskStructTask,
+		taskResponse cstaskmanager.ITaskStructTaskResponse,
+		taskResponseMetadata cstaskmanager.ITaskStructTaskResponseMetadata,
 		pubkeysOfNonSigningOperators []cstaskmanager.BN254G1Point,
 	) (*types.Receipt, error)
 	ProveResponseAccurate(
@@ -88,33 +89,33 @@ func NewAvsWriter(avsRegistryWriter avsregistry.AvsRegistryWriter, avsServiceBin
 }
 
 // returns the tx receipt, as well as the task index (which it gets from parsing the tx receipt logs)
-func (w *AvsWriter) SendNewTaskInput(ctx context.Context, inputs [5]*big.Int, quorumThresholdPercentage sdktypes.QuorumThresholdPercentage, quorumNumbers sdktypes.QuorumNums) (cstaskmanager.IZklayerTaskManagerTask, uint32, error) {
+func (w *AvsWriter) SendNewTaskInput(ctx context.Context, inputs [5]*big.Int, quorumThresholdPercentage sdktypes.QuorumThresholdPercentage, quorumNumbers sdktypes.QuorumNums, provenOnResponsen bool) (cstaskmanager.ITaskStructTask, uint32, error) {
 	txOpts, err := w.TxMgr.GetNoSendTxOpts()
 	if err != nil {
 		w.logger.Errorf("Error getting tx opts")
-		return cstaskmanager.IZklayerTaskManagerTask{}, 0, err
+		return cstaskmanager.ITaskStructTask{}, 0, err
 	}
-	tx, err := w.AvsContractBindings.TaskManager.CreateNewTask(txOpts, inputs, uint32(quorumThresholdPercentage), quorumNumbers.UnderlyingType())
+	tx, err := w.AvsContractBindings.TaskManager.CreateNewTask(txOpts, inputs, uint32(quorumThresholdPercentage), quorumNumbers.UnderlyingType(), provenOnResponsen)
 	if err != nil {
 		w.logger.Errorf("Error assembling CreateNewTask tx")
-		return cstaskmanager.IZklayerTaskManagerTask{}, 0, err
+		return cstaskmanager.ITaskStructTask{}, 0, err
 	}
 	receipt, err := w.TxMgr.Send(ctx, tx)
 	if err != nil {
 		w.logger.Errorf("Error submitting CreateNewTask tx")
-		return cstaskmanager.IZklayerTaskManagerTask{}, 0, err
+		return cstaskmanager.ITaskStructTask{}, 0, err
 	}
 	newTaskCreatedEvent, err := w.AvsContractBindings.TaskManager.ContractZklayerTaskManagerFilterer.ParseNewTaskCreated(*receipt.Logs[0])
 	if err != nil {
 		w.logger.Error("Aggregator failed to parse new task created event", "err", err)
-		return cstaskmanager.IZklayerTaskManagerTask{}, 0, err
+		return cstaskmanager.ITaskStructTask{}, 0, err
 	}
 	return newTaskCreatedEvent.Task, newTaskCreatedEvent.TaskIndex, nil
 }
 
 func (w *AvsWriter) SendAggregatedResponse(
-	ctx context.Context, task cstaskmanager.IZklayerTaskManagerTask,
-	taskResponse cstaskmanager.IZklayerTaskManagerTaskResponse,
+	ctx context.Context, task cstaskmanager.ITaskStructTask,
+	taskResponse cstaskmanager.ITaskStructTaskResponse,
 	nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
 ) (*types.Receipt, error) {
 	txOpts, err := w.TxMgr.GetNoSendTxOpts()
@@ -137,9 +138,9 @@ func (w *AvsWriter) SendAggregatedResponse(
 
 func (w *AvsWriter) RaiseChallenge(
 	ctx context.Context,
-	task cstaskmanager.IZklayerTaskManagerTask,
-	taskResponse cstaskmanager.IZklayerTaskManagerTaskResponse,
-	taskResponseMetadata cstaskmanager.IZklayerTaskManagerTaskResponseMetadata,
+	task cstaskmanager.ITaskStructTask,
+	taskResponse cstaskmanager.ITaskStructTaskResponse,
+	taskResponseMetadata cstaskmanager.ITaskStructTaskResponseMetadata,
 ) (*types.Receipt, error) {
 	txOpts, err := w.TxMgr.GetNoSendTxOpts()
 	if err != nil {
@@ -154,6 +155,31 @@ func (w *AvsWriter) RaiseChallenge(
 	receipt, err := w.TxMgr.Send(ctx, tx)
 	if err != nil {
 		w.logger.Errorf("Error submitting RaiseChallenge tx")
+		return nil, err
+	}
+	return receipt, nil
+}
+
+func (w *AvsWriter) RespondToTaskWithProof(
+	ctx context.Context,
+	task cstaskmanager.ITaskStructTask,
+	taskId uint32,
+	instances []*big.Int,
+	proof []byte,
+) (*types.Receipt, error) {
+	txOpts, err := w.TxMgr.GetNoSendTxOpts()
+	if err != nil {
+		w.logger.Errorf("Error getting tx opts")
+		return nil, err
+	}
+	tx, err := w.AvsContractBindings.TaskManager.RespondToTaskWithProof(txOpts, task, taskId, instances, proof)
+	if err != nil {
+		w.logger.Errorf("Error assembling RespondToTaskWithProof tx")
+		return nil, err
+	}
+	receipt, err := w.TxMgr.Send(ctx, tx)
+	if err != nil {
+		w.logger.Errorf("Error submitting RespondToTaskWithProof tx")
 		return nil, err
 	}
 	return receipt, nil
@@ -185,9 +211,9 @@ func (w *AvsWriter) ProveResponseAccurate(
 
 func (w *AvsWriter) ConfirmChallenge(
 	ctx context.Context,
-	task cstaskmanager.IZklayerTaskManagerTask,
-	taskResponse cstaskmanager.IZklayerTaskManagerTaskResponse,
-	taskResponseMetadata cstaskmanager.IZklayerTaskManagerTaskResponseMetadata,
+	task cstaskmanager.ITaskStructTask,
+	taskResponse cstaskmanager.ITaskStructTaskResponse,
+	taskResponseMetadata cstaskmanager.ITaskStructTaskResponseMetadata,
 	pubkeysOfNonSigningOperators []cstaskmanager.BN254G1Point,
 ) (*types.Receipt, error) {
 	txOpts, err := w.TxMgr.GetNoSendTxOpts()

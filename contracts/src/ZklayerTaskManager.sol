@@ -19,19 +19,14 @@ contract ZklayerTaskManager is
     Pausable,
     BLSSignatureChecker,
     OperatorStateRetriever,
-    IZklayerTaskManager
+    ITaskStruct
 {
     using BN254 for BN254.G1Point;
 
     /* CONSTANT */
-    // The number of blocks from the task initialization within which the aggregator has to respond to
-    uint32 public immutable TASK_RESPONSE_WINDOW_BLOCK;
-    uint32 public constant TASK_CHALLENGE_WINDOW_BLOCK = 100;
     uint256 internal constant _THRESHOLD_DENOMINATOR = 100;
 
     /* STORAGE */
-    // The latest task index
-    uint32 public latestTaskNum;
 
     // mapping of task indices to all tasks hashes
     // when a task is created, task hash is stored here,
@@ -60,11 +55,8 @@ contract ZklayerTaskManager is
     }
 
     constructor(
-        IRegistryCoordinator _registryCoordinator,
-        uint32 _taskResponseWindowBlock
-    ) BLSSignatureChecker(_registryCoordinator) {
-        TASK_RESPONSE_WINDOW_BLOCK = _taskResponseWindowBlock;
-    }
+        IRegistryCoordinator _registryCoordinator
+    ) BLSSignatureChecker(_registryCoordinator) {}
 
     function challengeInstances(
         uint32 id,
@@ -92,7 +84,8 @@ contract ZklayerTaskManager is
     function createNewTask(
         uint256[5] calldata inputs,
         uint32 quorumThresholdPercentage,
-        bytes calldata quorumNumbers
+        bytes calldata quorumNumbers,
+        bool provenOnResponce
     ) external onlyTaskGenerator {
         // create a new task struct
         Task memory newTask;
@@ -100,11 +93,13 @@ contract ZklayerTaskManager is
         newTask.taskCreatedBlock = uint32(block.number);
         newTask.quorumThresholdPercentage = quorumThresholdPercentage;
         newTask.quorumNumbers = quorumNumbers;
+        newTask.provenOnResponse = provenOnResponce;
 
-        // store hash of task onchain, emit event, and increase taskNum
-        allTaskHashes[latestTaskNum] = keccak256(abi.encode(newTask));
-        emit NewTaskCreated(latestTaskNum, newTask);
-        latestTaskNum = latestTaskNum + 1;
+        uint32 taskNum = inferenceDB.createNewTask(
+            keccak256(abi.encode(newTask))
+        );
+
+        emit NewTaskCreated(taskNum, newTask);
     }
 
     // NOTE: this function responds to existing tasks.
@@ -116,20 +111,6 @@ contract ZklayerTaskManager is
         uint32 taskCreatedBlock = task.taskCreatedBlock;
         bytes calldata quorumNumbers = task.quorumNumbers;
         uint32 quorumThresholdPercentage = task.quorumThresholdPercentage;
-
-        // check that the task is valid, hasn't been responsed yet, and is being responsed in time
-        require(
-            keccak256(abi.encode(task)) ==
-                allTaskHashes[taskResponse.referenceTaskIndex]
-        );
-        // some logical checks
-        require(
-            allTaskResponses[taskResponse.referenceTaskIndex] == bytes32(0)
-        );
-        require(
-            uint32(block.number) <=
-                taskCreatedBlock + TASK_RESPONSE_WINDOW_BLOCK
-        );
 
         /* CHECKING SIGNATURES & WHETHER THRESHOLD IS MET OR NOT */
         // calculate message which operators signed
@@ -162,17 +143,24 @@ contract ZklayerTaskManager is
             uint32(block.number),
             hashOfNonSigners
         );
+        inferenceDB.respondToTask(task, taskResponse, taskResponseMetadata);
         // updating the storage with task responsea
-        allTaskResponses[taskResponse.referenceTaskIndex] = keccak256(
-            abi.encode(taskResponse, taskResponseMetadata)
-        );
-
         // emitting event
         emit TaskResponded(taskResponse, taskResponseMetadata);
     }
 
-    function taskNumber() external view returns (uint32) {
-        return latestTaskNum;
+    function respondToTaskWithProof(
+        Task calldata task,
+        uint32 taskIndex,
+        uint256[] calldata instances,
+        bytes calldata proof
+    ) public {
+        inferenceDB.respondToTaskWithProof(task, taskIndex, instances, proof);
+        emit TaskRespondedWithProof(
+            taskIndex,
+            instances[instances.length - 1],
+            msg.sender
+        );
     }
 
     function raiseChallenge(
@@ -180,26 +168,8 @@ contract ZklayerTaskManager is
         TaskResponse calldata taskResponse,
         TaskResponseMetadata calldata taskResponseMetadata
     ) external {
-        uint32 referenceTaskIndex = taskResponse.referenceTaskIndex;
-        // some logical checks
-        require(allTaskResponses[referenceTaskIndex] != bytes32(0));
-        require(
-            allTaskResponses[referenceTaskIndex] ==
-                keccak256(abi.encode(taskResponse, taskResponseMetadata))
-        );
-
-        require(
-            uint32(block.number) <=
-                taskResponseMetadata.taskResponsedBlock +
-                    TASK_CHALLENGE_WINDOW_BLOCK
-        );
-
-        inferenceDB.challenge(
-            referenceTaskIndex,
-            task.inputs,
-            taskResponse.output
-        );
-        emit TaskChallenged(referenceTaskIndex);
+        inferenceDB.challenge(task, taskResponse, taskResponseMetadata);
+        emit TaskChallenged(taskResponse.referenceTaskIndex);
     }
 
     function proveResultAccurate(
@@ -318,7 +288,30 @@ contract ZklayerTaskManager is
         emit TaskChallengedSuccessfully(referenceTaskIndex, msg.sender);
     }
 
-    function getTaskResponseWindowBlock() external view returns (uint32) {
-        return TASK_RESPONSE_WINDOW_BLOCK;
-    }
+    event NewTaskCreated(uint32 indexed taskIndex, Task task);
+
+    event TaskResponded(
+        TaskResponse taskResponse,
+        TaskResponseMetadata taskResponseMetadata
+    );
+
+    event TaskCompleted(uint32 indexed taskIndex);
+
+    event TaskChallengedSuccessfully(
+        uint32 indexed taskIndex,
+        address indexed challenger
+    );
+
+    event TaskChallengedUnsuccessfully(
+        uint32 indexed taskIndex,
+        address indexed prover
+    );
+
+    event TaskChallenged(uint32 indexed taskIndex);
+
+    event TaskRespondedWithProof(
+        uint32 indexed taskIndex,
+        uint256 output,
+        address indexed prover
+    );
 }

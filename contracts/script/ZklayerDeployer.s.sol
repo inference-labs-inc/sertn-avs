@@ -37,7 +37,7 @@ import "forge-std/console.sol";
 contract ZklayerDeployer is Script, Utils {
     // DEPLOYMENT CONSTANTS
     uint256 public constant QUORUM_THRESHOLD_PERCENTAGE = 100;
-    uint32 public constant TASK_RESPONSE_WINDOW_BLOCK = 30;
+    // uint32 public constant TASK_RESPONSE_WINDOW_BLOCK = 30;
     uint32 public constant TASK_DURATION_BLOCKS = 0;
     // TODO: right now hardcoding these (this address is anvil's default address 9)
     address public constant AGGREGATOR_ADDR =
@@ -72,7 +72,7 @@ contract ZklayerDeployer is Script, Utils {
     IServiceManager public zklayerServiceManagerImplementation;
 
     ZklayerTaskManager public zklayerTaskManager;
-    IZklayerTaskManager public zklayerTaskManagerImplementation;
+    ZklayerTaskManager public zklayerTaskManagerImplementation;
 
     function run() external {
         // Eigenlayer contracts
@@ -363,7 +363,7 @@ contract ZklayerDeployer is Script, Utils {
             avsDirectory,
             registryCoordinator,
             stakeRegistry,
-            zklayerTaskManager
+            address(zklayerTaskManager)
         );
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
         zklayerProxyAdmin.upgrade(
@@ -374,8 +374,7 @@ contract ZklayerDeployer is Script, Utils {
         );
 
         zklayerTaskManagerImplementation = new ZklayerTaskManager(
-            registryCoordinator,
-            TASK_RESPONSE_WINDOW_BLOCK
+            registryCoordinator
         );
         ZKVerifier zkVerifier = new ZKVerifier();
         // Todo: opnun change 0 to number of blocks producer has to respond

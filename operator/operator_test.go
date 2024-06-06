@@ -31,7 +31,7 @@ func TestOperator(t *testing.T) {
 		var inputs = tests.TestInputs()
 		newTaskCreatedLog := &cstaskmanager.ContractZklayerTaskManagerNewTaskCreated{
 			TaskIndex: taskIndex,
-			Task: cstaskmanager.IZklayerTaskManagerTask{
+			Task: cstaskmanager.ITaskStructTask{
 				Inputs:                    inputs,
 				TaskCreatedBlock:          1000,
 				QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
@@ -40,7 +40,7 @@ func TestOperator(t *testing.T) {
 			Raw: types.Log{},
 		}
 		got := operator.ProcessNewTaskCreatedLog(newTaskCreatedLog)
-		want := &cstaskmanager.IZklayerTaskManagerTaskResponse{
+		want := &cstaskmanager.ITaskStructTaskResponse{
 			ReferenceTaskIndex: taskIndex,
 			Output:             tests.GoodOutput(),
 		}
@@ -53,7 +53,7 @@ func TestOperator(t *testing.T) {
 		// new task event
 		newTaskCreatedEvent := &cstaskmanager.ContractZklayerTaskManagerNewTaskCreated{
 			TaskIndex: taskIndex,
-			Task: cstaskmanager.IZklayerTaskManagerTask{
+			Task: cstaskmanager.ITaskStructTask{
 				Inputs:                    inputs,
 				TaskCreatedBlock:          1000,
 				QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
@@ -68,7 +68,7 @@ func TestOperator(t *testing.T) {
 		assert.True(t, ok)
 
 		signedTaskResponse := &aggregator.SignedTaskResponse{
-			TaskResponse: cstaskmanager.IZklayerTaskManagerTaskResponse{
+			TaskResponse: cstaskmanager.ITaskStructTaskResponse{
 				ReferenceTaskIndex: taskIndex,
 				Output:             output,
 			},

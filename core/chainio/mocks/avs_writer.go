@@ -47,7 +47,7 @@ func (m *MockAvsWriterer) EXPECT() *MockAvsWritererMockRecorder {
 }
 
 // ConfirmChallenge mocks base method.
-func (m *MockAvsWriterer) ConfirmChallenge(arg0 context.Context, arg1 contractZklayerTaskManager.IZklayerTaskManagerTask, arg2 contractZklayerTaskManager.IZklayerTaskManagerTaskResponse, arg3 contractZklayerTaskManager.IZklayerTaskManagerTaskResponseMetadata, arg4 []contractZklayerTaskManager.BN254G1Point) (*types0.Receipt, error) {
+func (m *MockAvsWriterer) ConfirmChallenge(arg0 context.Context, arg1 contractZklayerTaskManager.ITaskStructTask, arg2 contractZklayerTaskManager.ITaskStructTaskResponse, arg3 contractZklayerTaskManager.ITaskStructTaskResponseMetadata, arg4 []contractZklayerTaskManager.BN254G1Point) (*types0.Receipt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConfirmChallenge", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(*types0.Receipt)
@@ -92,7 +92,7 @@ func (mr *MockAvsWritererMockRecorder) ProveResponseAccurate(arg0, arg1, arg2, a
 }
 
 // RaiseChallenge mocks base method.
-func (m *MockAvsWriterer) RaiseChallenge(arg0 context.Context, arg1 contractZklayerTaskManager.IZklayerTaskManagerTask, arg2 contractZklayerTaskManager.IZklayerTaskManagerTaskResponse, arg3 contractZklayerTaskManager.IZklayerTaskManagerTaskResponseMetadata) (*types0.Receipt, error) {
+func (m *MockAvsWriterer) RaiseChallenge(arg0 context.Context, arg1 contractZklayerTaskManager.ITaskStructTask, arg2 contractZklayerTaskManager.ITaskStructTaskResponse, arg3 contractZklayerTaskManager.ITaskStructTaskResponseMetadata) (*types0.Receipt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RaiseChallenge", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*types0.Receipt)
@@ -122,7 +122,7 @@ func (mr *MockAvsWritererMockRecorder) RegisterOperatorInQuorumWithAVSRegistryCo
 }
 
 // SendAggregatedResponse mocks base method.
-func (m *MockAvsWriterer) SendAggregatedResponse(arg0 context.Context, arg1 contractZklayerTaskManager.IZklayerTaskManagerTask, arg2 contractZklayerTaskManager.IZklayerTaskManagerTaskResponse, arg3 contractZklayerTaskManager.IBLSSignatureCheckerNonSignerStakesAndSignature) (*types0.Receipt, error) {
+func (m *MockAvsWriterer) SendAggregatedResponse(arg0 context.Context, arg1 contractZklayerTaskManager.ITaskStructTask, arg2 contractZklayerTaskManager.ITaskStructTaskResponse, arg3 contractZklayerTaskManager.IBLSSignatureCheckerNonSignerStakesAndSignature) (*types0.Receipt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendAggregatedResponse", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*types0.Receipt)
@@ -137,19 +137,19 @@ func (mr *MockAvsWritererMockRecorder) SendAggregatedResponse(arg0, arg1, arg2, 
 }
 
 // SendNewTaskInput mocks base method.
-func (m *MockAvsWriterer) SendNewTaskInput(arg0 context.Context, arg1 [5]*big.Int, arg2 types.QuorumThresholdPercentage, arg3 types.QuorumNums) (contractZklayerTaskManager.IZklayerTaskManagerTask, uint32, error) {
+func (m *MockAvsWriterer) SendNewTaskInput(arg0 context.Context, arg1 [5]*big.Int, arg2 types.QuorumThresholdPercentage, arg3 types.QuorumNums, arg4 bool) (contractZklayerTaskManager.ITaskStructTask, uint32, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendNewTaskInput", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(contractZklayerTaskManager.IZklayerTaskManagerTask)
+	ret := m.ctrl.Call(m, "SendNewTaskInput", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(contractZklayerTaskManager.ITaskStructTask)
 	ret1, _ := ret[1].(uint32)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
 // SendNewTaskInput indicates an expected call of SendNewTaskInput.
-func (mr *MockAvsWritererMockRecorder) SendNewTaskInput(arg0, arg1, arg2, arg3 any) *gomock.Call {
+func (mr *MockAvsWritererMockRecorder) SendNewTaskInput(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendNewTaskInput", reflect.TypeOf((*MockAvsWriterer)(nil).SendNewTaskInput), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendNewTaskInput", reflect.TypeOf((*MockAvsWriterer)(nil).SendNewTaskInput), arg0, arg1, arg2, arg3, arg4)
 }
 
 // UpdateStakesOfEntireOperatorSetForQuorums mocks base method.

@@ -341,7 +341,7 @@ func (o *Operator) RunModelFromBigIntInputs(rawInputs [5]*big.Int) *big.Int {
 
 // Takes a NewTaskCreatedLog struct as input and returns a TaskResponseHeader struct.
 // The TaskResponseHeader struct is the struct that is signed and sent to the contract as a task response.
-func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.ContractZklayerTaskManagerNewTaskCreated) *cstaskmanager.IZklayerTaskManagerTaskResponse {
+func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.ContractZklayerTaskManagerNewTaskCreated) *cstaskmanager.ITaskStructTaskResponse {
 	o.logger.Debug("Received new task", "task", newTaskCreatedLog)
 	o.logger.Info("NEW TASK - OPERATOR",
 		"inputs", newTaskCreatedLog.Task.Inputs,
@@ -349,7 +349,26 @@ func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.Con
 		"taskCreatedBlock", newTaskCreatedLog.Task.TaskCreatedBlock,
 		"quorumNumbers", newTaskCreatedLog.Task.QuorumNumbers,
 		"QuorumThresholdPercentage", newTaskCreatedLog.Task.QuorumThresholdPercentage,
+		"ProvenOnResponse", newTaskCreatedLog.Task.ProvenOnResponse,
 	)
+
+	if newTaskCreatedLog.Task.ProvenOnResponse {
+		inputString := core.FormatBigIntInputsToString(newTaskCreatedLog.Task.Inputs)
+		output, proof := o.OutputAndProofFromInputs(inputString)
+		instances := append(newTaskCreatedLog.Task.Inputs[:], output)
+		tx, err := o.avsWriter.RespondToTaskWithProof(context.Background(), newTaskCreatedLog.Task, newTaskCreatedLog.TaskIndex, instances, proof)
+
+		if err != nil {
+			o.logger.Error("Error", "error", err)
+		}
+
+		o.logger.Info("Transaction for proof and response submitted", "txHash", tx.TxHash)
+
+		return &cstaskmanager.ITaskStructTaskResponse{
+			ReferenceTaskIndex: newTaskCreatedLog.TaskIndex,
+			Output:             output,
+		}
+	}
 
 	output := o.RunModelFromBigIntInputs(newTaskCreatedLog.Task.Inputs)
 
@@ -358,14 +377,14 @@ func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.Con
 		"output", output,
 	)
 
-	taskResponse := &cstaskmanager.IZklayerTaskManagerTaskResponse{
+	taskResponse := &cstaskmanager.ITaskStructTaskResponse{
 		ReferenceTaskIndex: newTaskCreatedLog.TaskIndex,
 		Output:             output,
 	}
 	return taskResponse
 }
 
-func (o *Operator) SignTaskResponse(taskResponse *cstaskmanager.IZklayerTaskManagerTaskResponse) (*aggregator.SignedTaskResponse, error) {
+func (o *Operator) SignTaskResponse(taskResponse *cstaskmanager.ITaskStructTaskResponse) (*aggregator.SignedTaskResponse, error) {
 	taskResponseHash, err := core.GetTaskResponseDigest(taskResponse)
 	if err != nil {
 		o.logger.Error("Error getting task response header hash. skipping task (this is not expected and should be investigated)", "err", err)

@@ -25,8 +25,7 @@ contract ZklayerTaskManagerTest is Test, BLSMockAVSDeployer {
         InferenceDB inferenceDB = new InferenceDB(0, address(0));
 
         tmImplementation = new ZklayerTaskManager(
-            zklm.IRegistryCoordinator(address(registryCoordinator)),
-            TASK_RESPONSE_WINDOW_BLOCK
+            zklm.IRegistryCoordinator(address(registryCoordinator))
         );
 
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
@@ -53,7 +52,6 @@ contract ZklayerTaskManagerTest is Test, BLSMockAVSDeployer {
         cheats.prank(generator);
 
         uint256[5] memory input = [0, 0, 0, 0, uint256(2)];
-        tm.createNewTask(input, 100, quorumNumbers);
-        assertEq(tm.latestTaskNum(), 1);
+        tm.createNewTask(input, 100, quorumNumbers, false);
     }
 }

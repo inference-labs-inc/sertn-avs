@@ -42,7 +42,7 @@ func TestCallChallengeModule(t *testing.T) {
 	const TASK_INDEX = 1
 	const BLOCK_NUMBER = uint32(100)
 
-	challenger.tasks[TASK_INDEX] = cstaskmanager.IZklayerTaskManagerTask{
+	challenger.tasks[TASK_INDEX] = cstaskmanager.ITaskStructTask{
 		Inputs:                    tests.TestInputs(),
 		TaskCreatedBlock:          1000,
 		QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
@@ -50,11 +50,11 @@ func TestCallChallengeModule(t *testing.T) {
 	}
 
 	challenger.taskResponses[TASK_INDEX] = chtypes.TaskResponseData{
-		TaskResponse: cstaskmanager.IZklayerTaskManagerTaskResponse{
+		TaskResponse: cstaskmanager.ITaskStructTaskResponse{
 			ReferenceTaskIndex: TASK_INDEX,
 			Output:             tests.GoodOutput(),
 		},
-		TaskResponseMetadata: cstaskmanager.IZklayerTaskManagerTaskResponseMetadata{
+		TaskResponseMetadata: cstaskmanager.ITaskStructTaskResponseMetadata{
 			TaskResponsedBlock: 1001,
 			HashOfNonSigners:   [32]byte{},
 		},
@@ -83,7 +83,7 @@ func TestRaiseChallenge(t *testing.T) {
 	const TASK_INDEX = 1
 	const BLOCK_NUMBER = uint32(100)
 
-	challenger.tasks[TASK_INDEX] = cstaskmanager.IZklayerTaskManagerTask{
+	challenger.tasks[TASK_INDEX] = cstaskmanager.ITaskStructTask{
 		Inputs:                    tests.TestInputs(),
 		TaskCreatedBlock:          1000,
 		QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
@@ -91,11 +91,11 @@ func TestRaiseChallenge(t *testing.T) {
 	}
 
 	challenger.taskResponses[TASK_INDEX] = chtypes.TaskResponseData{
-		TaskResponse: cstaskmanager.IZklayerTaskManagerTaskResponse{
+		TaskResponse: cstaskmanager.ITaskStructTaskResponse{
 			ReferenceTaskIndex: TASK_INDEX,
 			Output:             tests.GoodOutput(),
 		},
-		TaskResponseMetadata: cstaskmanager.IZklayerTaskManagerTaskResponseMetadata{
+		TaskResponseMetadata: cstaskmanager.ITaskStructTaskResponseMetadata{
 			TaskResponsedBlock: 1001,
 			HashOfNonSigners:   [32]byte{},
 		},
@@ -121,7 +121,7 @@ func TestProcessTaskResponseLog(t *testing.T) {
 
 	const TASK_INDEX = 1
 
-	challenger.tasks[TASK_INDEX] = cstaskmanager.IZklayerTaskManagerTask{
+	challenger.tasks[TASK_INDEX] = cstaskmanager.ITaskStructTask{
 		Inputs:                    tests.TestInputs(),
 		TaskCreatedBlock:          1000,
 		QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
@@ -129,11 +129,11 @@ func TestProcessTaskResponseLog(t *testing.T) {
 	}
 
 	challenger.taskResponses[TASK_INDEX] = chtypes.TaskResponseData{
-		TaskResponse: cstaskmanager.IZklayerTaskManagerTaskResponse{
+		TaskResponse: cstaskmanager.ITaskStructTaskResponse{
 			ReferenceTaskIndex: TASK_INDEX,
 			Output:             tests.BadOutput(),
 		},
-		TaskResponseMetadata: cstaskmanager.IZklayerTaskManagerTaskResponseMetadata{
+		TaskResponseMetadata: cstaskmanager.ITaskStructTaskResponseMetadata{
 			TaskResponsedBlock: 1001,
 			HashOfNonSigners:   [32]byte{},
 		},
@@ -182,7 +182,7 @@ func createMockChallenger(mockCtrl *gomock.Controller) (*Challenger, *chainiomoc
 		avsReader:          mockAvsReader,
 		ethClient:          mockEthClient,
 		avsSubscriber:      mockAvsSubscriber,
-		tasks:              make(map[uint32]cstaskmanager.IZklayerTaskManagerTask),
+		tasks:              make(map[uint32]cstaskmanager.ITaskStructTask),
 		taskResponses:      make(map[uint32]chtypes.TaskResponseData),
 		taskResponseChan:   make(chan *cstaskmanager.ContractZklayerTaskManagerTaskResponded),
 		newTaskCreatedChan: make(chan *cstaskmanager.ContractZklayerTaskManagerNewTaskCreated),

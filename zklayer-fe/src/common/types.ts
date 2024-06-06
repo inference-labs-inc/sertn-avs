@@ -5,13 +5,15 @@ export interface Log {
     | "TaskCompleted"
     | "TaskChallengedSuccessfully"
     | "TaskChallengedUnsuccessfully"
-    | "TaskChallenged";
+    | "TaskChallenged"
+    | "TaskRespondedWithProof";
   args:
     | NewTaskArgs
     | TaskResponseArgs
     | TaskChallengedArgs
     | TaskChallengedSuccessfullyArgs
-    | TaskChallengedUnsuccessfullyArgs;
+    | TaskChallengedUnsuccessfullyArgs
+    | TaskRespondedWithProofArgs;
   address: string;
   topics: string[];
   data: string;
@@ -22,6 +24,12 @@ export interface Log {
   logIndex: number;
   transactionLogIndex: string;
   removed: boolean;
+}
+
+export interface TaskRespondedWithProofArgs {
+  taskIndex: number;
+  prover: string;
+  output: string;
 }
 
 export interface NewTaskArgs {

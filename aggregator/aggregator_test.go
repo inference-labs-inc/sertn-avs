@@ -62,8 +62,7 @@ func TestSendNewTask(t *testing.T) {
 	INPUTS := tests.TestInputs()
 
 	mockAvsWriterer.EXPECT().SendNewTaskInput(
-		context.Background(), INPUTS, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS,
-	).Return(mocks.MockSendNewTaskNumberToSquareCall(BLOCK_NUMBER, TASK_INDEX, INPUTS))
+		context.Background(), INPUTS, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS, false).Return(mocks.MockSendNewTaskNumberToSquareCall(BLOCK_NUMBER, TASK_INDEX, INPUTS))
 
 	// 100 blocks, each takes 12 seconds. We hardcode for now since aggregator also hardcodes this value
 	taskTimeToExpiry := 100 * 12 * time.Second
@@ -87,8 +86,8 @@ func createMockAggregator(
 		logger:                logger,
 		avsWriter:             mockAvsWriter,
 		blsAggregationService: mockBlsAggregationService,
-		tasks:                 make(map[types.TaskIndex]cstaskmanager.IZklayerTaskManagerTask),
-		taskResponses:         make(map[types.TaskIndex]map[sdktypes.TaskResponseDigest]cstaskmanager.IZklayerTaskManagerTaskResponse),
+		tasks:                 make(map[types.TaskIndex]cstaskmanager.ITaskStructTask),
+		taskResponses:         make(map[types.TaskIndex]map[sdktypes.TaskResponseDigest]cstaskmanager.ITaskStructTaskResponse),
 	}
 	return aggregator, mockAvsWriter, mockBlsAggregationService, nil
 }

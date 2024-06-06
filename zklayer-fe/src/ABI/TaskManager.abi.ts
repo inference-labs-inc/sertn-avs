@@ -8,27 +8,8 @@ export const zkLayer = {
           type: "address",
           internalType: "contract IRegistryCoordinator",
         },
-        {
-          name: "_taskResponseWindowBlock",
-          type: "uint32",
-          internalType: "uint32",
-        },
       ],
       stateMutability: "nonpayable",
-    },
-    {
-      type: "function",
-      name: "TASK_CHALLENGE_WINDOW_BLOCK",
-      inputs: [],
-      outputs: [{ name: "", type: "uint32", internalType: "uint32" }],
-      stateMutability: "view",
-    },
-    {
-      type: "function",
-      name: "TASK_RESPONSE_WINDOW_BLOCK",
-      inputs: [],
-      outputs: [{ name: "", type: "uint32", internalType: "uint32" }],
-      stateMutability: "view",
     },
     {
       type: "function",
@@ -56,7 +37,11 @@ export const zkLayer = {
       name: "blsApkRegistry",
       inputs: [],
       outputs: [
-        { name: "", type: "address", internalType: "contract IBLSApkRegistry" },
+        {
+          name: "",
+          type: "address",
+          internalType: "contract IBLSApkRegistry",
+        },
       ],
       stateMutability: "view",
     },
@@ -115,8 +100,16 @@ export const zkLayer = {
               type: "tuple",
               internalType: "struct BN254.G2Point",
               components: [
-                { name: "X", type: "uint256[2]", internalType: "uint256[2]" },
-                { name: "Y", type: "uint256[2]", internalType: "uint256[2]" },
+                {
+                  name: "X",
+                  type: "uint256[2]",
+                  internalType: "uint256[2]",
+                },
+                {
+                  name: "Y",
+                  type: "uint256[2]",
+                  internalType: "uint256[2]",
+                },
               ],
             },
             {
@@ -175,26 +168,39 @@ export const zkLayer = {
         {
           name: "task",
           type: "tuple",
-          internalType: "struct IOmronTaskManager.Task",
+          internalType: "struct ITaskStruct.Task",
           components: [
-            { name: "inputs", type: "uint256[5]", internalType: "uint256[5]" },
+            {
+              name: "inputs",
+              type: "uint256[5]",
+              internalType: "uint256[5]",
+            },
             {
               name: "taskCreatedBlock",
               type: "uint32",
               internalType: "uint32",
             },
-            { name: "quorumNumbers", type: "bytes", internalType: "bytes" },
+            {
+              name: "quorumNumbers",
+              type: "bytes",
+              internalType: "bytes",
+            },
             {
               name: "quorumThresholdPercentage",
               type: "uint32",
               internalType: "uint32",
+            },
+            {
+              name: "provenOnResponse",
+              type: "bool",
+              internalType: "bool",
             },
           ],
         },
         {
           name: "taskResponse",
           type: "tuple",
-          internalType: "struct IOmronTaskManager.TaskResponse",
+          internalType: "struct ITaskStruct.TaskResponse",
           components: [
             {
               name: "referenceTaskIndex",
@@ -207,7 +213,7 @@ export const zkLayer = {
         {
           name: "taskResponseMetadata",
           type: "tuple",
-          internalType: "struct IOmronTaskManager.TaskResponseMetadata",
+          internalType: "struct ITaskStruct.TaskResponseMetadata",
           components: [
             {
               name: "taskResponsedBlock",
@@ -238,13 +244,18 @@ export const zkLayer = {
       type: "function",
       name: "createNewTask",
       inputs: [
-        { name: "inputs", type: "uint256[5]", internalType: "uint256[5]" },
+        {
+          name: "inputs",
+          type: "uint256[5]",
+          internalType: "uint256[5]",
+        },
         {
           name: "quorumThresholdPercentage",
           type: "uint32",
           internalType: "uint32",
         },
         { name: "quorumNumbers", type: "bytes", internalType: "bytes" },
+        { name: "provenOnResponce", type: "bool", internalType: "bool" },
       ],
       outputs: [],
       stateMutability: "nonpayable",
@@ -278,10 +289,18 @@ export const zkLayer = {
           type: "address",
           internalType: "contract IRegistryCoordinator",
         },
-        { name: "operatorIds", type: "bytes32[]", internalType: "bytes32[]" },
+        {
+          name: "operatorIds",
+          type: "bytes32[]",
+          internalType: "bytes32[]",
+        },
       ],
       outputs: [
-        { name: "operators", type: "address[]", internalType: "address[]" },
+        {
+          name: "operators",
+          type: "address[]",
+          internalType: "address[]",
+        },
       ],
       stateMutability: "view",
     },
@@ -294,10 +313,18 @@ export const zkLayer = {
           type: "address",
           internalType: "contract IRegistryCoordinator",
         },
-        { name: "operators", type: "address[]", internalType: "address[]" },
+        {
+          name: "operators",
+          type: "address[]",
+          internalType: "address[]",
+        },
       ],
       outputs: [
-        { name: "operatorIds", type: "bytes32[]", internalType: "bytes32[]" },
+        {
+          name: "operatorIds",
+          type: "bytes32[]",
+          internalType: "bytes32[]",
+        },
       ],
       stateMutability: "view",
     },
@@ -371,8 +398,16 @@ export const zkLayer = {
           type: "tuple[][]",
           internalType: "struct OperatorStateRetriever.Operator[][]",
           components: [
-            { name: "operator", type: "address", internalType: "address" },
-            { name: "operatorId", type: "bytes32", internalType: "bytes32" },
+            {
+              name: "operator",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "operatorId",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
             { name: "stake", type: "uint96", internalType: "uint96" },
           ],
         },
@@ -398,8 +433,16 @@ export const zkLayer = {
           type: "tuple[][]",
           internalType: "struct OperatorStateRetriever.Operator[][]",
           components: [
-            { name: "operator", type: "address", internalType: "address" },
-            { name: "operatorId", type: "bytes32", internalType: "bytes32" },
+            {
+              name: "operator",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "operatorId",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
             { name: "stake", type: "uint96", internalType: "uint96" },
           ],
         },
@@ -415,17 +458,14 @@ export const zkLayer = {
           type: "address",
           internalType: "contract IRegistryCoordinator",
         },
-        { name: "operatorIds", type: "bytes32[]", internalType: "bytes32[]" },
+        {
+          name: "operatorIds",
+          type: "bytes32[]",
+          internalType: "bytes32[]",
+        },
         { name: "blockNumber", type: "uint32", internalType: "uint32" },
       ],
       outputs: [{ name: "", type: "uint256[]", internalType: "uint256[]" }],
-      stateMutability: "view",
-    },
-    {
-      type: "function",
-      name: "getTaskResponseWindowBlock",
-      inputs: [],
-      outputs: [{ name: "", type: "uint32", internalType: "uint32" }],
       stateMutability: "view",
     },
     {
@@ -437,20 +477,17 @@ export const zkLayer = {
           type: "address",
           internalType: "contract IPauserRegistry",
         },
-        { name: "initialOwner", type: "address", internalType: "address" },
+        {
+          name: "initialOwner",
+          type: "address",
+          internalType: "address",
+        },
         { name: "_aggregator", type: "address", internalType: "address" },
         { name: "_generator", type: "address", internalType: "address" },
         { name: "_inferenceDB", type: "address", internalType: "address" },
       ],
       outputs: [],
       stateMutability: "nonpayable",
-    },
-    {
-      type: "function",
-      name: "latestTaskNum",
-      inputs: [],
-      outputs: [{ name: "", type: "uint32", internalType: "uint32" }],
-      stateMutability: "view",
     },
     {
       type: "function",
@@ -463,7 +500,11 @@ export const zkLayer = {
       type: "function",
       name: "pause",
       inputs: [
-        { name: "newPausedStatus", type: "uint256", internalType: "uint256" },
+        {
+          name: "newPausedStatus",
+          type: "uint256",
+          internalType: "uint256",
+        },
       ],
       outputs: [],
       stateMutability: "nonpayable",
@@ -494,7 +535,11 @@ export const zkLayer = {
       name: "pauserRegistry",
       inputs: [],
       outputs: [
-        { name: "", type: "address", internalType: "contract IPauserRegistry" },
+        {
+          name: "",
+          type: "address",
+          internalType: "contract IPauserRegistry",
+        },
       ],
       stateMutability: "view",
     },
@@ -503,7 +548,11 @@ export const zkLayer = {
       name: "proveResultAccurate",
       inputs: [
         { name: "taskId", type: "uint32", internalType: "uint32" },
-        { name: "instances", type: "uint256[]", internalType: "uint256[]" },
+        {
+          name: "instances",
+          type: "uint256[]",
+          internalType: "uint256[]",
+        },
         { name: "proof", type: "bytes", internalType: "bytes" },
       ],
       outputs: [],
@@ -516,26 +565,39 @@ export const zkLayer = {
         {
           name: "task",
           type: "tuple",
-          internalType: "struct IOmronTaskManager.Task",
+          internalType: "struct ITaskStruct.Task",
           components: [
-            { name: "inputs", type: "uint256[5]", internalType: "uint256[5]" },
+            {
+              name: "inputs",
+              type: "uint256[5]",
+              internalType: "uint256[5]",
+            },
             {
               name: "taskCreatedBlock",
               type: "uint32",
               internalType: "uint32",
             },
-            { name: "quorumNumbers", type: "bytes", internalType: "bytes" },
+            {
+              name: "quorumNumbers",
+              type: "bytes",
+              internalType: "bytes",
+            },
             {
               name: "quorumThresholdPercentage",
               type: "uint32",
               internalType: "uint32",
+            },
+            {
+              name: "provenOnResponse",
+              type: "bool",
+              internalType: "bool",
             },
           ],
         },
         {
           name: "taskResponse",
           type: "tuple",
-          internalType: "struct IOmronTaskManager.TaskResponse",
+          internalType: "struct ITaskStruct.TaskResponse",
           components: [
             {
               name: "referenceTaskIndex",
@@ -548,7 +610,7 @@ export const zkLayer = {
         {
           name: "taskResponseMetadata",
           type: "tuple",
-          internalType: "struct IOmronTaskManager.TaskResponseMetadata",
+          internalType: "struct ITaskStruct.TaskResponseMetadata",
           components: [
             {
               name: "taskResponsedBlock",
@@ -593,26 +655,39 @@ export const zkLayer = {
         {
           name: "task",
           type: "tuple",
-          internalType: "struct IOmronTaskManager.Task",
+          internalType: "struct ITaskStruct.Task",
           components: [
-            { name: "inputs", type: "uint256[5]", internalType: "uint256[5]" },
+            {
+              name: "inputs",
+              type: "uint256[5]",
+              internalType: "uint256[5]",
+            },
             {
               name: "taskCreatedBlock",
               type: "uint32",
               internalType: "uint32",
             },
-            { name: "quorumNumbers", type: "bytes", internalType: "bytes" },
+            {
+              name: "quorumNumbers",
+              type: "bytes",
+              internalType: "bytes",
+            },
             {
               name: "quorumThresholdPercentage",
               type: "uint32",
               internalType: "uint32",
+            },
+            {
+              name: "provenOnResponse",
+              type: "bool",
+              internalType: "bool",
             },
           ],
         },
         {
           name: "taskResponse",
           type: "tuple",
-          internalType: "struct IOmronTaskManager.TaskResponse",
+          internalType: "struct ITaskStruct.TaskResponse",
           components: [
             {
               name: "referenceTaskIndex",
@@ -656,8 +731,16 @@ export const zkLayer = {
               type: "tuple",
               internalType: "struct BN254.G2Point",
               components: [
-                { name: "X", type: "uint256[2]", internalType: "uint256[2]" },
-                { name: "Y", type: "uint256[2]", internalType: "uint256[2]" },
+                {
+                  name: "X",
+                  type: "uint256[2]",
+                  internalType: "uint256[2]",
+                },
+                {
+                  name: "Y",
+                  type: "uint256[2]",
+                  internalType: "uint256[2]",
+                },
               ],
             },
             {
@@ -692,6 +775,53 @@ export const zkLayer = {
     },
     {
       type: "function",
+      name: "respondToTaskWithProof",
+      inputs: [
+        {
+          name: "task",
+          type: "tuple",
+          internalType: "struct ITaskStruct.Task",
+          components: [
+            {
+              name: "inputs",
+              type: "uint256[5]",
+              internalType: "uint256[5]",
+            },
+            {
+              name: "taskCreatedBlock",
+              type: "uint32",
+              internalType: "uint32",
+            },
+            {
+              name: "quorumNumbers",
+              type: "bytes",
+              internalType: "bytes",
+            },
+            {
+              name: "quorumThresholdPercentage",
+              type: "uint32",
+              internalType: "uint32",
+            },
+            {
+              name: "provenOnResponse",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+        },
+        { name: "taskIndex", type: "uint32", internalType: "uint32" },
+        {
+          name: "instances",
+          type: "uint256[]",
+          internalType: "uint256[]",
+        },
+        { name: "proof", type: "bytes", internalType: "bytes" },
+      ],
+      outputs: [],
+      stateMutability: "nonpayable",
+    },
+    {
+      type: "function",
       name: "setPauserRegistry",
       inputs: [
         {
@@ -715,7 +845,11 @@ export const zkLayer = {
       name: "stakeRegistry",
       inputs: [],
       outputs: [
-        { name: "", type: "address", internalType: "contract IStakeRegistry" },
+        {
+          name: "",
+          type: "address",
+          internalType: "contract IStakeRegistry",
+        },
       ],
       stateMutability: "view",
     },
@@ -724,13 +858,6 @@ export const zkLayer = {
       name: "staleStakesForbidden",
       inputs: [],
       outputs: [{ name: "", type: "bool", internalType: "bool" }],
-      stateMutability: "view",
-    },
-    {
-      type: "function",
-      name: "taskNumber",
-      inputs: [],
-      outputs: [{ name: "", type: "uint32", internalType: "uint32" }],
       stateMutability: "view",
     },
     {
@@ -783,7 +910,11 @@ export const zkLayer = {
       type: "function",
       name: "unpause",
       inputs: [
-        { name: "newPausedStatus", type: "uint256", internalType: "uint256" },
+        {
+          name: "newPausedStatus",
+          type: "uint256",
+          internalType: "uint256",
+        },
       ],
       outputs: [],
       stateMutability: "nonpayable",
@@ -815,19 +946,32 @@ export const zkLayer = {
           name: "task",
           type: "tuple",
           indexed: false,
-          internalType: "struct IOmronTaskManager.Task",
+          internalType: "struct ITaskStruct.Task",
           components: [
-            { name: "inputs", type: "uint256[5]", internalType: "uint256[5]" },
+            {
+              name: "inputs",
+              type: "uint256[5]",
+              internalType: "uint256[5]",
+            },
             {
               name: "taskCreatedBlock",
               type: "uint32",
               internalType: "uint32",
             },
-            { name: "quorumNumbers", type: "bytes", internalType: "bytes" },
+            {
+              name: "quorumNumbers",
+              type: "bytes",
+              internalType: "bytes",
+            },
             {
               name: "quorumThresholdPercentage",
               type: "uint32",
               internalType: "uint32",
+            },
+            {
+              name: "provenOnResponse",
+              type: "bool",
+              internalType: "bool",
             },
           ],
         },
@@ -895,7 +1039,12 @@ export const zkLayer = {
       type: "event",
       name: "StaleStakesForbiddenUpdate",
       inputs: [
-        { name: "value", type: "bool", indexed: false, internalType: "bool" },
+        {
+          name: "value",
+          type: "bool",
+          indexed: false,
+          internalType: "bool",
+        },
       ],
       anonymous: false,
     },
@@ -971,7 +1120,7 @@ export const zkLayer = {
           name: "taskResponse",
           type: "tuple",
           indexed: false,
-          internalType: "struct IOmronTaskManager.TaskResponse",
+          internalType: "struct ITaskStruct.TaskResponse",
           components: [
             {
               name: "referenceTaskIndex",
@@ -985,7 +1134,7 @@ export const zkLayer = {
           name: "taskResponseMetadata",
           type: "tuple",
           indexed: false,
-          internalType: "struct IOmronTaskManager.TaskResponseMetadata",
+          internalType: "struct ITaskStruct.TaskResponseMetadata",
           components: [
             {
               name: "taskResponsedBlock",
@@ -998,6 +1147,31 @@ export const zkLayer = {
               internalType: "bytes32",
             },
           ],
+        },
+      ],
+      anonymous: false,
+    },
+    {
+      type: "event",
+      name: "TaskRespondedWithProof",
+      inputs: [
+        {
+          name: "taskIndex",
+          type: "uint32",
+          indexed: true,
+          internalType: "uint32",
+        },
+        {
+          name: "output",
+          type: "uint256",
+          indexed: false,
+          internalType: "uint256",
+        },
+        {
+          name: "prover",
+          type: "address",
+          indexed: true,
+          internalType: "address",
         },
       ],
       anonymous: false,

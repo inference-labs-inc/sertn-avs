@@ -16,11 +16,11 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-// this hardcodes abi.encode() for cstaskmanager.IZklayerTaskManagerTaskResponse
+// this hardcodes abi.encode() for cstaskmanager.ITaskStructTaskResponse
 // unclear why abigen doesn't provide this out of the box...
-func AbiEncodeTaskResponse(h *cstaskmanager.IZklayerTaskManagerTaskResponse) ([]byte, error) {
+func AbiEncodeTaskResponse(h *cstaskmanager.ITaskStructTaskResponse) ([]byte, error) {
 
-	// The order here has to match the field ordering of cstaskmanager.IZklayerTaskManagerTaskResponse
+	// The order here has to match the field ordering of cstaskmanager.ITaskStructTaskResponse
 	taskResponseType, err := abi.NewType("tuple", "", []abi.ArgumentMarshaling{
 		{
 			Name: "referenceTaskIndex",
@@ -49,7 +49,7 @@ func AbiEncodeTaskResponse(h *cstaskmanager.IZklayerTaskManagerTaskResponse) ([]
 }
 
 // GetTaskResponseDigest returns the hash of the TaskResponse, which is what operators sign over
-func GetTaskResponseDigest(h *cstaskmanager.IZklayerTaskManagerTaskResponse) ([32]byte, error) {
+func GetTaskResponseDigest(h *cstaskmanager.ITaskStructTaskResponse) ([32]byte, error) {
 
 	encodeTaskResponseByte, err := AbiEncodeTaskResponse(h)
 	if err != nil {

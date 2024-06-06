@@ -30,7 +30,7 @@ type Challenger struct {
 	avsReader          chainio.AvsReaderer
 	avsWriter          chainio.AvsWriterer
 	avsSubscriber      chainio.AvsSubscriberer
-	tasks              map[uint32]cstaskmanager.IZklayerTaskManagerTask
+	tasks              map[uint32]cstaskmanager.ITaskStructTask
 	taskResponses      map[uint32]types.TaskResponseData
 	taskResponseChan   chan *cstaskmanager.ContractZklayerTaskManagerTaskResponded
 	newTaskCreatedChan chan *cstaskmanager.ContractZklayerTaskManagerNewTaskCreated
@@ -60,7 +60,7 @@ func NewChallenger(c *config.Config) (*Challenger, error) {
 		avsWriter:          avsWriter,
 		avsReader:          avsReader,
 		avsSubscriber:      avsSubscriber,
-		tasks:              make(map[uint32]cstaskmanager.IZklayerTaskManagerTask),
+		tasks:              make(map[uint32]cstaskmanager.ITaskStructTask),
 		taskResponses:      make(map[uint32]types.TaskResponseData),
 		taskResponseChan:   make(chan *cstaskmanager.ContractZklayerTaskManagerTaskResponded),
 		newTaskCreatedChan: make(chan *cstaskmanager.ContractZklayerTaskManagerNewTaskCreated),

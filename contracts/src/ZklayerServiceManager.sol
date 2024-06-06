@@ -27,16 +27,16 @@ contract ZklayerServiceManager is ServiceManagerBase {
         IAVSDirectory _avsDirectory,
         IRegistryCoordinator _registryCoordinator,
         IStakeRegistry _stakeRegistry,
-        IZklayerTaskManager _zklayerTaskManager
+        address _zklayerTaskManager
     )
         ServiceManagerBase(
             _avsDirectory,
-            IPaymentCoordinator(address(0)), // inc-sq doesn't need to deal with payments
+            IPaymentCoordinator(address(0)),
             _registryCoordinator,
             _stakeRegistry
         )
     {
-        zklayerTaskManager = _zklayerTaskManager;
+        zklayerTaskManager = IZklayerTaskManager(_zklayerTaskManager);
     }
 
     /// @notice Called in the event of challenge resolution, in order to forward a call to the Slasher, which 'freezes' the `operator`.

@@ -106,7 +106,12 @@ const App = () => {
                 (async () => {
                   const { elements: inferenceForm } =
                     e.target as unknown as InferenceForm;
-                  setInference(await fetchInference(inferenceForm.input.value));
+                  setInference(
+                    await fetchInference(
+                      inferenceForm.input.value,
+                      inferenceForm.type.value === "Pre Prove"
+                    )
+                  );
                 })();
               }}
             >
@@ -121,6 +126,7 @@ const App = () => {
                 <select
                   disabled={true}
                   class="appearance-none rounded-l-none bg-white border border-gray-400 hover:border-gray-500  p-2 rounded-sm leading-tight focus:outline-none w-30 h-full"
+                  name="type"
                   value={ProofTypes[proofType]}
                 >
                   {ProofTypes.map((proofType) => (

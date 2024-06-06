@@ -72,9 +72,9 @@ type Aggregator struct {
 	avsWriter        chainio.AvsWriterer
 	// aggregation related fields
 	blsAggregationService blsagg.BlsAggregationService
-	tasks                 map[types.TaskIndex]cstaskmanager.IZklayerTaskManagerTask
+	tasks                 map[types.TaskIndex]cstaskmanager.ITaskStructTask
 	tasksMu               sync.RWMutex
-	taskResponses         map[types.TaskIndex]map[sdktypes.TaskResponseDigest]cstaskmanager.IZklayerTaskManagerTaskResponse
+	taskResponses         map[types.TaskIndex]map[sdktypes.TaskResponseDigest]cstaskmanager.ITaskStructTaskResponse
 	taskResponsesMu       sync.RWMutex
 }
 
@@ -116,8 +116,8 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 		serverIpPortAddr:      c.AggregatorServerIpPortAddr,
 		avsWriter:             avsWriter,
 		blsAggregationService: blsAggregationService,
-		tasks:                 make(map[types.TaskIndex]cstaskmanager.IZklayerTaskManagerTask),
-		taskResponses:         make(map[types.TaskIndex]map[sdktypes.TaskResponseDigest]cstaskmanager.IZklayerTaskManagerTaskResponse),
+		tasks:                 make(map[types.TaskIndex]cstaskmanager.ITaskStructTask),
+		taskResponses:         make(map[types.TaskIndex]map[sdktypes.TaskResponseDigest]cstaskmanager.ITaskStructTaskResponse),
 	}, nil
 }
 
@@ -134,7 +134,7 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 	// ticker doesn't tick immediately, so we send the first task here
 	// see https://github.com/golang/go/issues/17601
 	inputs := core.RandomInputs()
-	_, _ = agg.sendNewTask(inputs)
+	_, _ = agg.sendNewTask(inputs, false)
 
 	go func() {
 		router := gin.Default()
@@ -143,8 +143,9 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 
 		router.GET("/inference", func(c *gin.Context) {
 			inputs, _ := c.GetQuery("inputs")
+			provenOnResponse, _ := c.GetQuery("provenOnResponse")
 			formattedInputs := core.FormatFloatStringForChain(inputs)
-			taskIndex, _ := agg.sendNewTask(formattedInputs)
+			taskIndex, _ := agg.sendNewTask(formattedInputs, provenOnResponse == "true")
 
 			c.JSON(http.StatusOK, gin.H{
 				"message":   inputs,
@@ -216,16 +217,16 @@ func (agg *Aggregator) sendAggregatedResponseToContract(blsAggServiceResp blsagg
 
 // sendNewTask sends a new task to the task manager contract, and updates the Task dict struct
 // with the information of operators opted into quorum 0 at the block of task creation.
-func (agg *Aggregator) sendNewTask(input [5]*big.Int) (uint32, error) {
+func (agg *Aggregator) sendNewTask(input [5]*big.Int, provenOnResponse bool) (uint32, error) {
 	agg.logger.Info("AGGREGATOR - NEW TASK", "input", input)
 
-	newTask, taskIndex, err := agg.avsWriter.SendNewTaskInput(context.Background(), input, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS)
+	newTask, taskIndex, err := agg.avsWriter.SendNewTaskInput(context.Background(), input, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS, provenOnResponse)
 	if err != nil {
 		agg.logger.Error("Aggregator failed to send input", "err", err)
 		return 0, err
 	}
 
-	agg.logger.Info("AGGREGATOR - NEW TASK INDEX", "taskIndex", taskIndex, "input", input)
+	agg.logger.Info("AGGREGATOR - NEW TASK INDEX", "taskIndex", taskIndex, "input", input, "proven on response", provenOnResponse)
 
 	agg.tasksMu.Lock()
 	agg.tasks[taskIndex] = newTask
