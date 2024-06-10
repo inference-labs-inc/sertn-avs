@@ -59,10 +59,10 @@ func TestSendNewTask(t *testing.T) {
 
 	var TASK_INDEX = uint32(0)
 	var BLOCK_NUMBER = uint32(100)
-	INPUTS := tests.TestInputs()
+	inputs := tests.TestInputs()
 
 	mockAvsWriterer.EXPECT().SendNewTaskInput(
-		context.Background(), INPUTS, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS, false).Return(mocks.MockSendNewTaskNumberToSquareCall(BLOCK_NUMBER, TASK_INDEX, INPUTS))
+		context.Background(), inputs, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS, false).Return(mocks.MockSendNewTaskNumberToSquareCall(BLOCK_NUMBER, TASK_INDEX, inputs))
 
 	// 100 blocks, each takes 12 seconds. We hardcode for now since aggregator also hardcodes this value
 	taskTimeToExpiry := 100 * 12 * time.Second
@@ -71,7 +71,7 @@ func TestSendNewTask(t *testing.T) {
 	// see https://hynek.me/articles/what-to-mock-in-5-mins/
 	mockBlsAggService.EXPECT().InitializeNewTask(TASK_INDEX, BLOCK_NUMBER, types.QUORUM_NUMBERS, sdktypes.QuorumThresholdPercentages{types.QUORUM_THRESHOLD_NUMERATOR}, taskTimeToExpiry)
 
-	_, err = aggregator.sendNewTask(INPUTS)
+	_, err = aggregator.sendNewTask(inputs, true)
 	assert.Nil(t, err)
 }
 
