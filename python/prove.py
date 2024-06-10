@@ -4,7 +4,7 @@ from utils import relative_file_path, parse_input
 import json
 
 parser = argparse.ArgumentParser(
-                    prog='Zklayer AVS ezkl operator proving engine')
+                    prog='zkLayer AVS ezkl operator proving engine')
 
 parser.add_argument('-i','--input', nargs='+', help='input data to run on', required=True)
 
@@ -64,6 +64,6 @@ formatted_output += "]"
 # What happens when you change a value?
 # print(formatted_output)
 
-##### OUTPUT then Proof
+##### Output then Proof
 print(onchain_input_array[-1][2:])
 print(proof["proof"][2:])
