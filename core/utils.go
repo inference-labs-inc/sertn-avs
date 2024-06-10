@@ -104,7 +104,7 @@ func FormatFloatInputsToString(rawInputs [5]float64) string {
 func RelativeUrl(pathFromRoot string) string {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
-		fmt.Println("Error")
+		fmt.Println("Error getting relative url", pathFromRoot)
 	}
 	dirname := filepath.Dir(filename)
 	dirname = filepath.Join(dirname, "../", pathFromRoot)
