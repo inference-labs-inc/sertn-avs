@@ -16,12 +16,12 @@ import (
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/inference-labs-inc/zklayer-avs/aggregator/types"
-	"github.com/inference-labs-inc/zklayer-avs/core"
-	"github.com/inference-labs-inc/zklayer-avs/core/chainio"
-	"github.com/inference-labs-inc/zklayer-avs/core/config"
+	"github.com/inference-labs-inc/sertn-avs/aggregator/types"
+	"github.com/inference-labs-inc/sertn-avs/core"
+	"github.com/inference-labs-inc/sertn-avs/core/chainio"
+	"github.com/inference-labs-inc/sertn-avs/core/config"
 
-	cstaskmanager "github.com/inference-labs-inc/zklayer-avs/contracts/bindings/ZklayerTaskManager"
+	cstaskmanager "github.com/inference-labs-inc/sertn-avs/contracts/bindings/SertnTaskManager"
 )
 
 const (
@@ -30,10 +30,10 @@ const (
 	// ideally be fetched from the contracts
 	taskChallengeWindowBlock = 100
 	blockTimeSeconds         = 12 * time.Second
-	avsName                  = "zklayer"
+	avsName                  = "sertn"
 )
 
-// Aggregator sends tasks (numbers to square) onchain, then listens for operator signed TaskResponses.
+// Aggregator sends tasks onchain, then listens for operator signed TaskResponses.
 // It aggregates responses signatures, and if any of the TaskResponses reaches the QuorumThresholdPercentage for each quorum
 // (currently we only use a single quorum of the ERC20Mock token), it sends the aggregated TaskResponse and signature onchain.
 //
@@ -96,7 +96,7 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 	chainioConfig := sdkclients.BuildAllConfig{
 		EthHttpUrl:                 c.EthHttpRpcUrl,
 		EthWsUrl:                   c.EthWsRpcUrl,
-		RegistryCoordinatorAddr:    c.ZklayerRegistryCoordinatorAddr.String(),
+		RegistryCoordinatorAddr:    c.SertnRegistryCoordinatorAddr.String(),
 		OperatorStateRetrieverAddr: c.OperatorStateRetrieverAddr.String(),
 		AvsName:                    avsName,
 		PromMetricsIpPortAddress:   ":9090",

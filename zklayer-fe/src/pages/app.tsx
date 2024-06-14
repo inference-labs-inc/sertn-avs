@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 import { config, taskManagerAddress } from "../common/constants";
 import { useAccount, useConnect, usePublicClient } from "wagmi";
 import { formatAddress } from "../common/eth";
-import { zkLayer } from "../ABI/TaskManager.abi";
+import { sertn } from "../ABI/TaskManager.abi";
 import {
   InferenceForm,
   InferenceResponse,
@@ -67,7 +67,7 @@ const App = () => {
       (async () => {
         const logs = await client.getLogs({
           address: taskManagerAddress,
-          events: zkLayer.abi.filter((element) => element.type === "event"),
+          events: sertn.abi.filter((element) => element.type === "event"),
           fromBlock: blockNumber,
         });
         if (logs.length) {

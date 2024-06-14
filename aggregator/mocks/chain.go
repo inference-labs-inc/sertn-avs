@@ -5,13 +5,13 @@ import (
 
 	opstateretriever "github.com/Layr-Labs/eigensdk-go/contracts/bindings/OperatorStateRetriever"
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
-	"github.com/inference-labs-inc/zklayer-avs/aggregator/types"
-	cstaskmanager "github.com/inference-labs-inc/zklayer-avs/contracts/bindings/ZklayerTaskManager"
+	"github.com/inference-labs-inc/sertn-avs/aggregator/types"
+	cstaskmanager "github.com/inference-labs-inc/sertn-avs/contracts/bindings/SertnTaskManager"
 )
 
 // ====== TaskManager Mocks ======
 
-func MockSendNewTaskNumberToSquareCall(blockNum, taskNum uint32, inputs [5]*big.Int) (cstaskmanager.ITaskStructTask, uint32, error) {
+func MockSendNewTaskInputsCall(blockNum, taskNum uint32, inputs [5]*big.Int) (cstaskmanager.ITaskStructTask, uint32, error) {
 	task := cstaskmanager.ITaskStructTask{
 		Inputs:                    inputs,
 		TaskCreatedBlock:          blockNum,

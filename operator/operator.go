@@ -14,12 +14,12 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/inference-labs-inc/zklayer-avs/aggregator"
-	cstaskmanager "github.com/inference-labs-inc/zklayer-avs/contracts/bindings/ZklayerTaskManager"
-	"github.com/inference-labs-inc/zklayer-avs/core"
-	"github.com/inference-labs-inc/zklayer-avs/core/chainio"
-	"github.com/inference-labs-inc/zklayer-avs/metrics"
-	"github.com/inference-labs-inc/zklayer-avs/types"
+	"github.com/inference-labs-inc/sertn-avs/aggregator"
+	cstaskmanager "github.com/inference-labs-inc/sertn-avs/contracts/bindings/SertnTaskManager"
+	"github.com/inference-labs-inc/sertn-avs/core"
+	"github.com/inference-labs-inc/sertn-avs/core/chainio"
+	"github.com/inference-labs-inc/sertn-avs/metrics"
+	"github.com/inference-labs-inc/sertn-avs/types"
 
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	sdkelcontracts "github.com/Layr-Labs/eigensdk-go/chainio/clients/elcontracts"
@@ -39,7 +39,7 @@ import (
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 )
 
-const AVS_NAME = "zklayer"
+const AVS_NAME = "sertn"
 const SEM_VER = "0.0.1"
 
 type Operator struct {
@@ -62,15 +62,15 @@ type Operator struct {
 	blsKeypair            *bls.KeyPair
 	operatorId            sdktypes.OperatorId
 	operatorAddr          common.Address
-	newTaskChallengedChan chan *cstaskmanager.ContractZklayerTaskManagerTaskChallenged
+	newTaskChallengedChan chan *cstaskmanager.ContractSertnTaskManagerTaskChallenged
 	// receive new tasks in this chan (typically from listening to onchain event)
-	newTaskCreatedChan chan *cstaskmanager.ContractZklayerTaskManagerNewTaskCreated
+	newTaskCreatedChan chan *cstaskmanager.ContractSertnTaskManagerNewTaskCreated
 	// ip address of aggregator
 	aggregatorServerIpPortAddr string
 	// rpc client to send signed task responses to aggregator
 	aggregatorRpcClient AggregatorRpcClienter
 	// needed when opting in to avs (allow this service manager contract to slash operator)
-	zklayerServiceManagerAddr common.Address
+	sertnServiceManagerAddr common.Address
 }
 
 // TODO(samlaf): config is a mess right now, since the chainio client constructors
@@ -232,9 +232,9 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		operatorAddr:               common.HexToAddress(c.OperatorAddress),
 		aggregatorServerIpPortAddr: c.AggregatorServerIpPortAddress,
 		aggregatorRpcClient:        aggregatorRpcClient,
-		newTaskCreatedChan:         make(chan *cstaskmanager.ContractZklayerTaskManagerNewTaskCreated),
-		newTaskChallengedChan:      make(chan *cstaskmanager.ContractZklayerTaskManagerTaskChallenged),
-		zklayerServiceManagerAddr:  common.HexToAddress(c.AVSRegistryCoordinatorAddress),
+		newTaskCreatedChan:         make(chan *cstaskmanager.ContractSertnTaskManagerNewTaskCreated),
+		newTaskChallengedChan:      make(chan *cstaskmanager.ContractSertnTaskManagerTaskChallenged),
+		sertnServiceManagerAddr:    common.HexToAddress(c.AVSRegistryCoordinatorAddress),
 		operatorId:                 [32]byte{0}, // this is set below
 
 	}
@@ -341,7 +341,7 @@ func (o *Operator) RunModelFromBigIntInputs(rawInputs [5]*big.Int) *big.Int {
 
 // Takes a NewTaskCreatedLog struct as input and returns a TaskResponseHeader struct.
 // The TaskResponseHeader struct is the struct that is signed and sent to the contract as a task response.
-func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.ContractZklayerTaskManagerNewTaskCreated) *cstaskmanager.ITaskStructTaskResponse {
+func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.ContractSertnTaskManagerNewTaskCreated) *cstaskmanager.ITaskStructTaskResponse {
 	o.logger.Debug("Received new task", "task", newTaskCreatedLog)
 	o.logger.Info("NEW TASK - OPERATOR",
 		"inputs", newTaskCreatedLog.Task.Inputs,

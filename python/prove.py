@@ -4,7 +4,7 @@ from utils import relative_file_path, parse_input
 import json
 
 parser = argparse.ArgumentParser(
-                    prog='zkLayer AVS ezkl operator proving engine')
+                    prog='sertn AVS ezkl operator proving engine')
 
 parser.add_argument('-i','--input', nargs='+', help='input data to run on', required=True)
 

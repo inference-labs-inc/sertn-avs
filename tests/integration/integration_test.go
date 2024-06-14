@@ -20,11 +20,11 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/inference-labs-inc/zklayer-avs/aggregator"
-	"github.com/inference-labs-inc/zklayer-avs/core/chainio"
-	"github.com/inference-labs-inc/zklayer-avs/core/config"
-	"github.com/inference-labs-inc/zklayer-avs/operator"
-	"github.com/inference-labs-inc/zklayer-avs/types"
+	"github.com/inference-labs-inc/sertn-avs/aggregator"
+	"github.com/inference-labs-inc/sertn-avs/core/chainio"
+	"github.com/inference-labs-inc/sertn-avs/core/config"
+	"github.com/inference-labs-inc/sertn-avs/operator"
+	"github.com/inference-labs-inc/sertn-avs/types"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
@@ -52,9 +52,9 @@ func TestIntegration(t *testing.T) {
 	aggConfigRaw.EthRpcUrl = "http://" + anvilEndpoint
 	aggConfigRaw.EthWsUrl = "ws://" + anvilEndpoint
 
-	var zklayerDeploymentRaw config.ZklayerDeploymentRaw
-	zklayerDeploymentFilePath := "../../contracts/script/output/31337/zklayer_avs_deployment_output.json"
-	sdkutils.ReadJsonConfig(zklayerDeploymentFilePath, &zklayerDeploymentRaw)
+	var sertnDeploymentRaw config.SertnDeploymentRaw
+	sertnDeploymentFilePath := "../../contracts/script/output/31337/sertn_avs_deployment_output.json"
+	sdkutils.ReadJsonConfig(sertnDeploymentFilePath, &sertnDeploymentRaw)
 
 	logger, err := sdklogging.NewZapLogger(aggConfigRaw.Environment)
 	if err != nil {
@@ -98,18 +98,18 @@ func TestIntegration(t *testing.T) {
 	txMgr := txmgr.NewSimpleTxManager(skWallet, ethRpcClient, logger, aggregatorAddr)
 
 	config := &config.Config{
-		EcdsaPrivateKey:                aggregatorEcdsaPrivateKey,
-		Logger:                         logger,
-		EthHttpRpcUrl:                  aggConfigRaw.EthRpcUrl,
-		EthHttpClient:                  ethRpcClient,
-		EthWsRpcUrl:                    aggConfigRaw.EthWsUrl,
-		EthWsClient:                    ethWsClient,
-		OperatorStateRetrieverAddr:     common.HexToAddress(zklayerDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
-		ZklayerRegistryCoordinatorAddr: common.HexToAddress(zklayerDeploymentRaw.Addresses.RegistryCoordinatorAddr),
-		AggregatorServerIpPortAddr:     aggConfigRaw.AggregatorServerIpPortAddr,
-		RegisterOperatorOnStartup:      aggConfigRaw.RegisterOperatorOnStartup,
-		TxMgr:                          txMgr,
-		AggregatorAddress:              aggregatorAddr,
+		EcdsaPrivateKey:              aggregatorEcdsaPrivateKey,
+		Logger:                       logger,
+		EthHttpRpcUrl:                aggConfigRaw.EthRpcUrl,
+		EthHttpClient:                ethRpcClient,
+		EthWsRpcUrl:                  aggConfigRaw.EthWsUrl,
+		EthWsClient:                  ethWsClient,
+		OperatorStateRetrieverAddr:   common.HexToAddress(sertnDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
+		SertnRegistryCoordinatorAddr: common.HexToAddress(sertnDeploymentRaw.Addresses.RegistryCoordinatorAddr),
+		AggregatorServerIpPortAddr:   aggConfigRaw.AggregatorServerIpPortAddr,
+		RegisterOperatorOnStartup:    aggConfigRaw.RegisterOperatorOnStartup,
+		TxMgr:                        txMgr,
+		AggregatorAddress:            aggregatorAddr,
 	}
 
 	/* Prepare the config file for operator */

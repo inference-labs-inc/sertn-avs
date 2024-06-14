@@ -21,8 +21,8 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/utils"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/inference-labs-inc/zklayer-avs/core/chainio"
-	"github.com/inference-labs-inc/zklayer-avs/types"
+	"github.com/inference-labs-inc/sertn-avs/core/chainio"
+	"github.com/inference-labs-inc/sertn-avs/types"
 	"github.com/urfave/cli"
 )
 
@@ -69,8 +69,8 @@ func main() {
 		OperationFlag,
 		StrategyAddrFlag,
 	}
-	app.Name = "zklayer-plugin"
-	app.Usage = "Zklayer Plugin"
+	app.Name = "sertn-plugin"
+	app.Usage = "Sertn Plugin"
 	app.Description = "This is used to run one time operations like avs opt-in/opt-out"
 	app.Action = plugin
 	err := app.Run(os.Args)
@@ -100,7 +100,7 @@ func plugin(ctx *cli.Context) {
 		EthWsUrl:                   avsConfig.EthWsUrl,
 		RegistryCoordinatorAddr:    avsConfig.AVSRegistryCoordinatorAddress,
 		OperatorStateRetrieverAddr: avsConfig.OperatorStateRetrieverAddress,
-		AvsName:                    "zklayer",
+		AvsName:                    "sertn",
 		PromMetricsIpPortAddress:   avsConfig.EigenMetricsIpPortAddress,
 	}
 	logger, _ := logging.NewZapLogger(logging.Development)

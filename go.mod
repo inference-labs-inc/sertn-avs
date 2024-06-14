@@ -1,4 +1,4 @@
-module github.com/inference-labs-inc/zklayer-avs
+module github.com/inference-labs-inc/sertn-avs
 
 go 1.21
 

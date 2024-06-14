@@ -6,9 +6,9 @@
     "registryCoordinator": "0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9",
     "registryCoordinatorImplementation": "0x9d4454B023096f34B160D6B654540c56A1F81688",
     "zkVerifier": "0x1291Be112d480055DaFd8a610b7d1e203891C274",
-    "zklayerServiceManager": "0x84eA74d481Ee0A5332c457a4d796187F6Ba67fEB",
-    "zklayerServiceManagerImplementation": "0x36C02dA8a0983159322a80FFE9F24b1acfF8B570",
-    "zklayerTaskManager": "0x9E545E3C0baAB3E08CdfD552C960A1050f373042",
-    "zklayerTaskManagerImplementation": "0x4c5859f0F772848b2D91F1D83E2Fe57935348029"
+    "sertnServiceManager": "0x84eA74d481Ee0A5332c457a4d796187F6Ba67fEB",
+    "sertnServiceManagerImplementation": "0x36C02dA8a0983159322a80FFE9F24b1acfF8B570",
+    "sertnTaskManager": "0x9E545E3C0baAB3E08CdfD552C960A1050f373042",
+    "sertnTaskManagerImplementation": "0x4c5859f0F772848b2D91F1D83E2Fe57935348029"
   }
 }

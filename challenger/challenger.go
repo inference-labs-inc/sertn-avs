@@ -15,13 +15,13 @@ import (
 	ethclient "github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/inference-labs-inc/zklayer-avs/common"
-	"github.com/inference-labs-inc/zklayer-avs/core"
-	"github.com/inference-labs-inc/zklayer-avs/core/config"
+	"github.com/inference-labs-inc/sertn-avs/common"
+	"github.com/inference-labs-inc/sertn-avs/core"
+	"github.com/inference-labs-inc/sertn-avs/core/config"
 
-	"github.com/inference-labs-inc/zklayer-avs/challenger/types"
-	cstaskmanager "github.com/inference-labs-inc/zklayer-avs/contracts/bindings/ZklayerTaskManager"
-	"github.com/inference-labs-inc/zklayer-avs/core/chainio"
+	"github.com/inference-labs-inc/sertn-avs/challenger/types"
+	cstaskmanager "github.com/inference-labs-inc/sertn-avs/contracts/bindings/SertnTaskManager"
+	"github.com/inference-labs-inc/sertn-avs/core/chainio"
 )
 
 type Challenger struct {
@@ -32,8 +32,8 @@ type Challenger struct {
 	avsSubscriber      chainio.AvsSubscriberer
 	tasks              map[uint32]cstaskmanager.ITaskStructTask
 	taskResponses      map[uint32]types.TaskResponseData
-	taskResponseChan   chan *cstaskmanager.ContractZklayerTaskManagerTaskResponded
-	newTaskCreatedChan chan *cstaskmanager.ContractZklayerTaskManagerNewTaskCreated
+	taskResponseChan   chan *cstaskmanager.ContractSertnTaskManagerTaskResponded
+	newTaskCreatedChan chan *cstaskmanager.ContractSertnTaskManagerNewTaskCreated
 }
 
 func NewChallenger(c *config.Config) (*Challenger, error) {
@@ -62,8 +62,8 @@ func NewChallenger(c *config.Config) (*Challenger, error) {
 		avsSubscriber:      avsSubscriber,
 		tasks:              make(map[uint32]cstaskmanager.ITaskStructTask),
 		taskResponses:      make(map[uint32]types.TaskResponseData),
-		taskResponseChan:   make(chan *cstaskmanager.ContractZklayerTaskManagerTaskResponded),
-		newTaskCreatedChan: make(chan *cstaskmanager.ContractZklayerTaskManagerNewTaskCreated),
+		taskResponseChan:   make(chan *cstaskmanager.ContractSertnTaskManagerTaskResponded),
+		newTaskCreatedChan: make(chan *cstaskmanager.ContractSertnTaskManagerNewTaskCreated),
 	}
 
 	return challenger, nil
@@ -120,12 +120,12 @@ func (c *Challenger) Start(ctx context.Context) error {
 
 }
 
-func (c *Challenger) processNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.ContractZklayerTaskManagerNewTaskCreated) uint32 {
+func (c *Challenger) processNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.ContractSertnTaskManagerNewTaskCreated) uint32 {
 	c.tasks[newTaskCreatedLog.TaskIndex] = newTaskCreatedLog.Task
 	return newTaskCreatedLog.TaskIndex
 }
 
-func (c *Challenger) processTaskResponseLog(taskResponseLog *cstaskmanager.ContractZklayerTaskManagerTaskResponded) uint32 {
+func (c *Challenger) processTaskResponseLog(taskResponseLog *cstaskmanager.ContractSertnTaskManagerTaskResponded) uint32 {
 	taskResponseRawLog, err := c.avsSubscriber.ParseTaskResponded(taskResponseLog.Raw)
 	if err != nil {
 		c.logger.Error("Error parsing task response. skipping task (this is probably bad and should be investigated)", "err", err)
@@ -194,7 +194,7 @@ func (c *Challenger) callChallengeModule(taskIndex uint32) error {
 	//return types.NoErrorInTaskResponse
 }
 
-func (c *Challenger) getNonSigningOperatorPubKeys(vLog *cstaskmanager.ContractZklayerTaskManagerTaskResponded) []cstaskmanager.BN254G1Point {
+func (c *Challenger) getNonSigningOperatorPubKeys(vLog *cstaskmanager.ContractSertnTaskManagerTaskResponded) []cstaskmanager.BN254G1Point {
 	c.logger.Info("vLog.Raw is", "vLog.Raw", vLog.Raw)
 
 	// get the nonSignerStakesAndSignature

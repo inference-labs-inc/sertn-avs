@@ -9,8 +9,8 @@ import (
 
 	"github.com/urfave/cli"
 
-	"github.com/inference-labs-inc/zklayer-avs/challenger"
-	"github.com/inference-labs-inc/zklayer-avs/core/config"
+	"github.com/inference-labs-inc/sertn-avs/challenger"
+	"github.com/inference-labs-inc/sertn-avs/core/config"
 )
 
 var (
@@ -25,8 +25,8 @@ func main() {
 	app := cli.NewApp()
 	app.Flags = config.Flags
 	app.Version = fmt.Sprintf("%s-%s-%s", Version, GitCommit, GitDate)
-	app.Name = "zklayer-challenger"
-	app.Usage = "Zklayer Challenger"
+	app.Name = "sertn-challenger"
+	app.Usage = "Sertn Challenger"
 	app.Description = "Service that challenges wrong response to the task."
 
 	app.Action = challengerMain

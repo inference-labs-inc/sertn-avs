@@ -9,12 +9,12 @@ import (
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/ethereum/go-ethereum/common"
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
-	aggtypes "github.com/inference-labs-inc/zklayer-avs/aggregator/types"
-	"github.com/inference-labs-inc/zklayer-avs/challenger/mocks"
-	chtypes "github.com/inference-labs-inc/zklayer-avs/challenger/types"
-	cstaskmanager "github.com/inference-labs-inc/zklayer-avs/contracts/bindings/ZklayerTaskManager"
-	chainiomocks "github.com/inference-labs-inc/zklayer-avs/core/chainio/mocks"
-	"github.com/inference-labs-inc/zklayer-avs/tests"
+	aggtypes "github.com/inference-labs-inc/sertn-avs/aggregator/types"
+	"github.com/inference-labs-inc/sertn-avs/challenger/mocks"
+	chtypes "github.com/inference-labs-inc/sertn-avs/challenger/types"
+	cstaskmanager "github.com/inference-labs-inc/sertn-avs/contracts/bindings/SertnTaskManager"
+	chainiomocks "github.com/inference-labs-inc/sertn-avs/core/chainio/mocks"
+	"github.com/inference-labs-inc/sertn-avs/tests"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -27,9 +27,9 @@ var OUTPUT, PROOF = tests.OutputAndProof()
 
 // @samlaf I tried pulling the MockTask struct froma ggregator_test but getting error: "undefined: aggregator.MockTask"
 type MockTask struct {
-	TaskNum        uint32
-	BlockNumber    uint32
-	NumberToSquare uint32
+	TaskNum     uint32
+	BlockNumber uint32
+	Inputs      [5]*big.Int
 }
 
 func TestCallChallengeModule(t *testing.T) {
@@ -140,7 +140,7 @@ func TestProcessTaskResponseLog(t *testing.T) {
 		NonSigningOperatorPubKeys: []cstaskmanager.BN254G1Point{},
 	}
 
-	taskResponseLog := cstaskmanager.ContractZklayerTaskManagerTaskResponded{
+	taskResponseLog := cstaskmanager.ContractSertnTaskManagerTaskResponded{
 		TaskResponse:         challenger.taskResponses[TASK_INDEX].TaskResponse,
 		TaskResponseMetadata: challenger.taskResponses[TASK_INDEX].TaskResponseMetadata,
 		Raw: gethtypes.Log{
@@ -184,8 +184,8 @@ func createMockChallenger(mockCtrl *gomock.Controller) (*Challenger, *chainiomoc
 		avsSubscriber:      mockAvsSubscriber,
 		tasks:              make(map[uint32]cstaskmanager.ITaskStructTask),
 		taskResponses:      make(map[uint32]chtypes.TaskResponseData),
-		taskResponseChan:   make(chan *cstaskmanager.ContractZklayerTaskManagerTaskResponded),
-		newTaskCreatedChan: make(chan *cstaskmanager.ContractZklayerTaskManagerNewTaskCreated),
+		taskResponseChan:   make(chan *cstaskmanager.ContractSertnTaskManagerTaskResponded),
+		newTaskCreatedChan: make(chan *cstaskmanager.ContractSertnTaskManagerNewTaskCreated),
 	}
 	return challenger, mockAvsWriter, mockAvsReader, mockAvsSubscriber, mockEthClient, nil
 }

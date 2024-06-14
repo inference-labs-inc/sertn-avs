@@ -4,7 +4,7 @@ from utils import parse_input, input_to_field_element
 
 try:
     parser = argparse.ArgumentParser(
-                        prog='Zklayer AVS ezkl operator engine')
+                        prog='Sertn AVS ezkl operator engine')
 
     parser.add_argument('-i','--input', nargs='+', help='input data to run on', required=False)
     args = parser.parse_args()

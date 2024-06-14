@@ -1,4 +1,4 @@
-export const zkLayer = {
+export const sertn = {
   abi: [
     {
       type: "constructor",

@@ -23,7 +23,7 @@ rm -rf bindings/*
 forge clean
 forge build
 
-avs_service_contracts="ZklayerServiceManager ZklayerTaskManager"
+avs_service_contracts="SertnServiceManager SertnTaskManager"
 for contract in $avs_service_contracts; do
     create_binding . $contract ./bindings
 done

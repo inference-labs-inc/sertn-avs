@@ -2,17 +2,17 @@
 pragma solidity ^0.8.12;
 
 import "forge-std/Test.sol";
-import "../src/ZklayerServiceManager.sol" as zklm;
+import "../src/SertnServiceManager.sol" as sertnsm;
 import {InferenceDB} from "../src/InferenceDb.sol";
-import {ZklayerTaskManager} from "../src/ZklayerTaskManager.sol";
+import {SertnTaskManager} from "../src/SertnTaskManager.sol";
 import {BLSMockAVSDeployer} from "@eigenlayer-middleware/test/utils/BLSMockAVSDeployer.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
-contract ZklayerTaskManagerTest is Test, BLSMockAVSDeployer {
-    zklm.ZklayerServiceManager sm;
-    zklm.ZklayerServiceManager smImplementation;
-    ZklayerTaskManager tm;
-    ZklayerTaskManager tmImplementation;
+contract SertnTaskManagerTest is Test, BLSMockAVSDeployer {
+    sertnsm.SertnServiceManager sm;
+    sertnsm.SertnServiceManager smImplementation;
+    SertnTaskManager tm;
+    SertnTaskManager tmImplementation;
 
     uint32 public constant TASK_RESPONSE_WINDOW_BLOCK = 30;
     address aggregator =
@@ -24,12 +24,12 @@ contract ZklayerTaskManagerTest is Test, BLSMockAVSDeployer {
         _setUpBLSMockAVSDeployer();
         InferenceDB inferenceDB = new InferenceDB(0, address(0));
 
-        tmImplementation = new ZklayerTaskManager(
-            zklm.IRegistryCoordinator(address(registryCoordinator))
+        tmImplementation = new SertnTaskManager(
+            sertnsm.IRegistryCoordinator(address(registryCoordinator))
         );
 
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
-        tm = ZklayerTaskManager(
+        tm = SertnTaskManager(
             address(
                 new TransparentUpgradeableProxy(
                     address(tmImplementation),

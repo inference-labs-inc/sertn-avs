@@ -9,8 +9,8 @@ import (
 
 	"github.com/urfave/cli"
 
-	"github.com/inference-labs-inc/zklayer-avs/aggregator"
-	"github.com/inference-labs-inc/zklayer-avs/core/config"
+	"github.com/inference-labs-inc/sertn-avs/aggregator"
+	"github.com/inference-labs-inc/sertn-avs/core/config"
 )
 
 var (
@@ -25,8 +25,8 @@ func main() {
 	app := cli.NewApp()
 	app.Flags = config.Flags
 	app.Version = fmt.Sprintf("%s-%s-%s", Version, GitCommit, GitDate)
-	app.Name = "zklayer-aggregator"
-	app.Usage = "Zklayer Aggregator"
+	app.Name = "sertn-aggregator"
+	app.Usage = "Sertn Aggregator"
 	app.Description = "Service that sends number to be credibly squared by operator nodes."
 
 	app.Action = aggregatorMain

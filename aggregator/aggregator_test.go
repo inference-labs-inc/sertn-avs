@@ -17,11 +17,11 @@ import (
 	blsaggservmock "github.com/Layr-Labs/eigensdk-go/services/mocks/blsagg"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 
-	"github.com/inference-labs-inc/zklayer-avs/aggregator/mocks"
-	"github.com/inference-labs-inc/zklayer-avs/aggregator/types"
-	cstaskmanager "github.com/inference-labs-inc/zklayer-avs/contracts/bindings/ZklayerTaskManager"
-	chainiomocks "github.com/inference-labs-inc/zklayer-avs/core/chainio/mocks"
-	"github.com/inference-labs-inc/zklayer-avs/tests"
+	"github.com/inference-labs-inc/sertn-avs/aggregator/mocks"
+	"github.com/inference-labs-inc/sertn-avs/aggregator/types"
+	cstaskmanager "github.com/inference-labs-inc/sertn-avs/contracts/bindings/SertnTaskManager"
+	chainiomocks "github.com/inference-labs-inc/sertn-avs/core/chainio/mocks"
+	"github.com/inference-labs-inc/sertn-avs/tests"
 )
 
 var MOCK_OPERATOR_ID = [32]byte{207, 73, 226, 221, 104, 100, 123, 41, 192, 3, 9, 119, 90, 83, 233, 159, 231, 151, 245, 96, 150, 48, 144, 27, 102, 253, 39, 101, 1, 26, 135, 173}
@@ -29,9 +29,9 @@ var MOCK_OPERATOR_STAKE = big.NewInt(100)
 var MOCK_OPERATOR_BLS_PRIVATE_KEY_STRING = "50"
 
 type MockTask struct {
-	TaskNum        uint32
-	BlockNumber    uint32
-	NumberToSquare uint32
+	TaskNum     uint32
+	BlockNumber uint32
+	Inputs      [5]*big.Int
 }
 
 func TestSendNewTask(t *testing.T) {
@@ -62,7 +62,7 @@ func TestSendNewTask(t *testing.T) {
 	inputs := tests.TestInputs()
 
 	mockAvsWriterer.EXPECT().SendNewTaskInput(
-		context.Background(), inputs, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS, false).Return(mocks.MockSendNewTaskNumberToSquareCall(BLOCK_NUMBER, TASK_INDEX, inputs))
+		context.Background(), inputs, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS, false).Return(mocks.MockSendNewTaskInputsCall(BLOCK_NUMBER, TASK_INDEX, inputs))
 
 	// 100 blocks, each takes 12 seconds. We hardcode for now since aggregator also hardcodes this value
 	taskTimeToExpiry := 100 * 12 * time.Second

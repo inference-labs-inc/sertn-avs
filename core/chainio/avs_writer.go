@@ -13,8 +13,8 @@ import (
 	logging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 
-	cstaskmanager "github.com/inference-labs-inc/zklayer-avs/contracts/bindings/ZklayerTaskManager"
-	"github.com/inference-labs-inc/zklayer-avs/core/config"
+	cstaskmanager "github.com/inference-labs-inc/sertn-avs/contracts/bindings/SertnTaskManager"
+	"github.com/inference-labs-inc/sertn-avs/core/config"
 )
 
 type AvsWriterer interface {
@@ -64,7 +64,7 @@ type AvsWriter struct {
 var _ AvsWriterer = (*AvsWriter)(nil)
 
 func BuildAvsWriterFromConfig(c *config.Config) (*AvsWriter, error) {
-	return BuildAvsWriter(c.TxMgr, c.ZklayerRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr, c.EthHttpClient, c.Logger)
+	return BuildAvsWriter(c.TxMgr, c.SertnRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr, c.EthHttpClient, c.Logger)
 }
 
 func BuildAvsWriter(txMgr txmgr.TxManager, registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address, ethHttpClient eth.Client, logger logging.Logger) (*AvsWriter, error) {
@@ -105,7 +105,7 @@ func (w *AvsWriter) SendNewTaskInput(ctx context.Context, inputs [5]*big.Int, qu
 		w.logger.Errorf("Error submitting CreateNewTask tx")
 		return cstaskmanager.ITaskStructTask{}, 0, err
 	}
-	newTaskCreatedEvent, err := w.AvsContractBindings.TaskManager.ContractZklayerTaskManagerFilterer.ParseNewTaskCreated(*receipt.Logs[0])
+	newTaskCreatedEvent, err := w.AvsContractBindings.TaskManager.ContractSertnTaskManagerFilterer.ParseNewTaskCreated(*receipt.Logs[0])
 	if err != nil {
 		w.logger.Error("Aggregator failed to parse new task created event", "err", err)
 		return cstaskmanager.ITaskStructTask{}, 0, err

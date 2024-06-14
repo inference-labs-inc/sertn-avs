@@ -1,4 +1,4 @@
-# zkLayer AVS
+# sertn AVS
 
 <b> Do not use it in Production, testnet only. </b>
 
@@ -32,7 +32,7 @@ Start anvil in a separate terminal:
 make start-chain
 ```
 
-The above command starts a local anvil chain from a [saved state](./tests/anvil/avs-and-eigenlayer-deployed-anvil-state.json) with eigenlayer and zkLayer contracts already deployed (but no operator registered).
+The above command starts a local anvil chain from a [saved state](./tests/anvil/avs-and-eigenlayer-deployed-anvil-state.json) with eigenlayer and sertn contracts already deployed (but no operator registered).
 
 Start the aggregator:
 
@@ -40,7 +40,7 @@ Start the aggregator:
 make start-aggregator
 ```
 
-Register the operator with eigenlayer and zkLayer, and then start the process:
+Register the operator with eigenlayer and sertn, and then start the process:
 
 ```bash
 make start-operator
@@ -54,9 +54,9 @@ The architecture of the AVS contains:
 
 - [Eigenlayer core](https://github.com/Layr-Labs/eigenlayer-contracts/tree/master) contracts
 - AVS contracts
-  - [ServiceManager](contracts/src/ZklayerServiceManager.sol) which will eventually contain slashing logic but for M2 is just a placeholder.
-  - [TaskManager](contracts/src/ZklayerTaskManager.sol) which contains [task creation](contracts/src/ZklayerTaskManager.sol#L83) and [task response](contracts/src/ZklayerTaskManager.sol#L102) logic.
-  - The [challenge](contracts/src/ZklayerTaskManager.sol#L176) logic could be separated into its own contract, but we have decided to include it in the TaskManager for this simple task.
+  - [ServiceManager](contracts/src/SertnServiceManager.sol) which will eventually contain slashing logic but for M2 is just a placeholder.
+  - [TaskManager](contracts/src/SertnTaskManager.sol) which contains [task creation](contracts/src/SertnTaskManager.sol#L83) and [task response](contracts/src/SertnTaskManager.sol#L102) logic.
+  - The [challenge](contracts/src/SertnTaskManager.sol#L176) logic could be separated into its own contract, but we have decided to include it in the TaskManager for this simple task.
   - Set of [registry contracts](https://github.com/Layr-Labs/eigenlayer-middleware) to manage operators opted in to this avs
 - Task Generator
   - in a real world scenario, this could be a separate entity, but for this simple demo, the aggregator also acts as the task generator
@@ -68,16 +68,16 @@ The architecture of the AVS contains:
 
 ![](./diagrams/architecture.png)
 
-1. A task generator (in our case, same as the aggregator) publishes tasks once every regular interval (say 10 blocks, you are free to set your own interval) to the ZklayerTaskManager contract's [createNewTask](contracts/src/ZklayerTaskManager.sol#L83) function. Each task specifies an array of 5 uint256s `inputs` for which it wants the currently opted-in operators to determine its inference. `createNewTask` also takes `quorumNumbers` and `quorumThresholdPercentage` which requests that each listed quorum (we only use quorumNumber 0 in zkLayer) needs to reach at least thresholdPercentage of operator signatures.
+1. A task generator (in our case, same as the aggregator) publishes tasks once every regular interval (say 10 blocks, you are free to set your own interval) to the SertnTaskManager contract's [createNewTask](contracts/src/SertnTaskManager.sol#L83) function. Each task specifies an array of 5 uint256s `inputs` for which it wants the currently opted-in operators to determine its inference. `createNewTask` also takes `quorumNumbers` and `quorumThresholdPercentage` which requests that each listed quorum (we only use quorumNumber 0 in sertn) needs to reach at least thresholdPercentage of operator signatures.
 
 2. A [registry](https://github.com/Layr-Labs/eigenlayer-middleware/blob/master/src/BLSRegistryCoordinatorWithIndices.sol) contract is deployed that allows any eigenlayer operator with at least 1 delegated [mockerc20](contracts/src/ERC20Mock.sol) token to opt-in to this AVS and also de-register from this AVS.
 
 3. [Operator] The operators who are currently opted-in with the AVS need to read the inputs from the Task contract, compute its inference, sign on that computed result (over the BN254 curve) and send their taskResponse and signature to the aggregator.
 
-4. [Aggregator] The aggregator collects the signatures from the operators and aggregates them using BLS aggregation. If any response passes the [quorumThresholdPercentage](contracts/src/IZklayerTaskManager.sol#L36) set by the task generator when posting the task, the aggregator posts the aggregated response to the Task contract.
+4. [Aggregator] The aggregator collects the signatures from the operators and aggregates them using BLS aggregation. If any response passes the [quorumThresholdPercentage](contracts/src/ISertnTaskManager.sol#L36) set by the task generator when posting the task, the aggregator posts the aggregated response to the Task contract.
 
-5. If a response was sent within the [response window](contracts/src/ZklayerTaskManager.sol#L119), we enter the [Dispute resolution] period.
-   - [Off-chain] A challenge window is launched during which anyone can [raise a dispute](contracts/src/ZklayerTaskManager.sol#L171) in a DisputeResolution contract (in our case, this is the same as the TaskManager contract)
+5. If a response was sent within the [response window](contracts/src/SertnTaskManager.sol#L119), we enter the [Dispute resolution] period.
+   - [Off-chain] A challenge window is launched during which anyone can [raise a dispute](contracts/src/SertnTaskManager.sol#L171) in a DisputeResolution contract (in our case, this is the same as the TaskManager contract)
    - [On-chain] The DisputeResolution contract resolves that a particular operator’s response is not the correct response (that is, not the inference of the integers specified in the task) or the opted-in operator didn’t respond during the response window. If the dispute is resolved, the operator will be frozen in the Registration contract and the veto committee will decide whether to veto the freezing request or not.
 
 Below is a more detailed uml diagram of the aggregator and operator processes:
@@ -109,7 +109,7 @@ When running on anvil, a typical log for the operator is
 
 ```
 [2024-04-09 18:25:08.647 PDT] INFO (logging/zap_logger.go:49) rpc client is nil. Dialing aggregator rpc client
-[2024-04-09 18:25:08.650 PDT] INFO (logging/zap_logger.go:49) Sending signed task response header to aggregator {"signedTaskResponse":"\u0026aggregator.SignedTaskResponse{TaskResponse:contractZklayerTaskManager.ITaskStructTaskResponse{ReferenceTaskIndex:0x2, NumberSquared:4}, BlsSignature:bls.Signature{G1Point:(*bls.G1Point)(0x14000282068)}, OperatorId:[32]uint8{0xc4, 0xc2, 0x10, 0x30, 0xe, 0x28, 0xab, 0x4b, 0xa7, 0xb, 0x7f, 0xbb, 0xe, 0xfa, 0x55, 0x7d, 0x2a, 0x2a, 0x5f, 0x1f, 0xbf, 0xa6, 0xf8, 0x56, 0xe4, 0xcf, 0x3e, 0x9d, 0x76, 0x6a, 0x21, 0xdc}}"}
+[2024-04-09 18:25:08.650 PDT] INFO (logging/zap_logger.go:49) Sending signed task response header to aggregator {"signedTaskResponse":"\u0026aggregator.SignedTaskResponse{TaskResponse:contractSertnTaskManager.ITaskStructTaskResponse{ReferenceTaskIndex:0x2, NumberSquared:4}, BlsSignature:bls.Signature{G1Point:(*bls.G1Point)(0x14000282068)}, OperatorId:[32]uint8{0xc4, 0xc2, 0x10, 0x30, 0xe, 0x28, 0xab, 0x4b, 0xa7, 0xb, 0x7f, 0xbb, 0xe, 0xfa, 0x55, 0x7d, 0x2a, 0x2a, 0x5f, 0x1f, 0xbf, 0xa6, 0xf8, 0x56, 0xe4, 0xcf, 0x3e, 0x9d, 0x76, 0x6a, 0x21, 0xdc}}"}
 [2024-04-09 18:25:08.651 PDT] INFO (logging/zap_logger.go:49) Received error from aggregator {"err":"task 2 not initialized or already completed"}
 [2024-04-09 18:25:08.651 PDT] INFO (logging/zap_logger.go:69) Retrying in 2 seconds
 [2024-04-09 18:25:10.679 PDT] INFO (logging/zap_logger.go:49) Signed task response header accepted by aggregator. {"reply":false}

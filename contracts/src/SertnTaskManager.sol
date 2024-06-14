@@ -10,10 +10,10 @@ import {RegistryCoordinator} from "@eigenlayer-middleware/src/RegistryCoordinato
 import {BLSSignatureChecker, IRegistryCoordinator} from "@eigenlayer-middleware/src/BLSSignatureChecker.sol";
 import {OperatorStateRetriever} from "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 import "@eigenlayer-middleware/src/libraries/BN254.sol";
-import "./IZklayerTaskManager.sol";
+import "./ISertnTaskManager.sol";
 import {IInferenceDB} from "./IInferenceDB.sol";
 
-contract ZklayerTaskManager is
+contract SertnTaskManager is
     Initializable,
     OwnableUpgradeable,
     Pausable,

@@ -4,4 +4,4 @@ import "./ITaskStruct.sol";
 
 import "@eigenlayer-middleware/src/libraries/BN254.sol";
 
-interface IZklayerTaskManager {}
+interface ISertnTaskManager {}

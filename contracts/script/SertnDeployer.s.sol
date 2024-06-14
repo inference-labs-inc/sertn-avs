@@ -18,9 +18,9 @@ import {IndexRegistry} from "@eigenlayer-middleware/src/IndexRegistry.sol";
 import {StakeRegistry} from "@eigenlayer-middleware/src/StakeRegistry.sol";
 import "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 
-import {ZklayerServiceManager, IServiceManager} from "../src/ZklayerServiceManager.sol";
-import {ZklayerTaskManager} from "../src/ZklayerTaskManager.sol";
-import {IZklayerTaskManager} from "../src/IZklayerTaskManager.sol";
+import {SertnServiceManager, IServiceManager} from "../src/SertnServiceManager.sol";
+import {SertnTaskManager} from "../src/SertnTaskManager.sol";
+import {ISertnTaskManager} from "../src/ISertnTaskManager.sol";
 import "../src/ERC20Mock.sol";
 
 import {ZKVerifier} from "../src/ZKVerifier.sol";
@@ -33,8 +33,8 @@ import "forge-std/StdJson.sol";
 import "forge-std/console.sol";
 
 // # To deploy and verify our contract
-// forge script script/ZklayerDeployer.s.sol:ZklayerDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
-contract ZklayerDeployer is Script, Utils {
+// forge script script/SertnDeployer.s.sol:SertnDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
+contract SertnDeployer is Script, Utils {
     // DEPLOYMENT CONSTANTS
     uint256 public constant QUORUM_THRESHOLD_PERCENTAGE = 100;
     // uint32 public constant TASK_RESPONSE_WINDOW_BLOCK = 30;
@@ -50,9 +50,9 @@ contract ZklayerDeployer is Script, Utils {
     ERC20Mock public erc20Mock;
     StrategyBaseTVLLimits public erc20MockStrategy;
 
-    // Zklayer contracts
-    ProxyAdmin public zklayerProxyAdmin;
-    PauserRegistry public zklayerPauserReg;
+    // Sertn contracts
+    ProxyAdmin public sertnProxyAdmin;
+    PauserRegistry public sertnPauserReg;
 
     regcoord.RegistryCoordinator public registryCoordinator;
     regcoord.IRegistryCoordinator public registryCoordinatorImplementation;
@@ -68,11 +68,11 @@ contract ZklayerDeployer is Script, Utils {
 
     OperatorStateRetriever public operatorStateRetriever;
 
-    ZklayerServiceManager public zklayerServiceManager;
-    IServiceManager public zklayerServiceManagerImplementation;
+    SertnServiceManager public sertnServiceManager;
+    IServiceManager public sertnServiceManagerImplementation;
 
-    ZklayerTaskManager public zklayerTaskManager;
-    ZklayerTaskManager public zklayerTaskManagerImplementation;
+    SertnTaskManager public sertnTaskManager;
+    SertnTaskManager public sertnTaskManagerImplementation;
 
     function run() external {
         // Eigenlayer contracts
@@ -116,8 +116,8 @@ contract ZklayerDeployer is Script, Utils {
                 )
             );
 
-        address zklayerCommunityMultisig = msg.sender;
-        address zklayerPauser = msg.sender;
+        address sertnCommunityMultisig = msg.sender;
+        address sertnPauser = msg.sender;
 
         vm.startBroadcast();
         _deployErc20AndStrategyAndWhitelistStrategy(
@@ -126,12 +126,12 @@ contract ZklayerDeployer is Script, Utils {
             baseStrategyImplementation,
             strategyManager
         );
-        _deployZklayerContracts(
+        _deploySertnContracts(
             delegationManager,
             avsDirectory,
             erc20MockStrategy,
-            zklayerCommunityMultisig,
-            zklayerPauser
+            sertnCommunityMultisig,
+            sertnPauser
         );
         vm.stopBroadcast();
     }
@@ -170,12 +170,12 @@ contract ZklayerDeployer is Script, Utils {
         );
     }
 
-    function _deployZklayerContracts(
+    function _deploySertnContracts(
         IDelegationManager delegationManager,
         IAVSDirectory avsDirectory,
         IStrategy strat,
-        address zklayerCommunityMultisig,
-        address zklayerPauser
+        address sertnCommunityMultisig,
+        address sertnPauser
     ) internal {
         // Adding this as a temporary fix to make the rest of the script work with a single strategy
         // since it was originally written to work with an array of strategies
@@ -183,16 +183,16 @@ contract ZklayerDeployer is Script, Utils {
         uint numStrategies = deployedStrategyArray.length;
 
         // deploy proxy admin for ability to upgrade proxy contracts
-        zklayerProxyAdmin = new ProxyAdmin();
+        sertnProxyAdmin = new ProxyAdmin();
 
         // deploy pauser registry
         {
             address[] memory pausers = new address[](2);
-            pausers[0] = zklayerPauser;
-            pausers[1] = zklayerCommunityMultisig;
-            zklayerPauserReg = new PauserRegistry(
+            pausers[0] = sertnPauser;
+            pausers[1] = sertnCommunityMultisig;
+            sertnPauserReg = new PauserRegistry(
                 pausers,
-                zklayerCommunityMultisig
+                sertnCommunityMultisig
             );
         }
 
@@ -204,20 +204,20 @@ contract ZklayerDeployer is Script, Utils {
          * First, deploy upgradeable proxy contracts that **will point** to the implementations. Since the implementation contracts are
          * not yet deployed, we give these proxies an empty contract as the initial implementation, to act as if they have no code.
          */
-        zklayerServiceManager = ZklayerServiceManager(
+        sertnServiceManager = SertnServiceManager(
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
-                    address(zklayerProxyAdmin),
+                    address(sertnProxyAdmin),
                     ""
                 )
             )
         );
-        zklayerTaskManager = ZklayerTaskManager(
+        sertnTaskManager = SertnTaskManager(
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
-                    address(zklayerProxyAdmin),
+                    address(sertnProxyAdmin),
                     ""
                 )
             )
@@ -226,7 +226,7 @@ contract ZklayerDeployer is Script, Utils {
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
-                    address(zklayerProxyAdmin),
+                    address(sertnProxyAdmin),
                     ""
                 )
             )
@@ -235,7 +235,7 @@ contract ZklayerDeployer is Script, Utils {
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
-                    address(zklayerProxyAdmin),
+                    address(sertnProxyAdmin),
                     ""
                 )
             )
@@ -244,7 +244,7 @@ contract ZklayerDeployer is Script, Utils {
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
-                    address(zklayerProxyAdmin),
+                    address(sertnProxyAdmin),
                     ""
                 )
             )
@@ -253,7 +253,7 @@ contract ZklayerDeployer is Script, Utils {
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
-                    address(zklayerProxyAdmin),
+                    address(sertnProxyAdmin),
                     ""
                 )
             )
@@ -268,7 +268,7 @@ contract ZklayerDeployer is Script, Utils {
                 delegationManager
             );
 
-            zklayerProxyAdmin.upgrade(
+            sertnProxyAdmin.upgrade(
                 TransparentUpgradeableProxy(payable(address(stakeRegistry))),
                 address(stakeRegistryImplementation)
             );
@@ -277,7 +277,7 @@ contract ZklayerDeployer is Script, Utils {
                 registryCoordinator
             );
 
-            zklayerProxyAdmin.upgrade(
+            sertnProxyAdmin.upgrade(
                 TransparentUpgradeableProxy(payable(address(blsApkRegistry))),
                 address(blsApkRegistryImplementation)
             );
@@ -286,14 +286,14 @@ contract ZklayerDeployer is Script, Utils {
                 registryCoordinator
             );
 
-            zklayerProxyAdmin.upgrade(
+            sertnProxyAdmin.upgrade(
                 TransparentUpgradeableProxy(payable(address(indexRegistry))),
                 address(indexRegistryImplementation)
             );
         }
 
         registryCoordinatorImplementation = new regcoord.RegistryCoordinator(
-            zklayerServiceManager,
+            sertnServiceManager,
             regcoord.IStakeRegistry(address(stakeRegistry)),
             regcoord.IBLSApkRegistry(address(blsApkRegistry)),
             regcoord.IIndexRegistry(address(indexRegistry))
@@ -339,7 +339,7 @@ contract ZklayerDeployer is Script, Utils {
                         });
                 }
             }
-            zklayerProxyAdmin.upgradeAndCall(
+            sertnProxyAdmin.upgradeAndCall(
                 TransparentUpgradeableProxy(
                     payable(address(registryCoordinator))
                 ),
@@ -347,10 +347,10 @@ contract ZklayerDeployer is Script, Utils {
                 abi.encodeWithSelector(
                     regcoord.RegistryCoordinator.initialize.selector,
                     // we set churnApprover and ejector to communityMultisig because we don't need them
-                    zklayerCommunityMultisig,
-                    zklayerCommunityMultisig,
-                    zklayerCommunityMultisig,
-                    zklayerPauserReg,
+                    sertnCommunityMultisig,
+                    sertnCommunityMultisig,
+                    sertnCommunityMultisig,
+                    sertnPauserReg,
                     0, // 0 initialPausedStatus means everything unpaused
                     quorumsOperatorSetParams,
                     quorumsMinimumStake,
@@ -359,36 +359,36 @@ contract ZklayerDeployer is Script, Utils {
             );
         }
 
-        zklayerServiceManagerImplementation = new ZklayerServiceManager(
+        sertnServiceManagerImplementation = new SertnServiceManager(
             avsDirectory,
             registryCoordinator,
             stakeRegistry,
-            address(zklayerTaskManager)
+            address(sertnTaskManager)
         );
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
-        zklayerProxyAdmin.upgrade(
+        sertnProxyAdmin.upgrade(
             TransparentUpgradeableProxy(
-                payable(address(zklayerServiceManager))
+                payable(address(sertnServiceManager))
             ),
-            address(zklayerServiceManagerImplementation)
+            address(sertnServiceManagerImplementation)
         );
 
-        zklayerTaskManagerImplementation = new ZklayerTaskManager(
+        sertnTaskManagerImplementation = new SertnTaskManager(
             registryCoordinator
         );
         ZKVerifier zkVerifier = new ZKVerifier();
         // Todo: opnun change 0 to number of blocks producer has to respond
         InferenceDB inferenceDB = new InferenceDB(0, address(zkVerifier));
-        inferenceDB.updateTaskManager(address(zklayerTaskManager));
+        inferenceDB.updateTaskManager(address(sertnTaskManager));
 
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
-        zklayerProxyAdmin.upgradeAndCall(
-            TransparentUpgradeableProxy(payable(address(zklayerTaskManager))),
-            address(zklayerTaskManagerImplementation),
+        sertnProxyAdmin.upgradeAndCall(
+            TransparentUpgradeableProxy(payable(address(sertnTaskManager))),
+            address(sertnTaskManagerImplementation),
             abi.encodeWithSelector(
-                zklayerTaskManager.initialize.selector,
-                zklayerPauserReg,
-                zklayerCommunityMultisig,
+                sertnTaskManager.initialize.selector,
+                sertnPauserReg,
+                sertnCommunityMultisig,
                 AGGREGATOR_ADDR,
                 TASK_GENERATOR_ADDR,
                 address(inferenceDB)
@@ -411,23 +411,23 @@ contract ZklayerDeployer is Script, Utils {
         );
         vm.serializeAddress(
             deployed_addresses,
-            "zklayerServiceManager",
-            address(zklayerServiceManager)
+            "sertnServiceManager",
+            address(sertnServiceManager)
         );
         vm.serializeAddress(
             deployed_addresses,
-            "zklayerServiceManagerImplementation",
-            address(zklayerServiceManagerImplementation)
+            "sertnServiceManagerImplementation",
+            address(sertnServiceManagerImplementation)
         );
         vm.serializeAddress(
             deployed_addresses,
-            "zklayerTaskManager",
-            address(zklayerTaskManager)
+            "sertnTaskManager",
+            address(sertnTaskManager)
         );
         vm.serializeAddress(
             deployed_addresses,
-            "zklayerTaskManagerImplementation",
-            address(zklayerTaskManagerImplementation)
+            "sertnTaskManagerImplementation",
+            address(sertnTaskManagerImplementation)
         );
         vm.serializeAddress(
             deployed_addresses,
@@ -457,6 +457,6 @@ contract ZklayerDeployer is Script, Utils {
             deployed_addresses_output
         );
 
-        writeOutput(finalJson, "zklayer_avs_deployment_output");
+        writeOutput(finalJson, "sertn_avs_deployment_output");
     }
 }

@@ -9,7 +9,7 @@ CHALLENGER_ECDSA_PRIV_KEY=0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9
 
 CHAINID=31337
 # Make sure to update this if the strategy address changes
-# check in contracts/script/output/${CHAINID}/zklayer_avs_deployment_output.json
+# check in contracts/script/output/${CHAINID}/sertn_avs_deployment_output.json
 STRATEGY_ADDRESS=0x7a2088a1bFc9d81c55368AE168C2C02570cB814F
 DEPLOYMENT_FILES_DIR=contracts/script/output/${CHAINID}
 
@@ -20,7 +20,7 @@ setup-python:
 	python3 -m venv ./.venv && source ./.venv/bin/activate && pip install -r ./python/requirements.txt
 
 start-interface: ## builds all contracts
-	cd zklayer-fe && npm i && npm run dev
+	cd sertn-fe && npm i && npm run dev
 
 build-contracts: ## builds all contracts
 	cd contracts && forge build
@@ -28,10 +28,10 @@ build-contracts: ## builds all contracts
 deploy-eigenlayer-contracts-to-anvil-and-save-state: ## Deploy eigenlayer
 	./tests/anvil/deploy-eigenlayer-save-anvil-state.sh
 
-deploy-zklayer-contracts-to-anvil-and-save-state: ## Deploy avs
+deploy-sertn-contracts-to-anvil-and-save-state: ## Deploy avs
 	./tests/anvil/deploy-avs-save-anvil-state.sh
 
-deploy-contracts: deploy-eigenlayer-contracts-to-anvil-and-save-state deploy-zklayer-contracts-to-anvil-and-save-state ## deploy eigenlayer, shared avs contracts, and inc-sq contracts 
+deploy-contracts: deploy-eigenlayer-contracts-to-anvil-and-save-state deploy-sertn-contracts-to-anvil-and-save-state ## deploy eigenlayer, shared avs contracts, and inc-sq contracts 
 
 start-chain: ## starts anvil from a saved state file (with el and avs contracts deployed)
 	./tests/anvil/start-anvil-chain-with-el-and-avs-deployed.sh
@@ -67,7 +67,7 @@ send-fund: ## sends fund to the operator saved in tests/keys/test.ecdsa.key.json
 ____OFFCHAIN_SOFTWARE___: ## 
 start-aggregator: ## 
 	source ./.venv/bin/activate && go run aggregator/cmd/main.go --config config-files/aggregator.yaml \
-		--zklayer-deployment ${DEPLOYMENT_FILES_DIR}/zklayer_avs_deployment_output.json \
+		--sertn-deployment ${DEPLOYMENT_FILES_DIR}/sertn_avs_deployment_output.json \
 		--ecdsa-private-key ${AGGREGATOR_ECDSA_PRIV_KEY} \
 		2>&1 | zap-pretty
 
@@ -77,7 +77,7 @@ start-operator: ##
 
 start-challenger: ## 
 	source ./.venv/bin/activate && go run challenger/cmd/main.go --config config-files/challenger.yaml \
-		--zklayer-deployment ${DEPLOYMENT_FILES_DIR}/zklayer_avs_deployment_output.json \
+		--sertn-deployment ${DEPLOYMENT_FILES_DIR}/sertn_avs_deployment_output.json \
 		--ecdsa-private-key ${CHALLENGER_ECDSA_PRIV_KEY} \
 		2>&1 | zap-pretty
 

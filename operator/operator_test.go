@@ -14,12 +14,12 @@ import (
 
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 
-	"github.com/inference-labs-inc/zklayer-avs/aggregator"
-	aggtypes "github.com/inference-labs-inc/zklayer-avs/aggregator/types"
-	cstaskmanager "github.com/inference-labs-inc/zklayer-avs/contracts/bindings/ZklayerTaskManager"
-	chainiomocks "github.com/inference-labs-inc/zklayer-avs/core/chainio/mocks"
-	operatormocks "github.com/inference-labs-inc/zklayer-avs/operator/mocks"
-	"github.com/inference-labs-inc/zklayer-avs/tests"
+	"github.com/inference-labs-inc/sertn-avs/aggregator"
+	aggtypes "github.com/inference-labs-inc/sertn-avs/aggregator/types"
+	cstaskmanager "github.com/inference-labs-inc/sertn-avs/contracts/bindings/SertnTaskManager"
+	chainiomocks "github.com/inference-labs-inc/sertn-avs/core/chainio/mocks"
+	operatormocks "github.com/inference-labs-inc/sertn-avs/operator/mocks"
+	"github.com/inference-labs-inc/sertn-avs/tests"
 )
 
 func TestOperator(t *testing.T) {
@@ -29,7 +29,7 @@ func TestOperator(t *testing.T) {
 
 	t.Run("ProcessNewTaskCreatedLog", func(t *testing.T) {
 		var inputs = tests.TestInputs()
-		newTaskCreatedLog := &cstaskmanager.ContractZklayerTaskManagerNewTaskCreated{
+		newTaskCreatedLog := &cstaskmanager.ContractSertnTaskManagerNewTaskCreated{
 			TaskIndex: taskIndex,
 			Task: cstaskmanager.ITaskStructTask{
 				Inputs:                    inputs,
@@ -51,7 +51,7 @@ func TestOperator(t *testing.T) {
 		inputs := tests.TestInputs()
 		output := tests.GoodOutput()
 		// new task event
-		newTaskCreatedEvent := &cstaskmanager.ContractZklayerTaskManagerNewTaskCreated{
+		newTaskCreatedEvent := &cstaskmanager.ContractSertnTaskManagerNewTaskCreated{
 			TaskIndex: taskIndex,
 			Task: cstaskmanager.ITaskStructTask{
 				Inputs:                    inputs,

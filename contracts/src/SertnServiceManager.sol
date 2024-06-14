@@ -2,23 +2,23 @@
 pragma solidity ^0.8.9;
 
 import "@eigenlayer/contracts/libraries/BytesLib.sol";
-import "./IZklayerTaskManager.sol";
+import "./ISertnTaskManager.sol";
 import "@eigenlayer-middleware/src/ServiceManagerBase.sol";
 
 /**
- * @title Primary entrypoint for procuring services from Zklayer.
+ * @title Primary entrypoint for procuring services from Sertn.
  * @author Layr Labs, Inc.
  */
-contract ZklayerServiceManager is ServiceManagerBase {
+contract SertnServiceManager is ServiceManagerBase {
     using BytesLib for bytes;
 
-    IZklayerTaskManager public immutable zklayerTaskManager;
+    ISertnTaskManager public immutable sertnTaskManager;
 
     /// @notice when applied to a function, ensures that the function is only callable by the `registryCoordinator`.
-    modifier onlyZklayerTaskManager() {
+    modifier onlySertnTaskManager() {
         require(
-            msg.sender == address(zklayerTaskManager),
-            "onlyZklayerTaskManager: not from zklayer task manager"
+            msg.sender == address(sertnTaskManager),
+            "onlySertnTaskManager: not from sertn task manager"
         );
         _;
     }
@@ -27,7 +27,7 @@ contract ZklayerServiceManager is ServiceManagerBase {
         IAVSDirectory _avsDirectory,
         IRegistryCoordinator _registryCoordinator,
         IStakeRegistry _stakeRegistry,
-        address _zklayerTaskManager
+        address _sertnTaskManager
     )
         ServiceManagerBase(
             _avsDirectory,
@@ -36,7 +36,7 @@ contract ZklayerServiceManager is ServiceManagerBase {
             _stakeRegistry
         )
     {
-        zklayerTaskManager = IZklayerTaskManager(_zklayerTaskManager);
+        sertnTaskManager = ISertnTaskManager(_sertnTaskManager);
     }
 
     /// @notice Called in the event of challenge resolution, in order to forward a call to the Slasher, which 'freezes' the `operator`.
@@ -44,7 +44,7 @@ contract ZklayerServiceManager is ServiceManagerBase {
     ///      We recommend writing slashing logic without integrating with the Slasher at this point in time.
     function freezeOperator(
         address operatorAddr
-    ) external onlyZklayerTaskManager {
+    ) external onlySertnTaskManager {
         // slasher.freezeOperator(operatorAddr);
     }
 }
