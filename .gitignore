@@ -31,3 +31,5 @@ id_rsa
 __pycache__
 
 .DS_Store
+
+.secret

@@ -4,15 +4,22 @@
 help:
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
+FORK_RPC=https://holesky.gateway.tenderly.co
+CHAINID=17000
+
 AGGREGATOR_ECDSA_PRIV_KEY=0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
 CHALLENGER_ECDSA_PRIV_KEY=0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a
+MAIN_ECDSA_KEY=${AGGREGATOR_ECDSA_PRIV_KEY}
+OPERATOR_ECDSA_PRIV_KEY=c6373064c6eb0c3b09d55ec5a85cf9a39003ffc39245157584d8eeed8bed041d
 
-CHAINID=31337
-# Make sure to update this if the strategy address changes
-# check in contracts/script/output/${CHAINID}/sertn_avs_deployment_output.json
-STRATEGY_ADDRESS=0x7a2088a1bFc9d81c55368AE168C2C02570cB814F
 DEPLOYMENT_FILES_DIR=contracts/script/output/${CHAINID}
 
+WETH_ADDRESS=0x94373a4919b3240d86ea41593d5eba789fef3848
+STRATEGY_ADDRESS=0x80528D6e9A2BAbFc766965E0E26d5aB08D9CFaF9
+
+OPERATOR_ADDRESS=0x6dBC2B9174B0b51B7B308e064358a31E50beeBfa
+CHALLENGER_ADDRESS=0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+AGGREGATOR_ADDRESS=0x70997970C51812dc3A010C7d01b50e0d17dc79C8
 -----------------------------: ## 
 
 ___CONTRACTS___: ## 
@@ -23,18 +30,15 @@ start-interface: ## builds all contracts
 	cd sertn-fe && npm i && npm run dev
 
 build-contracts: ## builds all contracts
-	cd contracts && forge build
+	cd contracts && forge build --sizes
 
-deploy-eigenlayer-contracts-to-anvil-and-save-state: ## Deploy eigenlayer
-	./tests/anvil/deploy-eigenlayer-save-anvil-state.sh
+setup: setup-python build-contracts
 
-deploy-sertn-contracts-to-anvil-and-save-state: ## Deploy avs
+deploy-contracts: 
 	./tests/anvil/deploy-avs-save-anvil-state.sh
 
-deploy-contracts: deploy-eigenlayer-contracts-to-anvil-and-save-state deploy-sertn-contracts-to-anvil-and-save-state ## deploy eigenlayer, shared avs contracts, and inc-sq contracts 
-
 start-chain: ## starts anvil from a saved state file (with el and avs contracts deployed)
-	./tests/anvil/start-anvil-chain-with-el-and-avs-deployed.sh
+	anvil --fork-url ${FORK_RPC}
 
 bindings: ## generates contract bindings
 	cd contracts && ./generate-go-bindings.sh
@@ -58,8 +62,11 @@ cli-deregister-operator-with-avs: ##
 cli-print-operator-status: ## 
 	go run cli/main.go --config config-files/operator.anvil.yaml print-operator-status
 
-send-fund: ## sends fund to the operator saved in tests/keys/test.ecdsa.key.json
-	cast send 0x860B6912C2d0337ef05bbC89b0C2CB6CbAEAB4A5 --value 10ether --private-key 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
+send-funds: ## sends fund to the operator challwnger and aggregator saved in tests/keys/test.ecdsa.key.json
+	cast send ${OPERATOR_ADDRESS} --value 1ether --private-key ${MAIN_ECDSA_KEY} && cast send ${AGGREGATOR_ADDRESS} --value 1ether --private-key ${MAIN_ECDSA_KEY} && cast send ${CHALLENGER_ADDRESS} --value 1ether --private-key ${MAIN_ECDSA_KEY}
+
+wrap-eth:
+	cast send ${WETH_ADDRESS} "deposit()" --value 0.5ether --private-key ${OPERATOR_ECDSA_PRIV_KEY}
 
 -----------------------------: ## 
 # We pipe all zapper logs through https://github.com/maoueh/zap-pretty so make sure to install it
@@ -71,7 +78,9 @@ start-aggregator: ##
 		--ecdsa-private-key ${AGGREGATOR_ECDSA_PRIV_KEY} \
 		2>&1 | zap-pretty
 
-start-operator: ## 
+start-operator: send-funds wrap-eth start-operator-go
+
+start-operator-go: ## 
 	source ./.venv/bin/activate && go run operator/cmd/main.go --config config-files/operator.anvil.yaml \
 		2>&1 | zap-pretty
 

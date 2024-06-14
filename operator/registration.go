@@ -63,32 +63,11 @@ func (o *Operator) RegisterOperatorWithEigenlayer() error {
 }
 
 func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.Int) error {
-	_, tokenAddr, err := o.eigenlayerReader.GetStrategyAndUnderlyingToken(&bind.CallOpts{}, strategyAddr)
+	_, _, err := o.eigenlayerReader.GetStrategyAndUnderlyingToken(&bind.CallOpts{}, strategyAddr)
 	if err != nil {
 		o.logger.Error("Failed to fetch strategy contract", "err", err)
 		return err
 	}
-	contractErc20Mock, err := o.avsReader.GetErc20Mock(context.Background(), tokenAddr)
-	if err != nil {
-		o.logger.Error("Failed to fetch ERC20Mock contract", "err", err)
-		return err
-	}
-	txOpts, err := o.avsWriter.TxMgr.GetNoSendTxOpts()
-	if err != nil {
-		o.logger.Errorf("Error assembling Mint tx options")
-		return err
-	}
-	tx, err := contractErc20Mock.Mint(txOpts, o.operatorAddr, amount)
-	if err != nil {
-		o.logger.Errorf("Error assembling Mint tx")
-		return err
-	}
-	_, err = o.avsWriter.TxMgr.Send(context.Background(), tx)
-	if err != nil {
-		o.logger.Errorf("Error submitting Mint tx")
-		return err
-	}
-
 	_, err = o.eigenlayerWriter.DepositERC20IntoStrategy(context.Background(), strategyAddr, amount)
 	if err != nil {
 		o.logger.Errorf("Error depositing into strategy", "err", err)

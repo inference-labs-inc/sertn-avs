@@ -65,6 +65,10 @@ const App = () => {
     //Implementing the setInterval method
     const interval = setInterval(() => {
       (async () => {
+        if(blockNumber < 10n){
+          blockNumber = await client.getBlockNumber()
+          blockNumber -= 10n
+        }
         const logs = await client.getLogs({
           address: taskManagerAddress,
           events: sertn.abi.filter((element) => element.type === "event"),
@@ -97,7 +101,7 @@ const App = () => {
         <div class="flex-grow justify-center items-center flex">
           <main class="font-thin w-full max-w-xl px-5 -translate-y-10">
             <h1 class="text-8xl w-full text-center p-10 pt-0">
-              zk<span class="text-slate-500">Layer</span>
+              Ser<span class="text-slate-500">Tm</span>
             </h1>
             <form
               class="w-full transition-all mb-24"

@@ -1,15 +1,15 @@
 # this sets the logger level (true = info, false = debug)
 production: true
 
-operator_address: 0x860B6912C2d0337ef05bbC89b0C2CB6CbAEAB4A5
+operator_address: 0x6dBC2B9174B0b51B7B308e064358a31E50beeBfa
 
 # EigenLayer Slasher contract address
 
 # This is the address of the contracts which are deployed in the anvil saved state
 # The saved eigenlayer state is located in tests/anvil/sertn_avs_deployment_output.json
 # TODO(samlaf): automate updating these addresses when we deploy new contracts
-avs_registry_coordinator_address: 0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9
-operator_state_retriever_address: 0x95401dc811bb5740090279Ba06cfA8fcF6113778
+avs_registry_coordinator_address: 0x9849832a1d8274aaeDb1112ad9686413461e7101
+operator_state_retriever_address: 0x4eaB29997D332A666c3C366217Ab177cF9A7C436
 
 # ETH RPC URL
 eth_rpc_url: http://localhost:8545
@@ -41,4 +41,4 @@ enable_node_api: true
 register_operator_on_startup: true
 # address of token to deposit tokens into when registering on startup
 # addresses.erc20MockStrategy in tests/anvil/sertn_avs_deployment_output.json
-token_strategy_addr: 0x09635F643e140090A9A8Dcd712eD6285858ceBef
+token_strategy_addr: 0x80528D6e9A2BAbFc766965E0E26d5aB08D9CFaF9

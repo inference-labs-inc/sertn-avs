@@ -1,0 +1,32 @@
+{
+  "addresses": {
+    "avsDirectory": "0x055733000064333CaDDbC92763c58BF0192fFeBf",
+    "avsDirectoryImplementation": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+    "baseStrategyImplementation": "0x80528D6e9A2BAbFc766965E0E26d5aB08D9CFaF9",
+    "delayedWithdrawalRouter": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+    "delayedWithdrawalRouterImplementation": "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1",
+    "delegation": "0xA44151489861Fe9e3055d95adC98FbD462B948e7",
+    "delegationImplementation": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+    "eigenLayerPauserReg": "0x85Ef7299F8311B25642679edBF02B62FA2212F06",
+    "eigenLayerProxyAdmin": "0xDB023566064246399b4AE851197a97729C93A6cf",
+    "eigenPodBeacon": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+    "eigenPodImplementation": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+    "eigenPodManager": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+    "eigenPodManagerImplementation": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
+    "emptyContract": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+    "slasher": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+    "slasherImplementation": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+    "strategies": "",
+    "strategyManager": "0xdfB5f6CE42aAA7830E94ECFCcAd411beF4d4D5b6",
+    "strategyManagerImplementation": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0",
+    "wethStrategy": "0x80528D6e9A2BAbFc766965E0E26d5aB08D9CFaF9"
+  },
+  "chainInfo": {
+    "chainId": 31337,
+    "deploymentBlock": 0
+  },
+  "parameters": {
+    "executorMultisig": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "operationsMultisig": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+  }
+}
