@@ -8,8 +8,8 @@ operator_address: 0x6dBC2B9174B0b51B7B308e064358a31E50beeBfa
 # This is the address of the contracts which are deployed in the anvil saved state
 # The saved eigenlayer state is located in tests/anvil/sertn_avs_deployment_output.json
 # TODO(samlaf): automate updating these addresses when we deploy new contracts
-avs_registry_coordinator_address: 0x9849832a1d8274aaeDb1112ad9686413461e7101
-operator_state_retriever_address: 0x4eaB29997D332A666c3C366217Ab177cF9A7C436
+avs_registry_coordinator_address: 0x325c8Df4CFb5B068675AFF8f62aA668D1dEc3C4B
+operator_state_retriever_address: 0xa62835D1A6bf5f521C4e2746E1F51c923b8f3483
 
 # ETH RPC URL
 eth_rpc_url: http://localhost:8545

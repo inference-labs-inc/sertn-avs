@@ -32,7 +32,13 @@ Start anvil in a separate terminal:
 make start-chain
 ```
 
-The above command starts a local anvil chain from a [saved state](./tests/anvil/avs-and-eigenlayer-deployed-anvil-state.json) with eigenlayer and sertn contracts already deployed (but no operator registered).
+The above command starts a local fork of the Holesky testnet.
+
+```bash
+make deploy-contracts
+```
+
+The above command deploys all of the AVS contracts to the Holesky fork.
 
 Start the aggregator:
 
@@ -47,6 +53,54 @@ make start-operator
 ```
 
 > By default, the `start-operator` command will also setup the operator (see `register_operator_on_startup` flag in `config-files/operator.anvil.yaml`). To disable this, set `register_operator_on_startup` to false, and run `make cli-setup-operator` before running `start-operator`.
+
+```bash
+make start-interface
+```
+
+The above command will start a web interface to interact with the AVS system in an intuitive manner.
+
+### Important!
+
+Make sure to update `common/constants.ts` and `operator.anvil.yaml` to the contracts deployed under `sertn_avs_deployment_output.json`.
+
+```js
+export const taskManagerAddress = "0x8ac5eE52F70AE01dB914bE459D8B3d50126fd6aE";
+```
+
+matches
+
+```
+{
+  "addresses": {
+    "erc20Mock": "0x0000000000000000000000000000000000000000",
+    ...
+    "sertnTaskManager": "0x8ac5eE52F70AE01dB914bE459D8B3d50126fd6aE",
+    ...
+  }
+}
+```
+
+and
+
+```yaml
+avs_registry_coordinator_address: 0x325c8Df4CFb5B068675AFF8f62aA668D1dEc3C4B
+operator_state_retriever_address: 0xa62835D1A6bf5f521C4e2746E1F51c923b8f3483
+```
+
+match
+
+```
+{
+  "addresses": {
+    "erc20Mock": "0x0000000000000000000000000000000000000000",
+    ...
+    "operatorStateRetriever": "0xa62835D1A6bf5f521C4e2746E1F51c923b8f3483",
+    "registryCoordinator": "0x325c8Df4CFb5B068675AFF8f62aA668D1dEc3C4B",
+    ...
+  }
+}
+```
 
 ## Avs Task Description
 
@@ -79,10 +133,6 @@ The architecture of the AVS contains:
 5. If a response was sent within the [response window](contracts/src/SertnTaskManager.sol#L119), we enter the [Dispute resolution] period.
    - [Off-chain] A challenge window is launched during which anyone can [raise a dispute](contracts/src/SertnTaskManager.sol#L171) in a DisputeResolution contract (in our case, this is the same as the TaskManager contract)
    - [On-chain] The DisputeResolution contract resolves that a particular operator’s response is not the correct response (that is, not the inference of the integers specified in the task) or the opted-in operator didn’t respond during the response window. If the dispute is resolved, the operator will be frozen in the Registration contract and the veto committee will decide whether to veto the freezing request or not.
-
-Below is a more detailed uml diagram of the aggregator and operator processes:
-
-![](./diagrams/uml.png)
 
 ## Avs node spec compliance
 
