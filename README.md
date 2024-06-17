@@ -60,9 +60,8 @@ make start-interface
 
 The above command will start a web interface to interact with the AVS system in an intuitive manner.
 
-### Important!
-
-Make sure to update `common/constants.ts` and `operator.anvil.yaml` to the contracts deployed under `sertn_avs_deployment_output.json`.
+> [!IMPORTANT]
+> Make sure to update `common/constants.ts` and `operator.anvil.yaml` to the > contracts deployed under `sertn_avs_deployment_output.json`.
 
 ```js
 export const taskManagerAddress = "0x8ac5eE52F70AE01dB914bE459D8B3d50126fd6aE";
