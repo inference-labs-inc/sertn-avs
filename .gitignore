@@ -33,3 +33,5 @@ __pycache__
 .DS_Store
 
 .secret
+
+.vite

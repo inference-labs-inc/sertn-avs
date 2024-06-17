@@ -65,9 +65,9 @@ const App = () => {
     //Implementing the setInterval method
     const interval = setInterval(() => {
       (async () => {
-        if(blockNumber < 10n){
-          blockNumber = await client.getBlockNumber()
-          blockNumber -= 10n
+        if (blockNumber < 10n) {
+          blockNumber = await client.getBlockNumber();
+          blockNumber -= 10n;
         }
         const logs = await client.getLogs({
           address: taskManagerAddress,
@@ -101,7 +101,7 @@ const App = () => {
         <div class="flex-grow justify-center items-center flex">
           <main class="font-thin w-full max-w-xl px-5 -translate-y-10">
             <h1 class="text-8xl w-full text-center p-10 pt-0">
-              Ser<span class="text-slate-500">Tm</span>
+              ser<span class="text-slate-500">tn</span>
             </h1>
             <form
               class="w-full transition-all mb-24"
