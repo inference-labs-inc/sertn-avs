@@ -62,11 +62,14 @@ cli-deregister-operator-with-avs: ##
 cli-print-operator-status: ## 
 	go run cli/main.go --config config-files/operator.anvil.yaml print-operator-status
 
+send-funds-operator: 
+	cast send ${OPERATOR_ADDRESS} --value 0.25ether --private-key ${MAIN_ECDSA_KEY}
+
 send-funds: ## sends fund to the operator challwnger and aggregator saved in tests/keys/test.ecdsa.key.json
-	cast send ${OPERATOR_ADDRESS} --value 1ether --private-key ${MAIN_ECDSA_KEY} && cast send ${AGGREGATOR_ADDRESS} --value 1ether --private-key ${MAIN_ECDSA_KEY} && cast send ${CHALLENGER_ADDRESS} --value 1ether --private-key ${MAIN_ECDSA_KEY}
+	cast send ${AGGREGATOR_ADDRESS} --value 0.25ether --private-key ${MAIN_ECDSA_KEY} && cast send ${CHALLENGER_ADDRESS} --value 0.25ether --private-key ${MAIN_ECDSA_KEY}
 
 wrap-eth:
-	cast send ${WETH_ADDRESS} "deposit()" --value 0.5ether --private-key ${OPERATOR_ECDSA_PRIV_KEY}
+	cast send ${WETH_ADDRESS} "deposit()" --value 0.125ether --private-key ${OPERATOR_ECDSA_PRIV_KEY}
 
 -----------------------------: ## 
 # We pipe all zapper logs through https://github.com/maoueh/zap-pretty so make sure to install it
@@ -78,7 +81,7 @@ start-aggregator: ##
 		--ecdsa-private-key ${AGGREGATOR_ECDSA_PRIV_KEY} \
 		2>&1 | zap-pretty
 
-start-operator: send-funds wrap-eth start-operator-go
+start-operator: send-funds-operator wrap-eth start-operator-go
 
 start-operator-go: ## 
 	source ./.venv/bin/activate && go run operator/cmd/main.go --config config-files/operator.anvil.yaml \

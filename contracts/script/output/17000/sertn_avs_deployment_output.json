@@ -2,13 +2,13 @@
   "addresses": {
     "erc20Mock": "0x0000000000000000000000000000000000000000",
     "erc20MockStrategy": "0x0000000000000000000000000000000000000000",
-    "operatorStateRetriever": "0xa62835D1A6bf5f521C4e2746E1F51c923b8f3483",
-    "registryCoordinator": "0x325c8Df4CFb5B068675AFF8f62aA668D1dEc3C4B",
-    "registryCoordinatorImplementation": "0xd710a67624Ad831683C86a48291c597adE30F787",
-    "sertnServiceManager": "0xa4E00CB342B36eC9fDc4B50b3d527c3643D4C49e",
-    "sertnServiceManagerImplementation": "0x06b3244b086cecC40F1e5A826f736Ded68068a0F",
-    "sertnTaskManager": "0x8ac5eE52F70AE01dB914bE459D8B3d50126fd6aE",
-    "sertnTaskManagerImplementation": "0x2e8880cAdC08E9B438c6052F5ce3869FBd6cE513",
-    "zkVerifier": "0xb007167714e2940013EC3bb551584130B7497E22"
+    "operatorStateRetriever": "0x7f8185b1c877Ea1f0036f8E3455B0f2f99ACBB7e",
+    "registryCoordinator": "0xef411dE59B1b060453C5d9bF2C1B303816374c93",
+    "registryCoordinatorImplementation": "0x6c283635BF99f6a2B40b095B57e2a77abCbfF335",
+    "sertnServiceManager": "0x91eBe0B98aA1801868AcE6a66fA8D7cEE00d8eA3",
+    "sertnServiceManagerImplementation": "0xb80eef2666BBDE56931A73d8c52061324749023b",
+    "sertnTaskManager": "0x28410d159554A95545571A1362c7F51c37D31021",
+    "sertnTaskManagerImplementation": "0xCd759C8108910FAc2879F452Aeda50b57dc9fF2d",
+    "zkVerifier": "0xbefe06E29C9B39391697d8f22Bf459b006E25165"
   }
 }
