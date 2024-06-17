@@ -8,7 +8,7 @@
     "sertnServiceManager": "0xa4E00CB342B36eC9fDc4B50b3d527c3643D4C49e",
     "sertnServiceManagerImplementation": "0x06b3244b086cecC40F1e5A826f736Ded68068a0F",
     "sertnTaskManager": "0x8ac5eE52F70AE01dB914bE459D8B3d50126fd6aE",
-    "sertnTaskManagerImplementation": "0x00CAC06Dd0BB4103f8b62D280fE9BCEE8f26fD59",
-    "zkVerifier": "0x4951A1C579039EbfCBA0BE33D2cd3A6D30b0f802"
+    "sertnTaskManagerImplementation": "0x2e8880cAdC08E9B438c6052F5ce3869FBd6cE513",
+    "zkVerifier": "0xb007167714e2940013EC3bb551584130B7497E22"
   }
 }

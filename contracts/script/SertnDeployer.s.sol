@@ -312,6 +312,8 @@ contract SertnDeployer is Script, Utils {
             address(sertnServiceManagerImplementation)
         );
 
+        sertnServiceManager.initialize(address(msg.sender));
+
         sertnServiceManager.updateAVSMetadataURI(
             "https://raw.githubusercontent.com/inference-labs-inc/sertn-avs/main/el-info.json"
         );
