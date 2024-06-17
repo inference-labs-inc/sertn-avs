@@ -9,8 +9,8 @@ contract InferenceDB is IInferenceDB {
     // The latest task index
     uint32 public latestTaskNum;
 
-    uint32 public immutable TASK_RESPONSE_WINDOW_BLOCK = 100;
-    uint32 public constant TASK_CHALLENGE_WINDOW_BLOCK = 100;
+    uint32 public immutable TASK_RESPONSE_WINDOW_BLOCK = 30;
+    uint32 public constant TASK_CHALLENGE_WINDOW_BLOCK = 30;
 
     // mapping of task indices to all tasks hashes
     // when a task is created, task hash is stored here,

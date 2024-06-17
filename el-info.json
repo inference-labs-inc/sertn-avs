@@ -1,0 +1,7 @@
+{
+    "name": "sertn",
+    "website": "https://sertn.ai",
+    "description": "Sertn, a universal verification layer for AI inferences using on-chain zk-proofs. Just as you wouldn't access online banking, healthcare records, or investment accounts without HTTPS, we ensure similar levels of certainty for AI models. Our solution enables efficient off-chain AI computation while eliminating counterparty risk, providing cryptographic security for inference consumers in a decentralized environment.",
+    "logo": "",
+    "twitter": "https://x.com/inference_labs"
+}

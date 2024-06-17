@@ -37,15 +37,12 @@ import "forge-std/console.sol";
 contract SertnDeployer is Script, Utils {
     // DEPLOYMENT CONSTANTS
     uint256 public constant QUORUM_THRESHOLD_PERCENTAGE = 100;
-    // uint32 public constant TASK_RESPONSE_WINDOW_BLOCK = 30;
-    uint32 public constant TASK_DURATION_BLOCKS = 0;
+    uint32 public constant TASK_CHALLENGE_WINDOW_BLOCK = 30;
     // TODO: right now hardcoding these (this address is anvil's default address 9)
     address public constant AGGREGATOR_ADDR =
         0xa0Ee7A142d267C1f36714E4a8F75612F20a79720;
     address public constant TASK_GENERATOR_ADDR =
         0xa0Ee7A142d267C1f36714E4a8F75612F20a79720;
-
-    // ERC20 and Strategy: we need to deploy this erc20, create a strategy for it, and whitelist this strategy in the strategymanager
 
     ERC20Mock public erc20Mock;
     StrategyBaseTVLLimits public erc20MockStrategy;
@@ -94,10 +91,10 @@ contract SertnDeployer is Script, Utils {
         );
 
         StrategyBaseTVLLimits wethStrategy = StrategyBaseTVLLimits(
-                stdJson.readAddress(
-                    eigenlayerDeployedContracts,
-                    ".addresses.wethStrategy"
-                )   
+            stdJson.readAddress(
+                eigenlayerDeployedContracts,
+                ".addresses.wethStrategy"
+            )
         );
 
         address sertnCommunityMultisig = msg.sender;
@@ -315,12 +312,17 @@ contract SertnDeployer is Script, Utils {
             address(sertnServiceManagerImplementation)
         );
 
+        sertnServiceManager.updateAVSMetadataURI("");
+
         sertnTaskManagerImplementation = new SertnTaskManager(
             registryCoordinator
         );
         ZKVerifier zkVerifier = new ZKVerifier();
-        // Todo: opnun change 0 to number of blocks producer has to respond
-        InferenceDB inferenceDB = new InferenceDB(0, address(zkVerifier));
+
+        InferenceDB inferenceDB = new InferenceDB(
+            TASK_CHALLENGE_WINDOW_BLOCK,
+            address(zkVerifier)
+        );
         inferenceDB.updateTaskManager(address(sertnTaskManager));
 
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
