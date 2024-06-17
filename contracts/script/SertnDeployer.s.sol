@@ -312,7 +312,9 @@ contract SertnDeployer is Script, Utils {
             address(sertnServiceManagerImplementation)
         );
 
-        sertnServiceManager.updateAVSMetadataURI("");
+        sertnServiceManager.updateAVSMetadataURI(
+            "https://raw.githubusercontent.com/inference-labs-inc/sertn-avs/main/el-info.json"
+        );
 
         sertnTaskManagerImplementation = new SertnTaskManager(
             registryCoordinator
