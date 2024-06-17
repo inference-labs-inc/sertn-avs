@@ -37,6 +37,9 @@ setup: setup-python build-contracts
 deploy-contracts: 
 	./tests/anvil/deploy-avs-save-anvil-state.sh
 
+update-metadata: 
+	sh ./tests/anvil/update-metadata.sh
+
 start-chain: ## starts anvil from a saved state file (with el and avs contracts deployed)
 	anvil --fork-url ${FORK_RPC}
 
