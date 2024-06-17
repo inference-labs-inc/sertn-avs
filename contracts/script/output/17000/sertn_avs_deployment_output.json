@@ -1,0 +1,14 @@
+{
+  "addresses": {
+    "erc20Mock": "0x0000000000000000000000000000000000000000",
+    "erc20MockStrategy": "0x0000000000000000000000000000000000000000",
+    "operatorStateRetriever": "0xa62835D1A6bf5f521C4e2746E1F51c923b8f3483",
+    "registryCoordinator": "0x325c8Df4CFb5B068675AFF8f62aA668D1dEc3C4B",
+    "registryCoordinatorImplementation": "0xd710a67624Ad831683C86a48291c597adE30F787",
+    "sertnServiceManager": "0xa4E00CB342B36eC9fDc4B50b3d527c3643D4C49e",
+    "sertnServiceManagerImplementation": "0x06b3244b086cecC40F1e5A826f736Ded68068a0F",
+    "sertnTaskManager": "0x8ac5eE52F70AE01dB914bE459D8B3d50126fd6aE",
+    "sertnTaskManagerImplementation": "0x00CAC06Dd0BB4103f8b62D280fE9BCEE8f26fD59",
+    "zkVerifier": "0x4951A1C579039EbfCBA0BE33D2cd3A6D30b0f802"
+  }
+}

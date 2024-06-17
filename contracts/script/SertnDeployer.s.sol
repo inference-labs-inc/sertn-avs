@@ -79,12 +79,7 @@ contract SertnDeployer is Script, Utils {
         string memory eigenlayerDeployedContracts = readOutput(
             "eigenlayer_deployment_output"
         );
-        IStrategyManager strategyManager = IStrategyManager(
-            stdJson.readAddress(
-                eigenlayerDeployedContracts,
-                ".addresses.strategyManager"
-            )
-        );
+
         IDelegationManager delegationManager = IDelegationManager(
             stdJson.readAddress(
                 eigenlayerDeployedContracts,
@@ -97,77 +92,26 @@ contract SertnDeployer is Script, Utils {
                 ".addresses.avsDirectory"
             )
         );
-        ProxyAdmin eigenLayerProxyAdmin = ProxyAdmin(
-            stdJson.readAddress(
-                eigenlayerDeployedContracts,
-                ".addresses.eigenLayerProxyAdmin"
-            )
-        );
-        PauserRegistry eigenLayerPauserReg = PauserRegistry(
-            stdJson.readAddress(
-                eigenlayerDeployedContracts,
-                ".addresses.eigenLayerPauserReg"
-            )
-        );
-        StrategyBaseTVLLimits baseStrategyImplementation = StrategyBaseTVLLimits(
+
+        StrategyBaseTVLLimits wethStrategy = StrategyBaseTVLLimits(
                 stdJson.readAddress(
                     eigenlayerDeployedContracts,
-                    ".addresses.baseStrategyImplementation"
-                )
-            );
+                    ".addresses.wethStrategy"
+                )   
+        );
 
         address sertnCommunityMultisig = msg.sender;
         address sertnPauser = msg.sender;
 
         vm.startBroadcast();
-        _deployErc20AndStrategyAndWhitelistStrategy(
-            eigenLayerProxyAdmin,
-            eigenLayerPauserReg,
-            baseStrategyImplementation,
-            strategyManager
-        );
         _deploySertnContracts(
             delegationManager,
             avsDirectory,
-            erc20MockStrategy,
+            wethStrategy,
             sertnCommunityMultisig,
             sertnPauser
         );
         vm.stopBroadcast();
-    }
-
-    function _deployErc20AndStrategyAndWhitelistStrategy(
-        ProxyAdmin eigenLayerProxyAdmin,
-        PauserRegistry eigenLayerPauserReg,
-        StrategyBaseTVLLimits baseStrategyImplementation,
-        IStrategyManager strategyManager
-    ) internal {
-        erc20Mock = new ERC20Mock();
-        // TODO(samlaf): any reason why we are using the strategybase with tvl limits instead of just using strategybase?
-        // the maxPerDeposit and maxDeposits below are just arbitrary values.
-        erc20MockStrategy = StrategyBaseTVLLimits(
-            address(
-                new TransparentUpgradeableProxy(
-                    address(baseStrategyImplementation),
-                    address(eigenLayerProxyAdmin),
-                    abi.encodeWithSelector(
-                        StrategyBaseTVLLimits.initialize.selector,
-                        1 ether, // maxPerDeposit
-                        100 ether, // maxDeposits
-                        IERC20(erc20Mock),
-                        eigenLayerPauserReg
-                    )
-                )
-            )
-        );
-        IStrategy[] memory strats = new IStrategy[](1);
-        strats[0] = erc20MockStrategy;
-        bool[] memory thirdPartyTransfersForbiddenValues = new bool[](1);
-        thirdPartyTransfersForbiddenValues[0] = false;
-        strategyManager.addStrategiesToDepositWhitelist(
-            strats,
-            thirdPartyTransfersForbiddenValues
-        );
     }
 
     function _deploySertnContracts(
@@ -367,9 +311,7 @@ contract SertnDeployer is Script, Utils {
         );
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
         sertnProxyAdmin.upgrade(
-            TransparentUpgradeableProxy(
-                payable(address(sertnServiceManager))
-            ),
+            TransparentUpgradeableProxy(payable(address(sertnServiceManager))),
             address(sertnServiceManagerImplementation)
         );
 
