@@ -5,6 +5,7 @@ help:
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 FORK_RPC=https://holesky.gateway.tenderly.co
+RPC_URL=http://localhost:8545
 CHAINID=17000
 
 AGGREGATOR_ECDSA_PRIV_KEY=0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
@@ -66,13 +67,13 @@ cli-print-operator-status: ##
 	go run cli/main.go --config config-files/operator.anvil.yaml print-operator-status
 
 send-funds-operator: 
-	cast send ${OPERATOR_ADDRESS} --value 0.25ether --private-key ${MAIN_ECDSA_KEY}
+	cast send ${OPERATOR_ADDRESS} --value 0.25ether --private-key ${MAIN_ECDSA_KEY} --rpc-url ${RPC_URL}
 
 send-funds: ## sends fund to the operator challwnger and aggregator saved in tests/keys/test.ecdsa.key.json
 	cast send ${AGGREGATOR_ADDRESS} --value 0.25ether --private-key ${MAIN_ECDSA_KEY} && cast send ${CHALLENGER_ADDRESS} --value 0.25ether --private-key ${MAIN_ECDSA_KEY}
 
 wrap-eth:
-	cast send ${WETH_ADDRESS} "deposit()" --value 0.125ether --private-key ${OPERATOR_ECDSA_PRIV_KEY}
+	cast send ${WETH_ADDRESS} "deposit()" --value 0.125ether --private-key ${OPERATOR_ECDSA_PRIV_KEY} --rpc-url ${RPC_URL}
 
 -----------------------------: ## 
 # We pipe all zapper logs through https://github.com/maoueh/zap-pretty so make sure to install it
