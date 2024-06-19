@@ -4,7 +4,7 @@ import { injected, metaMask, safe } from "wagmi/connectors";
 
 export const backendUrl = "http://localhost:8080/inference";
 
-export const taskManagerAddress = "0x8ac5eE52F70AE01dB914bE459D8B3d50126fd6aE";
+export const taskManagerAddress = "0xa62835D1A6bf5f521C4e2746E1F51c923b8f3483";
 
 export const config = createConfig({
   chains: [localhost],

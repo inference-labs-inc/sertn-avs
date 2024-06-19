@@ -8,8 +8,8 @@ operator_address: 0x6dBC2B9174B0b51B7B308e064358a31E50beeBfa
 # This is the address of the contracts which are deployed in the anvil saved state
 # The saved eigenlayer state is located in tests/anvil/sertn_avs_deployment_output.json
 # TODO(samlaf): automate updating these addresses when we deploy new contracts
-avs_registry_coordinator_address: 0x325c8Df4CFb5B068675AFF8f62aA668D1dEc3C4B # 0xef411dE59B1b060453C5d9bF2C1B303816374c93
-operator_state_retriever_address: 0xa62835D1A6bf5f521C4e2746E1F51c923b8f3483 # 0x7f8185b1c877Ea1f0036f8E3455B0f2f99ACBB7e
+avs_registry_coordinator_address: 0x8E45C0936fa1a65bDaD3222bEFeC6a03C83372cE #0x325c8Df4CFb5B068675AFF8f62aA668D1dEc3C4B # 0xef411dE59B1b060453C5d9bF2C1B303816374c93
+operator_state_retriever_address: 0x10e38eE9dd4C549b61400Fc19347D00eD3edAfC4 #0xa62835D1A6bf5f521C4e2746E1F51c923b8f3483 # 0x7f8185b1c877Ea1f0036f8E3455B0f2f99ACBB7e
 
 # ETH RPC URL
 eth_rpc_url: http://localhost:8545 #https://ethereum-holesky-rpc.publicnode.com

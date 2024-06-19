@@ -39,7 +39,6 @@ contract SertnTaskManager is
 
     address public aggregator;
     address public generator;
-
     IInferenceDB inferenceDB;
     /* MODIFIERS */
     modifier onlyAggregator() {
@@ -76,6 +75,10 @@ contract SertnTaskManager is
         _transferOwnership(initialOwner);
         aggregator = _aggregator;
         generator = _generator;
+        inferenceDB = IInferenceDB(_inferenceDB);
+    }
+
+    function setNewInferenceDB(address _inferenceDB) public onlyTaskGenerator {
         inferenceDB = IInferenceDB(_inferenceDB);
     }
 

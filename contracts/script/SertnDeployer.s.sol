@@ -392,6 +392,11 @@ contract SertnDeployer is Script, Utils {
             "zkVerifier",
             address(zkVerifier)
         );
+        vm.serializeAddress(
+            deployed_addresses,
+            "proxyAdmin",
+            address(sertnProxyAdmin)
+        );
         string memory deployed_addresses_output = vm.serializeAddress(
             deployed_addresses,
             "operatorStateRetriever",

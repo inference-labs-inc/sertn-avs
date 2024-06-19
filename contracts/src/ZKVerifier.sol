@@ -248,7 +248,7 @@ contract ZKVerifier {
                 // Load vk_digest and num_instances of vk into memory
                 mstore(
                     0x05a0,
-                    0x1df36213366afb618ed86862f1ee7b020c58e972bf9390420cfe9182467044e1
+                    0x16968269e8b6d7743b467f0410c731c680b42175f32854094e254834ead683f2
                 ) // vk_digest
                 mstore(
                     0x05c0,
@@ -417,7 +417,7 @@ contract ZKVerifier {
                 // Load full vk into memory
                 mstore(
                     0x05a0,
-                    0x1df36213366afb618ed86862f1ee7b020c58e972bf9390420cfe9182467044e1
+                    0x16968269e8b6d7743b467f0410c731c680b42175f32854094e254834ead683f2
                 ) // vk_digest
                 mstore(
                     0x05c0,
@@ -605,11 +605,11 @@ contract ZKVerifier {
                 ) // permutation_comms[0].y
                 mstore(
                     0x0b80,
-                    0x12e0db55ccdbfef5019cc8f48cbe39401fc5b5ff962f7cd7780ae727b6c10bd9
+                    0x2d6e216207f2a5f78c309509d01d5fbaa6f9451bcf53e8ff6e612ad8c05968e9
                 ) // permutation_comms[1].x
                 mstore(
                     0x0ba0,
-                    0x03d75a7e667e932237c8563a3c717dc2b4cfc9170178c1a20e3e381c0297726a
+                    0x008ef427bfff8f0c001f38b863f26a9c63b9aaa0115944319838759069c231cc
                 ) // permutation_comms[1].y
                 mstore(
                     0x0bc0,
@@ -637,11 +637,11 @@ contract ZKVerifier {
                 ) // permutation_comms[4].y
                 mstore(
                     0x0c80,
-                    0x2606c21158c0c13e85a06f8eb551e8af8962c7e1ce6dc35884a681fd307fa81b
+                    0x076abf89a12559cf81b5bb41767f5587aaa8ccfbf85d9b1947244f217d4bf5f3
                 ) // permutation_comms[5].x
                 mstore(
                     0x0ca0,
-                    0x24ab9a2bedb0fca61909c8752fa9e45c1ac83df32164cbaa9d98058a35269bdb
+                    0x299f9f79fbf7a2f16db81df15af29e21c6d83f64eb6412f339a8b9755a3083df
                 ) // permutation_comms[5].y
                 mstore(
                     0x0cc0,

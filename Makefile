@@ -10,7 +10,7 @@ CHAINID=17000
 
 AGGREGATOR_ECDSA_PRIV_KEY=0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
 CHALLENGER_ECDSA_PRIV_KEY=0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a
-MAIN_ECDSA_KEY=${AGGREGATOR_ECDSA_PRIV_KEY}
+MAIN_ECDSA_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 OPERATOR_ECDSA_PRIV_KEY=c6373064c6eb0c3b09d55ec5a85cf9a39003ffc39245157584d8eeed8bed041d
 
 DEPLOYMENT_FILES_DIR=contracts/script/output/${CHAINID}
@@ -37,6 +37,9 @@ setup: setup-python build-contracts
 
 deploy-contracts: 
 	./tests/anvil/deploy-avs-save-anvil-state.sh
+
+update-contracts:
+	cd contracts && forge script UpdateContracts --rpc-url=${RPC_URL} --private-key=${MAIN_ECDSA_KEY} --broadcast
 
 update-metadata: 
 	sh ./tests/anvil/update-metadata.sh

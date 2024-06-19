@@ -6,4 +6,4 @@ class Model(nn.Module):
         super(Model, self).__init__()
 
     def forward(self, x):
-        return [torch.max(x)]
+        return [torch.min(x)]
