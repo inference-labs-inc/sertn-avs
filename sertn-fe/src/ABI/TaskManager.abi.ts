@@ -37,11 +37,7 @@ export const sertn = {
       name: "blsApkRegistry",
       inputs: [],
       outputs: [
-        {
-          name: "",
-          type: "address",
-          internalType: "contract IBLSApkRegistry",
-        },
+        { name: "", type: "address", internalType: "contract IBLSApkRegistry" },
       ],
       stateMutability: "view",
     },
@@ -100,16 +96,8 @@ export const sertn = {
               type: "tuple",
               internalType: "struct BN254.G2Point",
               components: [
-                {
-                  name: "X",
-                  type: "uint256[2]",
-                  internalType: "uint256[2]",
-                },
-                {
-                  name: "Y",
-                  type: "uint256[2]",
-                  internalType: "uint256[2]",
-                },
+                { name: "X", type: "uint256[2]", internalType: "uint256[2]" },
+                { name: "Y", type: "uint256[2]", internalType: "uint256[2]" },
               ],
             },
             {
@@ -170,31 +158,19 @@ export const sertn = {
           type: "tuple",
           internalType: "struct ITaskStruct.Task",
           components: [
-            {
-              name: "inputs",
-              type: "uint256[5]",
-              internalType: "uint256[5]",
-            },
+            { name: "inputs", type: "uint256[5]", internalType: "uint256[5]" },
             {
               name: "taskCreatedBlock",
               type: "uint32",
               internalType: "uint32",
             },
-            {
-              name: "quorumNumbers",
-              type: "bytes",
-              internalType: "bytes",
-            },
+            { name: "quorumNumbers", type: "bytes", internalType: "bytes" },
             {
               name: "quorumThresholdPercentage",
               type: "uint32",
               internalType: "uint32",
             },
-            {
-              name: "provenOnResponse",
-              type: "bool",
-              internalType: "bool",
-            },
+            { name: "provenOnResponse", type: "bool", internalType: "bool" },
           ],
         },
         {
@@ -244,11 +220,7 @@ export const sertn = {
       type: "function",
       name: "createNewTask",
       inputs: [
-        {
-          name: "inputs",
-          type: "uint256[5]",
-          internalType: "uint256[5]",
-        },
+        { name: "inputs", type: "uint256[5]", internalType: "uint256[5]" },
         {
           name: "quorumThresholdPercentage",
           type: "uint32",
@@ -289,18 +261,10 @@ export const sertn = {
           type: "address",
           internalType: "contract IRegistryCoordinator",
         },
-        {
-          name: "operatorIds",
-          type: "bytes32[]",
-          internalType: "bytes32[]",
-        },
+        { name: "operatorIds", type: "bytes32[]", internalType: "bytes32[]" },
       ],
       outputs: [
-        {
-          name: "operators",
-          type: "address[]",
-          internalType: "address[]",
-        },
+        { name: "operators", type: "address[]", internalType: "address[]" },
       ],
       stateMutability: "view",
     },
@@ -313,18 +277,10 @@ export const sertn = {
           type: "address",
           internalType: "contract IRegistryCoordinator",
         },
-        {
-          name: "operators",
-          type: "address[]",
-          internalType: "address[]",
-        },
+        { name: "operators", type: "address[]", internalType: "address[]" },
       ],
       outputs: [
-        {
-          name: "operatorIds",
-          type: "bytes32[]",
-          internalType: "bytes32[]",
-        },
+        { name: "operatorIds", type: "bytes32[]", internalType: "bytes32[]" },
       ],
       stateMutability: "view",
     },
@@ -398,16 +354,8 @@ export const sertn = {
           type: "tuple[][]",
           internalType: "struct OperatorStateRetriever.Operator[][]",
           components: [
-            {
-              name: "operator",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "operatorId",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
+            { name: "operator", type: "address", internalType: "address" },
+            { name: "operatorId", type: "bytes32", internalType: "bytes32" },
             { name: "stake", type: "uint96", internalType: "uint96" },
           ],
         },
@@ -433,16 +381,8 @@ export const sertn = {
           type: "tuple[][]",
           internalType: "struct OperatorStateRetriever.Operator[][]",
           components: [
-            {
-              name: "operator",
-              type: "address",
-              internalType: "address",
-            },
-            {
-              name: "operatorId",
-              type: "bytes32",
-              internalType: "bytes32",
-            },
+            { name: "operator", type: "address", internalType: "address" },
+            { name: "operatorId", type: "bytes32", internalType: "bytes32" },
             { name: "stake", type: "uint96", internalType: "uint96" },
           ],
         },
@@ -458,36 +398,11 @@ export const sertn = {
           type: "address",
           internalType: "contract IRegistryCoordinator",
         },
-        {
-          name: "operatorIds",
-          type: "bytes32[]",
-          internalType: "bytes32[]",
-        },
+        { name: "operatorIds", type: "bytes32[]", internalType: "bytes32[]" },
         { name: "blockNumber", type: "uint32", internalType: "uint32" },
       ],
       outputs: [{ name: "", type: "uint256[]", internalType: "uint256[]" }],
       stateMutability: "view",
-    },
-    {
-      type: "function",
-      name: "initialize",
-      inputs: [
-        {
-          name: "_pauserRegistry",
-          type: "address",
-          internalType: "contract IPauserRegistry",
-        },
-        {
-          name: "initialOwner",
-          type: "address",
-          internalType: "address",
-        },
-        { name: "_aggregator", type: "address", internalType: "address" },
-        { name: "_generator", type: "address", internalType: "address" },
-        { name: "_inferenceDB", type: "address", internalType: "address" },
-      ],
-      outputs: [],
-      stateMutability: "nonpayable",
     },
     {
       type: "function",
@@ -500,11 +415,7 @@ export const sertn = {
       type: "function",
       name: "pause",
       inputs: [
-        {
-          name: "newPausedStatus",
-          type: "uint256",
-          internalType: "uint256",
-        },
+        { name: "newPausedStatus", type: "uint256", internalType: "uint256" },
       ],
       outputs: [],
       stateMutability: "nonpayable",
@@ -535,11 +446,7 @@ export const sertn = {
       name: "pauserRegistry",
       inputs: [],
       outputs: [
-        {
-          name: "",
-          type: "address",
-          internalType: "contract IPauserRegistry",
-        },
+        { name: "", type: "address", internalType: "contract IPauserRegistry" },
       ],
       stateMutability: "view",
     },
@@ -548,11 +455,7 @@ export const sertn = {
       name: "proveResultAccurate",
       inputs: [
         { name: "taskId", type: "uint32", internalType: "uint32" },
-        {
-          name: "instances",
-          type: "uint256[]",
-          internalType: "uint256[]",
-        },
+        { name: "instances", type: "uint256[]", internalType: "uint256[]" },
         { name: "proof", type: "bytes", internalType: "bytes" },
       ],
       outputs: [],
@@ -567,31 +470,19 @@ export const sertn = {
           type: "tuple",
           internalType: "struct ITaskStruct.Task",
           components: [
-            {
-              name: "inputs",
-              type: "uint256[5]",
-              internalType: "uint256[5]",
-            },
+            { name: "inputs", type: "uint256[5]", internalType: "uint256[5]" },
             {
               name: "taskCreatedBlock",
               type: "uint32",
               internalType: "uint32",
             },
-            {
-              name: "quorumNumbers",
-              type: "bytes",
-              internalType: "bytes",
-            },
+            { name: "quorumNumbers", type: "bytes", internalType: "bytes" },
             {
               name: "quorumThresholdPercentage",
               type: "uint32",
               internalType: "uint32",
             },
-            {
-              name: "provenOnResponse",
-              type: "bool",
-              internalType: "bool",
-            },
+            { name: "provenOnResponse", type: "bool", internalType: "bool" },
           ],
         },
         {
@@ -657,31 +548,19 @@ export const sertn = {
           type: "tuple",
           internalType: "struct ITaskStruct.Task",
           components: [
-            {
-              name: "inputs",
-              type: "uint256[5]",
-              internalType: "uint256[5]",
-            },
+            { name: "inputs", type: "uint256[5]", internalType: "uint256[5]" },
             {
               name: "taskCreatedBlock",
               type: "uint32",
               internalType: "uint32",
             },
-            {
-              name: "quorumNumbers",
-              type: "bytes",
-              internalType: "bytes",
-            },
+            { name: "quorumNumbers", type: "bytes", internalType: "bytes" },
             {
               name: "quorumThresholdPercentage",
               type: "uint32",
               internalType: "uint32",
             },
-            {
-              name: "provenOnResponse",
-              type: "bool",
-              internalType: "bool",
-            },
+            { name: "provenOnResponse", type: "bool", internalType: "bool" },
           ],
         },
         {
@@ -731,16 +610,8 @@ export const sertn = {
               type: "tuple",
               internalType: "struct BN254.G2Point",
               components: [
-                {
-                  name: "X",
-                  type: "uint256[2]",
-                  internalType: "uint256[2]",
-                },
-                {
-                  name: "Y",
-                  type: "uint256[2]",
-                  internalType: "uint256[2]",
-                },
+                { name: "X", type: "uint256[2]", internalType: "uint256[2]" },
+                { name: "Y", type: "uint256[2]", internalType: "uint256[2]" },
               ],
             },
             {
@@ -782,40 +653,42 @@ export const sertn = {
           type: "tuple",
           internalType: "struct ITaskStruct.Task",
           components: [
-            {
-              name: "inputs",
-              type: "uint256[5]",
-              internalType: "uint256[5]",
-            },
+            { name: "inputs", type: "uint256[5]", internalType: "uint256[5]" },
             {
               name: "taskCreatedBlock",
               type: "uint32",
               internalType: "uint32",
             },
-            {
-              name: "quorumNumbers",
-              type: "bytes",
-              internalType: "bytes",
-            },
+            { name: "quorumNumbers", type: "bytes", internalType: "bytes" },
             {
               name: "quorumThresholdPercentage",
               type: "uint32",
               internalType: "uint32",
             },
-            {
-              name: "provenOnResponse",
-              type: "bool",
-              internalType: "bool",
-            },
+            { name: "provenOnResponse", type: "bool", internalType: "bool" },
           ],
         },
         { name: "taskIndex", type: "uint32", internalType: "uint32" },
-        {
-          name: "instances",
-          type: "uint256[]",
-          internalType: "uint256[]",
-        },
+        { name: "instances", type: "uint256[]", internalType: "uint256[]" },
         { name: "proof", type: "bytes", internalType: "bytes" },
+      ],
+      outputs: [],
+      stateMutability: "nonpayable",
+    },
+    {
+      type: "function",
+      name: "setNewAggregator",
+      inputs: [
+        { name: "_aggregator", type: "address", internalType: "address" },
+      ],
+      outputs: [],
+      stateMutability: "nonpayable",
+    },
+    {
+      type: "function",
+      name: "setNewInferenceDB",
+      inputs: [
+        { name: "_inferenceDB", type: "address", internalType: "address" },
       ],
       outputs: [],
       stateMutability: "nonpayable",
@@ -845,11 +718,7 @@ export const sertn = {
       name: "stakeRegistry",
       inputs: [],
       outputs: [
-        {
-          name: "",
-          type: "address",
-          internalType: "contract IStakeRegistry",
-        },
+        { name: "", type: "address", internalType: "contract IStakeRegistry" },
       ],
       stateMutability: "view",
     },
@@ -910,11 +779,7 @@ export const sertn = {
       type: "function",
       name: "unpause",
       inputs: [
-        {
-          name: "newPausedStatus",
-          type: "uint256",
-          internalType: "uint256",
-        },
+        { name: "newPausedStatus", type: "uint256", internalType: "uint256" },
       ],
       outputs: [],
       stateMutability: "nonpayable",
@@ -948,31 +813,19 @@ export const sertn = {
           indexed: false,
           internalType: "struct ITaskStruct.Task",
           components: [
-            {
-              name: "inputs",
-              type: "uint256[5]",
-              internalType: "uint256[5]",
-            },
+            { name: "inputs", type: "uint256[5]", internalType: "uint256[5]" },
             {
               name: "taskCreatedBlock",
               type: "uint32",
               internalType: "uint32",
             },
-            {
-              name: "quorumNumbers",
-              type: "bytes",
-              internalType: "bytes",
-            },
+            { name: "quorumNumbers", type: "bytes", internalType: "bytes" },
             {
               name: "quorumThresholdPercentage",
               type: "uint32",
               internalType: "uint32",
             },
-            {
-              name: "provenOnResponse",
-              type: "bool",
-              internalType: "bool",
-            },
+            { name: "provenOnResponse", type: "bool", internalType: "bool" },
           ],
         },
       ],
@@ -1039,12 +892,7 @@ export const sertn = {
       type: "event",
       name: "StaleStakesForbiddenUpdate",
       inputs: [
-        {
-          name: "value",
-          type: "bool",
-          indexed: false,
-          internalType: "bool",
-        },
+        { name: "value", type: "bool", indexed: false, internalType: "bool" },
       ],
       anonymous: false,
     },

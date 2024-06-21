@@ -20,7 +20,7 @@ STRATEGY_ADDRESS=0x80528D6e9A2BAbFc766965E0E26d5aB08D9CFaF9
 
 OPERATOR_ADDRESS=0x6dBC2B9174B0b51B7B308e064358a31E50beeBfa
 CHALLENGER_ADDRESS=0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
-AGGREGATOR_ADDRESS=0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+AGGREGATOR_ADDRESS=0xa0ee7a142d267c1f36714e4a8f75612f20a79720
 -----------------------------: ## 
 
 ___CONTRACTS___: ## 
@@ -39,13 +39,16 @@ deploy-contracts:
 	./tests/anvil/deploy-avs-save-anvil-state.sh
 
 update-contracts:
-	cd contracts && forge script UpdateContracts --rpc-url=${RPC_URL} --private-key=${MAIN_ECDSA_KEY} --broadcast
+	cast send 0x232582B6B105FD467218a5A28A446a2E9625bdc6 --value 0.25ether --private-key=${MAIN_ECDSA_KEY} && cd contracts && forge script UpdateContracts --rpc-url=${RPC_URL} --unlocked --broadcast
+
+test-contracts:
+	cd contracts && forge script TestContracts --rpc-url=${RPC_URL} --unlocked
 
 update-metadata: 
 	sh ./tests/anvil/update-metadata.sh
 
 start-chain: ## starts anvil from a saved state file (with el and avs contracts deployed)
-	anvil --fork-url ${FORK_RPC}
+	anvil --fork-url ${FORK_RPC} --auto-impersonate
 
 bindings: ## generates contract bindings
 	cd contracts && ./generate-go-bindings.sh

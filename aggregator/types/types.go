@@ -9,7 +9,7 @@ import (
 // TODO: our contracts require uint8 but right now sdktypes.QuorumThresholdPercentage is uint8
 //
 //	prob need to update our inc-sq contracts to use uint8 as well?
-const QUORUM_THRESHOLD_NUMERATOR = sdktypes.QuorumThresholdPercentage(100)
+const QUORUM_THRESHOLD_NUMERATOR = sdktypes.QuorumThresholdPercentage(0)
 const QUORUM_THRESHOLD_DENOMINATOR = sdktypes.QuorumThresholdPercentage(100)
 
 const QUERY_FILTER_FROM_BLOCK = uint64(1)

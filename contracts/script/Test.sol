@@ -34,7 +34,7 @@ import "forge-std/console.sol";
 
 // # To deploy and verify our contract
 // forge script script/SertnDeployer.s.sol:SertnDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
-contract UpdateContracts is Script, Utils {
+contract TestContracts is Script, Utils {
     // DEPLOYMENT CONSTANTS
     uint256 public constant QUORUM_THRESHOLD_PERCENTAGE = 100;
     uint32 public constant TASK_CHALLENGE_WINDOW_BLOCK = 30;
@@ -72,7 +72,6 @@ contract UpdateContracts is Script, Utils {
     SertnTaskManager public sertnTaskManagerImplementation;
 
     function run() external {
-        vm.startBroadcast(0x32530349A795378D7e2276670D9D991281F5BfCA);
         string memory avsDeployedContracts = readOutput(
             "sertn_avs_deployment_output"
         );
@@ -107,66 +106,14 @@ contract UpdateContracts is Script, Utils {
             registryCoordinator
         );
 
-        ZKVerifier zkVerifier = new ZKVerifier();
-
-        InferenceDB inferenceDB = new InferenceDB(
-            TASK_CHALLENGE_WINDOW_BLOCK,
-            address(zkVerifier)
-        );
-        inferenceDB.updateTaskManager(address(sertnTaskManager));
-
-        // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
-        sertnProxyAdmin.upgrade(
-            TransparentUpgradeableProxy(payable(address(sertnTaskManager))),
-            address(sertnTaskManagerImplementation)
-        );
-        vm.stopBroadcast();
-
-        vm.startBroadcast(sertnTaskManager.generator());
-
-        sertnTaskManager.setNewInferenceDB(address(inferenceDB));
-        sertnTaskManager.setNewAggregator(AGGREGATOR_ADDR);
-
-        // WRITE JSON DATA
-        string memory parent_object = "parent object";
-
-        string memory deployed_addresses = "addresses";
-
-        vm.serializeAddress(
-            deployed_addresses,
-            "zkVerifier",
-            address(zkVerifier)
-        );
-
-        vm.serializeAddress(
-            deployed_addresses,
-            "inferenceDB",
-            address(inferenceDB)
-        );
-
-        string memory deployed_addresses_output = vm.serializeAddress(
-            deployed_addresses,
-            "operatorStateRetriever",
-            address(operatorStateRetriever)
-        );
-
-        // serialize all the data
-        string memory finalJson = vm.serializeString(
-            parent_object,
-            deployed_addresses,
-            deployed_addresses_output
-        );
-
         console.log(
             sertnTaskManager.generator(),
             sertnTaskManager.aggregator()
         );
 
-        writeOutput(finalJson, "updated_contracts");
-        vm.stopBroadcast();
-        vm.startBroadcast(AGGREGATOR_ADDR);
+        vm.startPrank(msg.sender);
         sertnTaskManager.createNewTask([uint256(0), 0, 0, 0, 0], 100, "", true);
-        console.log(AGGREGATOR_ADDR);
-        vm.stopBroadcast();
+        console.log(msg.sender);
+        vm.stopPrank();
     }
 }

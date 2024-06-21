@@ -75,11 +75,11 @@ const App = () => {
           fromBlock: blockNumber,
         });
         if (logs.length) {
-          blockNumber = logs[logs.length - 1].blockNumber + 1n;
+          blockNumber = logs[logs.length - 1].blockNumber;
           handleEvents(logs as unknown as Log[], logger);
         }
       })();
-    }, 2000);
+    }, 5000);
     return () => clearInterval(interval);
   }, [client]);
 

@@ -37,7 +37,7 @@ export const handleEvents = (
       const args = log.args as TaskResponseArgs;
       logger.log(
         "INFO",
-        "New Task Response. " + "Ouput: " + args.taskResponse.output,
+        "New Task Response. " + "Output: " + args.taskResponse.output,
         args.taskResponse.referenceTaskIndex,
         blockNumber
       );

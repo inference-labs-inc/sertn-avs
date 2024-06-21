@@ -64,22 +64,27 @@ contract SertnTaskManager is
         return inferenceDB.challengeInstances(id, index);
     }
 
-    function initialize(
-        IPauserRegistry _pauserRegistry,
-        address initialOwner,
-        address _aggregator,
-        address _generator,
-        address _inferenceDB
-    ) public initializer {
-        _initializePauser(_pauserRegistry, UNPAUSE_ALL);
-        _transferOwnership(initialOwner);
-        aggregator = _aggregator;
-        generator = _generator;
-        inferenceDB = IInferenceDB(_inferenceDB);
-    }
+    // function initialize(
+    //     IPauserRegistry _pauserRegistry,
+    //     address initialOwner,
+    //     address _aggregator,
+    //     address _generator,
+    //     address _inferenceDB
+    // ) public initializer {
+    //     _initializePauser(_pauserRegistry, UNPAUSE_ALL);
+    //     _transferOwnership(initialOwner);
+    //     aggregator = _aggregator;
+    //     generator = _generator;
+    //     inferenceDB = IInferenceDB(_inferenceDB);
+    // }
 
     function setNewInferenceDB(address _inferenceDB) public onlyTaskGenerator {
         inferenceDB = IInferenceDB(_inferenceDB);
+    }
+
+    function setNewAggregator(address _aggregator) public onlyAggregator {
+        aggregator = _aggregator;
+        generator = _aggregator;
     }
 
     /* FUNCTIONS */

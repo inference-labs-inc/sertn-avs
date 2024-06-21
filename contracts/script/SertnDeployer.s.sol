@@ -330,18 +330,18 @@ contract SertnDeployer is Script, Utils {
         inferenceDB.updateTaskManager(address(sertnTaskManager));
 
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
-        sertnProxyAdmin.upgradeAndCall(
-            TransparentUpgradeableProxy(payable(address(sertnTaskManager))),
-            address(sertnTaskManagerImplementation),
-            abi.encodeWithSelector(
-                sertnTaskManager.initialize.selector,
-                sertnPauserReg,
-                sertnCommunityMultisig,
-                AGGREGATOR_ADDR,
-                TASK_GENERATOR_ADDR,
-                address(inferenceDB)
-            )
-        );
+        // sertnProxyAdmin.upgradeAndCall(
+        //     TransparentUpgradeableProxy(payable(address(sertnTaskManager))),
+        //     address(sertnTaskManagerImplementation),
+        //     abi.encodeWithSelector(
+        //         sertnTaskManager.initialize.selector,
+        //         sertnPauserReg,
+        //         sertnCommunityMultisig,
+        //         AGGREGATOR_ADDR,
+        //         TASK_GENERATOR_ADDR,
+        //         address(inferenceDB)
+        //     )
+        // );
 
         // WRITE JSON DATA
         string memory parent_object = "parent object";

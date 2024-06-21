@@ -1,7 +1,7 @@
 {
   "addresses": {
-    "inferenceDB": "0xA3307BF348ACC4bEDdd67CCA2f7F0c4349d347Db",
-    "operatorStateRetriever": "0x10e38eE9dd4C549b61400Fc19347D00eD3edAfC4",
-    "zkVerifier": "0x76cec9299B6Fa418dc71416FF353737AB7933A7D"
+    "inferenceDB": "0xD412471B0B9d2D66a4A5E8327E156866BD67d1Da",
+    "operatorStateRetriever": "0x7f8185b1c877Ea1f0036f8E3455B0f2f99ACBB7e",
+    "zkVerifier": "0xe88179F9781b4BC9D9e46918e7B5F1D52C061fe8"
   }
 }
