@@ -64,20 +64,6 @@ contract SertnTaskManager is
         return inferenceDB.challengeInstances(id, index);
     }
 
-    // function initialize(
-    //     IPauserRegistry _pauserRegistry,
-    //     address initialOwner,
-    //     address _aggregator,
-    //     address _generator,
-    //     address _inferenceDB
-    // ) public initializer {
-    //     _initializePauser(_pauserRegistry, UNPAUSE_ALL);
-    //     _transferOwnership(initialOwner);
-    //     aggregator = _aggregator;
-    //     generator = _generator;
-    //     inferenceDB = IInferenceDB(_inferenceDB);
-    // }
-
     function setNewInferenceDB(address _inferenceDB) public onlyTaskGenerator {
         inferenceDB = IInferenceDB(_inferenceDB);
     }
@@ -93,7 +79,8 @@ contract SertnTaskManager is
         uint256[5] calldata inputs,
         uint32 quorumThresholdPercentage,
         bytes calldata quorumNumbers,
-        bool provenOnResponce
+        bool provenOnResponce,
+        address modelVerifier
     ) external onlyTaskGenerator {
         // create a new task struct
         Task memory newTask;
@@ -102,6 +89,7 @@ contract SertnTaskManager is
         newTask.quorumThresholdPercentage = quorumThresholdPercentage;
         newTask.quorumNumbers = quorumNumbers;
         newTask.provenOnResponse = provenOnResponce;
+        newTask.modelVerifier = modelVerifier;
 
         uint32 taskNum = inferenceDB.createNewTask(
             keccak256(abi.encode(newTask))
@@ -289,9 +277,6 @@ contract SertnTaskManager is
         //         }
         //     }
         // }
-
-        // the task response has been challenged successfully
-        //taskSuccesfullyChallenged[referenceTaskIndex] = true;
 
         emit TaskChallengedSuccessfully(referenceTaskIndex, msg.sender);
     }

@@ -112,7 +112,13 @@ contract TestContracts is Script, Utils {
         );
 
         vm.startPrank(msg.sender);
-        sertnTaskManager.createNewTask([uint256(0), 0, 0, 0, 0], 100, "", true);
+        sertnTaskManager.createNewTask(
+            [uint256(0), 0, 0, 0, 0],
+            100,
+            "",
+            true,
+            address(0)
+        );
         console.log(msg.sender);
         vm.stopPrank();
     }

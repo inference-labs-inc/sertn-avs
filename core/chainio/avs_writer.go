@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
@@ -26,6 +27,7 @@ type AvsWriterer interface {
 		quorumThresholdPercentage sdktypes.QuorumThresholdPercentage,
 		quorumNumbers sdktypes.QuorumNums,
 		provenOnResponse bool,
+		modelVerifier common.Address,
 	) (cstaskmanager.ITaskStructTask, uint32, error)
 	RaiseChallenge(
 		ctx context.Context,
@@ -89,13 +91,13 @@ func NewAvsWriter(avsRegistryWriter avsregistry.AvsRegistryWriter, avsServiceBin
 }
 
 // returns the tx receipt, as well as the task index (which it gets from parsing the tx receipt logs)
-func (w *AvsWriter) SendNewTaskInput(ctx context.Context, inputs [5]*big.Int, quorumThresholdPercentage sdktypes.QuorumThresholdPercentage, quorumNumbers sdktypes.QuorumNums, provenOnResponsen bool) (cstaskmanager.ITaskStructTask, uint32, error) {
+func (w *AvsWriter) SendNewTaskInput(ctx context.Context, inputs [5]*big.Int, quorumThresholdPercentage sdktypes.QuorumThresholdPercentage, quorumNumbers sdktypes.QuorumNums, provenOnResponsen bool, modelVerifier common.Address) (cstaskmanager.ITaskStructTask, uint32, error) {
 	txOpts, err := w.TxMgr.GetNoSendTxOpts()
 	if err != nil {
 		w.logger.Errorf("Error getting tx opts")
 		return cstaskmanager.ITaskStructTask{}, 0, err
 	}
-	tx, err := w.AvsContractBindings.TaskManager.CreateNewTask(txOpts, inputs, uint32(quorumThresholdPercentage), quorumNumbers.UnderlyingType(), provenOnResponsen)
+	tx, err := w.AvsContractBindings.TaskManager.CreateNewTask(txOpts, inputs, uint32(quorumThresholdPercentage), quorumNumbers.UnderlyingType(), provenOnResponsen, modelVerifier)
 	if err != nil {
 		w.logger.Errorf("Error assembling CreateNewTask tx")
 		return cstaskmanager.ITaskStructTask{}, 0, err

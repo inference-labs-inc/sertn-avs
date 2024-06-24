@@ -157,16 +157,7 @@ contract UpdateContracts is Script, Utils {
             deployed_addresses_output
         );
 
-        console.log(
-            sertnTaskManager.generator(),
-            sertnTaskManager.aggregator()
-        );
-
         writeOutput(finalJson, "updated_contracts");
-        vm.stopBroadcast();
-        vm.startBroadcast(AGGREGATOR_ADDR);
-        sertnTaskManager.createNewTask([uint256(0), 0, 0, 0, 0], 100, "", true);
-        console.log(AGGREGATOR_ADDR);
         vm.stopBroadcast();
     }
 }

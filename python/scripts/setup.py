@@ -5,23 +5,23 @@ import os
 import json
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
-
+from model_0 import Model
 from utils import relative_file_path
-from model import Model
 
-model = Model()
+model_deployment_folder = "models/model_0"
 
-model_path = relative_file_path('model_data/network.onnx')
-compiled_model_path = relative_file_path('model_data/network.ezkl')
-pk_path = relative_file_path('model_data/test.pk')
-vk_path = relative_file_path('model_data/test.vk')
-settings_path = relative_file_path('model_data/settings.json')
+model_path = relative_file_path(model_deployment_folder+'/network.onnx')
+compiled_model_path = relative_file_path(model_deployment_folder+'/network.ezkl')
+pk_path = relative_file_path(model_deployment_folder+'/test.pk')
+vk_path = relative_file_path(model_deployment_folder+'/test.vk')
+settings_path = relative_file_path(model_deployment_folder+'/settings.json')
 
-witness_path = relative_file_path('model_data/witness.json')
-data_path = relative_file_path('model_data/input.json')
-cal_data_path = relative_file_path('model_data/cal_data.json')
+witness_path = relative_file_path(model_deployment_folder+'/witness.json')
+data_path = relative_file_path(model_deployment_folder+'/input.json')
+cal_data_path = relative_file_path(model_deployment_folder+'/cal_data.json')
 
 # Flips the neural net into inference mode
+model = Model()
 model.eval()
 
 example_input = Variable(torch.Tensor([1,10,1,1,2]))

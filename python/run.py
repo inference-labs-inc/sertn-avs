@@ -1,14 +1,26 @@
 import argparse
-from model import Model
+from importlib import import_module
 from utils import parse_input, input_to_field_element
-
+from model_db import models
 try:
     parser = argparse.ArgumentParser(
                         prog='Sertn AVS ezkl operator engine')
 
     parser.add_argument('-i','--input', nargs='+', help='input data to run on', required=False)
+    parser.add_argument('-m','--model', nargs='+', help='model to run on', required=False)
     args = parser.parse_args()
+
     input = parse_input(args.input)
+    model_address = parse_input(args.model)
+    
+    if not model_address:
+        model_path = "model_0"
+        
+    model_path = models[model_address]
+    model_module = import_module(model_path)
+
+    Model = getattr(model_module, "Model")
+
     model = Model()
     model.eval()
     # return the answer

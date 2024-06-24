@@ -2,24 +2,31 @@ import ezkl
 import argparse
 from utils import relative_file_path, parse_input
 import json
+from model_db import models
 
 parser = argparse.ArgumentParser(
-                    prog='sertn AVS ezkl operator proving engine')
+                    prog='Sertn AVS ezkl operator proving engine')
 
 parser.add_argument('-i','--input', nargs='+', help='input data to run on', required=True)
+parser.add_argument('-m','--model', nargs='+', help='input model to run on', required=True)
 
 args = parser.parse_args()
 
 input = parse_input(args.input)
+model_address = parse_input(args.model)
+
+if not model_address:
+    model_path = "models/model_0"
+model_path = "models/"+models[model_address]
 
 data_array = ((input).detach().numpy()).reshape([-1]).tolist()
 
 data_path = relative_file_path("proof/inputs.json")
 witness_path = relative_file_path("proof/witness.json")
-compiled_model_path = relative_file_path("model_data/network.ezkl")
-pk_path = relative_file_path("model_data/test.pk")
-vk_path = relative_file_path("model_data/test.vk")
-settings_path = relative_file_path("model_data/settings.json")
+compiled_model_path = relative_file_path(model_path + "/network.ezkl")
+pk_path = relative_file_path(model_path + "/test.pk")
+vk_path = relative_file_path(model_path + "/test.vk")
+settings_path = relative_file_path(model_path + "/settings.json")
 proof_path =    relative_file_path('proof/proof.json')
 
 # Serialize data into file:

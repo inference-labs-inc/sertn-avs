@@ -21,6 +21,8 @@ contract InferenceDB is IInferenceDB {
     // mapping of task indices to hash of abi.encode(taskResponse, taskResponseMetadata)
     mapping(uint32 => bytes32) public allTaskResponses;
 
+    mapping(uint32 => address) public modelVerifiersForTasks;
+
     uint32 TASK_CHALLENGE_RESPONSE_WINDOW_BLOCK = 0;
     IZKVerifier zkVerifier;
 
@@ -58,6 +60,11 @@ contract InferenceDB is IInferenceDB {
         }
 
         challengeInstances[referenceTaskIndex][5] = taskResponse.output;
+        if (task.modelVerifier == address(0)) {
+            modelVerifiersForTasks[referenceTaskIndex] = address(zkVerifier);
+        } else {
+            modelVerifiersForTasks[referenceTaskIndex] = task.modelVerifier;
+        }
 
         challengeData[referenceTaskIndex].challenger = msg.sender;
         challengeData[referenceTaskIndex].timeChallenged = block.timestamp;
@@ -76,7 +83,12 @@ contract InferenceDB is IInferenceDB {
             require(challengeInstances[taskId][i] == instances[i]);
         }
 
-        require(zkVerifier.verifyProof(proof, instances));
+        require(
+            IZKVerifier(modelVerifiersForTasks[taskId]).verifyProof(
+                proof,
+                instances
+            )
+        );
 
         challengeMetadata.taskProven = ChallengeStatus.ProofConfirmed;
     }
@@ -162,7 +174,9 @@ contract InferenceDB is IInferenceDB {
         for (uint256 i = 0; i < task.inputs.length; i++) {
             require(instances[i] == task.inputs[i]);
         }
-        require(zkVerifier.verifyProof(proof, instances));
+        address modelVerifier = task.modelVerifier;
+        if (modelVerifier == address(0)) modelVerifier = address(zkVerifier);
+        require(IZKVerifier(modelVerifier).verifyProof(proof, instances));
 
         challengeData[taskIndex].taskProven = ChallengeStatus.ProofRejected;
     }

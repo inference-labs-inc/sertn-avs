@@ -14,6 +14,7 @@ import (
 	blsagg "github.com/Layr-Labs/eigensdk-go/services/bls_aggregation"
 	oprsinfoserv "github.com/Layr-Labs/eigensdk-go/services/operatorsinfo"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/inference-labs-inc/sertn-avs/aggregator/types"
@@ -134,7 +135,7 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 	// ticker doesn't tick immediately, so we send the first task here
 	// see https://github.com/golang/go/issues/17601
 	inputs := core.RandomInputs()
-	_, _ = agg.sendNewTask(inputs, false)
+	_, _ = agg.sendNewTask(inputs, false, common.HexToAddress(""))
 
 	go func() {
 		router := gin.Default()
@@ -144,8 +145,9 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 		router.GET("/inference", func(c *gin.Context) {
 			inputs, _ := c.GetQuery("inputs")
 			provenOnResponse, _ := c.GetQuery("provenOnResponse")
+			modelVerifier, _ := c.GetQuery("modelVerifier")
 			formattedInputs := core.FormatFloatStringForChain(inputs)
-			taskIndex, _ := agg.sendNewTask(formattedInputs, provenOnResponse == "true")
+			taskIndex, _ := agg.sendNewTask(formattedInputs, provenOnResponse == "true", common.HexToAddress(modelVerifier))
 
 			c.JSON(http.StatusOK, gin.H{
 				"message":   inputs,
@@ -217,10 +219,10 @@ func (agg *Aggregator) sendAggregatedResponseToContract(blsAggServiceResp blsagg
 
 // sendNewTask sends a new task to the task manager contract, and updates the Task dict struct
 // with the information of operators opted into quorum 0 at the block of task creation.
-func (agg *Aggregator) sendNewTask(input [5]*big.Int, provenOnResponse bool) (uint32, error) {
+func (agg *Aggregator) sendNewTask(input [5]*big.Int, provenOnResponse bool, modelVerifier common.Address) (uint32, error) {
 	agg.logger.Info("AGGREGATOR - NEW TASK", "input", input)
 
-	newTask, taskIndex, err := agg.avsWriter.SendNewTaskInput(context.Background(), input, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS, provenOnResponse)
+	newTask, taskIndex, err := agg.avsWriter.SendNewTaskInput(context.Background(), input, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS, provenOnResponse, modelVerifier)
 	if err != nil {
 		agg.logger.Error("Aggregator failed to send input", "err", err)
 		return 0, err

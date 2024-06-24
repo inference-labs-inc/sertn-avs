@@ -4,5 +4,5 @@ import (
 	_ "embed"
 )
 
-//go:embed abis/SertnTaskManager.json
+//go:embed abis/TaskManager.abi.json
 var TaskManagerAbi []byte
