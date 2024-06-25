@@ -39,4 +39,4 @@ export const ModelDBAbi = [
     ],
     stateMutability: "view",
   },
-];
+] as const;

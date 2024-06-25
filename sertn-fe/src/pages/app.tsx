@@ -11,7 +11,7 @@ import {
   LogMessage,
   ProofTypes,
 } from "../common/types";
-import { fetchInference, handleEvents } from "../common/utils";
+import { fetchInference, getModels, handleEvents } from "../common/utils";
 import Logger from "../components/Logger";
 
 let blockNumber = 0n;
@@ -34,6 +34,10 @@ const App = () => {
   const [proofType, setProofType] = useState(0);
   const { connectors, connect } = useConnect();
   const { address, isConnected } = useAccount();
+  const [model, setModel] = useState("");
+  const [availableModels, setAvailableModels] = useState([
+    { name: "", description: "", address: "" },
+  ]);
 
   const client = usePublicClient({ config: config });
 
@@ -62,6 +66,11 @@ const App = () => {
 
   useEffect(() => {
     if (!client) return;
+    (async () => {
+      const models = await getModels(client);
+      setAvailableModels(models);
+    })();
+
     //Implementing the setInterval method
     const interval = setInterval(() => {
       (async () => {
@@ -113,13 +122,14 @@ const App = () => {
                   setInference(
                     await fetchInference(
                       inferenceForm.input.value,
-                      inferenceForm.type.value === "Pre Prove"
+                      inferenceForm.type.value === "Pre Prove",
+                      model
                     )
                   );
                 })();
               }}
             >
-              <div class="flex tems-center mb-6">
+              <div class="flex items-center mb-6">
                 <input
                   class="bg-gray-100 border border-r-0 border-gray-400 rounded-sm rounded-r-none py-2 px-4 text-gray-700 leading-tight focus:outline-none  focus:border-slate-500 flex-grow w-3/5"
                   id="inline-full-name"
@@ -141,6 +151,24 @@ const App = () => {
                 </select>
               </div>
               <Logger logs={logs} inference={inference} />
+              <div class="flex justify-center gap-2 mb-4">
+                {availableModels.map((m) => {
+                  return (
+                    <a
+                      href="#"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setModel(m.address);
+                      }}
+                      class={`p-2 rounded-full px-4 ${
+                        model == m.address ? "bg-slate-600" : "bg-slate-400"
+                      } text-white text-xs`}
+                    >
+                      {m.name}
+                    </a>
+                  );
+                })}
+              </div>
               <div class="flex justify-center gap-4 w-full">
                 <button
                   class="shadow bg-slate-200 hover:bg-slate-400 focus:shadow-outline focus:outline-none hover:text-white py-2 px-4 rounded"

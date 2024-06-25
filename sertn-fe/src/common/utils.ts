@@ -1,4 +1,5 @@
-import { backendUrl } from "./constants";
+import { PublicClient, getContract } from "viem";
+import { ModelDBAddress, backendUrl } from "./constants";
 import {
   InferenceResponse,
   Log,
@@ -10,6 +11,7 @@ import {
   TaskRespondedWithProofArgs,
   TaskResponseArgs,
 } from "./types";
+import { ModelDBAbi } from "../ABI/ModelDB.abi";
 
 export const handleEvents = (
   logs: Log[],
@@ -82,12 +84,33 @@ export const handleEvents = (
 
 export const fetchInference = async (
   inputs: string,
-  provenOnResponse: boolean
+  provenOnResponse: boolean,
+  modelVerifier = "0xb63A6908A6cd558799E17B92E10E843d254248F2"
 ) => {
   const response = await fetch(
     backendUrl +
-      `?inputs=${inputs}&provenOnResponse=${provenOnResponse}&modelVerifier=0xb63A6908A6cd558799E17B92E10E843d254248F2`
+      `?inputs=${inputs}&provenOnResponse=${provenOnResponse}&modelVerifier=${modelVerifier}`
   );
   const text = await response.text();
   return JSON.parse(text) as InferenceResponse;
+};
+
+export const getModels = async (client: PublicClient) => {
+  const modelContract = getContract({
+    address: ModelDBAddress,
+    abi: ModelDBAbi,
+    client,
+  });
+
+  const latest = await modelContract.read.currentModelId();
+  const models = [];
+
+  for (let i = 0n; i < latest; i++) {
+    let address = await modelContract.read.modelAddresses([i]);
+    let model = await modelContract.read.modelVerifiers([address]);
+    const [name, description, _] = model;
+    models.push({ name, description, address });
+  }
+
+  return models;
 };
