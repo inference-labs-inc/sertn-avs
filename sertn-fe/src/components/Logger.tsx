@@ -10,7 +10,7 @@ const Logger = ({
   return (
     <div
       class={`${
-        inference.taskIndex >= 0 ? "h-60 p-6 mb-6" : "h-0"
+        inference.taskIndex >= 0 ? "h-60 p-6 mb-4" : "h-0"
       } text-white bg-slate-800 w-full rounded-sm transition-all duration-500 overflow-y-auto scrollbar-hide flex flex-col`}
     >
       {logs
