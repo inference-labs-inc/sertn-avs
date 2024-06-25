@@ -9,6 +9,7 @@ import {
   Log,
   LogLevel,
   LogMessage,
+  Model,
   ProofTypes,
 } from "../common/types";
 import { fetchInference, getModels, handleEvents } from "../common/utils";
@@ -35,9 +36,7 @@ const App = () => {
   const { connectors, connect } = useConnect();
   const { address, isConnected } = useAccount();
   const [model, setModel] = useState("");
-  const [availableModels, setAvailableModels] = useState([
-    { name: "", description: "", address: "" },
-  ]);
+  const [availableModels, setAvailableModels] = useState<Model[]>([]);
 
   const client = usePublicClient({ config: config });
 

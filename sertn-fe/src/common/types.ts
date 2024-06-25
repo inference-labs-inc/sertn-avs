@@ -105,3 +105,9 @@ export type LogMessage = {
   message: string;
   blockNumber: string;
 };
+
+export type Model = {
+  name: string;
+  description: string;
+  address: string;
+};
