@@ -38,7 +38,7 @@ enable_metrics: true
 node_api_ip_port_address: localhost:9010
 enable_node_api: true
 
-register_operator_on_startup: true
+register_operator_on_startup: false
 # address of token to deposit tokens into when registering on startup
 # addresses.erc20MockStrategy in tests/anvil/sertn_avs_deployment_output.json
 token_strategy_addr: 0x80528D6e9A2BAbFc766965E0E26d5aB08D9CFaF9

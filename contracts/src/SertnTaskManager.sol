@@ -28,15 +28,6 @@ contract SertnTaskManager is
 
     /* STORAGE */
 
-    // mapping of task indices to all tasks hashes
-    // when a task is created, task hash is stored here,
-    // and responses need to pass the actual task,
-    // which is hashed onchain and checked against this mapping
-    mapping(uint32 => bytes32) public allTaskHashes;
-
-    // mapping of task indices to hash of abi.encode(taskResponse, taskResponseMetadata)
-    mapping(uint32 => bytes32) public allTaskResponses;
-
     address public aggregator;
     address public generator;
     IInferenceDB inferenceDB;
@@ -165,7 +156,7 @@ contract SertnTaskManager is
         TaskResponseMetadata calldata taskResponseMetadata
     ) external {
         inferenceDB.challenge(task, taskResponse, taskResponseMetadata);
-        emit TaskChallenged(taskResponse.referenceTaskIndex);
+        emit TaskChallenged(taskResponse.referenceTaskIndex, task);
     }
 
     function proveResultAccurate(
@@ -300,7 +291,7 @@ contract SertnTaskManager is
         address indexed prover
     );
 
-    event TaskChallenged(uint32 indexed taskIndex);
+    event TaskChallenged(uint32 indexed taskIndex, Task task);
 
     event TaskRespondedWithProof(
         uint32 indexed taskIndex,

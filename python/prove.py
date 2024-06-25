@@ -13,11 +13,14 @@ parser.add_argument('-m','--model', nargs='+', help='input model to run on', req
 args = parser.parse_args()
 
 input = parse_input(args.input)
-model_address = parse_input(args.model)
+model_address = args.model[0]
 
-if not model_address:
-    model_path = "models/model_0"
-model_path = "models/"+models[model_address]
+if not (model_address in models.keys()):
+    model_path = "model_0"
+else:
+    model_path = models[model_address]
+
+model_path = "models/" + model_path
 
 data_array = ((input).detach().numpy()).reshape([-1]).tolist()
 

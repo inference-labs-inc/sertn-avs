@@ -68,7 +68,7 @@ export const handleEvents = (
       const args = log.args as TaskRespondedWithProofArgs;
       logger.log(
         "SUCCESS",
-        "Task Responded With Proof. Confirmed Ouput: " +
+        "Task Responded With Proof. Confirmed Output: " +
           args.output.toString() +
           ". Proven by: " +
           args.prover +
@@ -85,7 +85,8 @@ export const fetchInference = async (
   provenOnResponse: boolean
 ) => {
   const response = await fetch(
-    backendUrl + `?inputs=${inputs}&provenOnResponse=${provenOnResponse}`
+    backendUrl +
+      `?inputs=${inputs}&provenOnResponse=${provenOnResponse}&modelVerifier=0xb63A6908A6cd558799E17B92E10E843d254248F2`
   );
   const text = await response.text();
   return JSON.parse(text) as InferenceResponse;

@@ -23,7 +23,10 @@ import {SertnTaskManager} from "../src/SertnTaskManager.sol";
 import {ISertnTaskManager} from "../src/ISertnTaskManager.sol";
 import "../src/ERC20Mock.sol";
 
-import {ZKVerifier} from "../src/ZKVerifier.sol";
+import {Halo2Verifier} from "../src/models/model_0/ZKVerifier.sol";
+import {Halo2Verifier as Halo2Verifier_2} from "../src/models/model_1/ZKVerifier.sol";
+import {ModelDB} from "../src/ModelDB.sol";
+
 import {InferenceDB} from "../src/InferenceDB.sol";
 import {Utils} from "./utils/Utils.sol";
 
@@ -107,11 +110,25 @@ contract UpdateContracts is Script, Utils {
             registryCoordinator
         );
 
-        ZKVerifier zkVerifier = new ZKVerifier();
+        Halo2Verifier minModel = new Halo2Verifier();
+        Halo2Verifier_2 maxModel = new Halo2Verifier_2();
+        ModelDB modelDB = new ModelDB();
+
+        modelDB.createNewModel(
+            address(minModel),
+            "Minimum",
+            "This model returns the minimum value of the 5 inputs"
+        );
+
+        modelDB.createNewModel(
+            address(maxModel),
+            "Maximum",
+            "This model returns the maximum value of the inputs"
+        );
 
         InferenceDB inferenceDB = new InferenceDB(
             TASK_CHALLENGE_WINDOW_BLOCK,
-            address(zkVerifier)
+            address(minModel)
         );
         inferenceDB.updateTaskManager(address(sertnTaskManager));
 
@@ -132,17 +149,17 @@ contract UpdateContracts is Script, Utils {
 
         string memory deployed_addresses = "addresses";
 
-        vm.serializeAddress(
-            deployed_addresses,
-            "zkVerifier",
-            address(zkVerifier)
-        );
+        vm.serializeAddress(deployed_addresses, "model_0", address(minModel));
+
+        vm.serializeAddress(deployed_addresses, "model_1", address(maxModel));
 
         vm.serializeAddress(
             deployed_addresses,
             "inferenceDB",
             address(inferenceDB)
         );
+
+        vm.serializeAddress(deployed_addresses, "modelDB", address(modelDB));
 
         string memory deployed_addresses_output = vm.serializeAddress(
             deployed_addresses,

@@ -5,10 +5,10 @@ import os
 import json
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
-from model_0 import Model
+from model_1 import Model
 from utils import relative_file_path
 
-model_deployment_folder = "models/model_0"
+model_deployment_folder = "models/model_1"
 
 model_path = relative_file_path(model_deployment_folder+'/network.onnx')
 compiled_model_path = relative_file_path(model_deployment_folder+'/network.ezkl')
@@ -24,7 +24,7 @@ cal_data_path = relative_file_path(model_deployment_folder+'/cal_data.json')
 model = Model()
 model.eval()
 
-example_input = Variable(torch.Tensor([1,10,1,1,2]))
+example_input = Variable(torch.Tensor([1,1,1,1,2]))
 
 example_input = example_input.reshape(1, 5)
 

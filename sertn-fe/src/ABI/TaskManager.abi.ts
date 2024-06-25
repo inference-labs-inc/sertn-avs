@@ -26,44 +26,6 @@ export const sertn = {
     },
     {
       type: "function",
-      name: "allTaskHashes",
-      inputs: [
-        {
-          name: "",
-          type: "uint32",
-          internalType: "uint32",
-        },
-      ],
-      outputs: [
-        {
-          name: "",
-          type: "bytes32",
-          internalType: "bytes32",
-        },
-      ],
-      stateMutability: "view",
-    },
-    {
-      type: "function",
-      name: "allTaskResponses",
-      inputs: [
-        {
-          name: "",
-          type: "uint32",
-          internalType: "uint32",
-        },
-      ],
-      outputs: [
-        {
-          name: "",
-          type: "bytes32",
-          internalType: "bytes32",
-        },
-      ],
-      stateMutability: "view",
-    },
-    {
-      type: "function",
       name: "blsApkRegistry",
       inputs: [],
       outputs: [
@@ -1366,6 +1328,44 @@ export const sertn = {
           type: "uint32",
           indexed: true,
           internalType: "uint32",
+        },
+        {
+          name: "task",
+          type: "tuple",
+          indexed: false,
+          internalType: "struct ITaskStruct.Task",
+          components: [
+            {
+              name: "inputs",
+              type: "uint256[5]",
+              internalType: "uint256[5]",
+            },
+            {
+              name: "taskCreatedBlock",
+              type: "uint32",
+              internalType: "uint32",
+            },
+            {
+              name: "quorumNumbers",
+              type: "bytes",
+              internalType: "bytes",
+            },
+            {
+              name: "quorumThresholdPercentage",
+              type: "uint32",
+              internalType: "uint32",
+            },
+            {
+              name: "provenOnResponse",
+              type: "bool",
+              internalType: "bool",
+            },
+            {
+              name: "modelVerifier",
+              type: "address",
+              internalType: "address",
+            },
+          ],
         },
       ],
       anonymous: false,

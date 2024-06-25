@@ -23,7 +23,7 @@ import {SertnTaskManager} from "../src/SertnTaskManager.sol";
 import {ISertnTaskManager} from "../src/ISertnTaskManager.sol";
 import "../src/ERC20Mock.sol";
 
-import {ZKVerifier} from "../src/ZKVerifier.sol";
+import {Halo2Verifier} from "../src/models/model_0/ZKVerifier.sol";
 import {InferenceDB} from "../src/InferenceDB.sol";
 import {Utils} from "./utils/Utils.sol";
 
@@ -321,7 +321,7 @@ contract SertnDeployer is Script, Utils {
         sertnTaskManagerImplementation = new SertnTaskManager(
             registryCoordinator
         );
-        ZKVerifier zkVerifier = new ZKVerifier();
+        Halo2Verifier zkVerifier = new Halo2Verifier();
 
         InferenceDB inferenceDB = new InferenceDB(
             TASK_CHALLENGE_WINDOW_BLOCK,
