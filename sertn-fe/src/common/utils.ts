@@ -26,58 +26,66 @@ export const handleEvents = (
 ) => {
   logs.map((log: Log) => {
     const blockNumber = log.blockNumber.toString();
-    if (log.eventName === "NewTaskCreated") {
-      const args = log.args as NewTaskArgs;
-      logger.log(
-        "INFO",
-        "New Task Created. " + " ZK Inputs: " + args.task.inputs,
-        args.taskIndex,
-        blockNumber
-      );
-    }
-    if (log.eventName === "TaskResponded") {
-      const args = log.args as TaskResponseArgs;
-      logger.log(
-        "INFO",
-        "New Task Response. " + "Output: " + args.taskResponse.output,
-        args.taskResponse.referenceTaskIndex,
-        blockNumber
-      );
-    }
-    if (log.eventName === "TaskChallenged") {
-      const args = log.args as TaskChallengedArgs;
-      logger.log("WARN", "Task Challenged", args.taskIndex, blockNumber);
-    }
-    if (log.eventName === "TaskChallengedUnsuccessfully") {
-      const args = log.args as TaskChallengedUnsuccessfullyArgs;
-      logger.log(
-        "SUCCESS",
-        "Task Proven. Prover: " + args.prover,
-        args.taskIndex,
-        blockNumber
-      );
-    }
-    if (log.eventName === "TaskChallengedSuccessfully") {
-      const args = log.args as TaskChallengedSuccessfullyArgs;
-      logger.log(
-        "ERROR",
-        "Task Challenge Confirmed. Challenger: " + args.challenger,
-        args.taskIndex,
-        blockNumber
-      );
-    }
-    if (log.eventName === "TaskRespondedWithProof") {
-      const args = log.args as TaskRespondedWithProofArgs;
-      logger.log(
-        "SUCCESS",
-        "Task Responded With Proof. Confirmed Output: " +
-          args.output.toString() +
-          ". Proven by: " +
-          args.prover +
-          ".",
-        args.taskIndex,
-        blockNumber
-      );
+    switch (log.eventName) {
+      case "NewTaskCreated": {
+        const args = log.args as NewTaskArgs;
+        logger.log(
+          "INFO",
+          "New Task Created. " + " ZK Inputs: " + args.task.inputs,
+          args.taskIndex,
+          blockNumber
+        );
+        break;
+      }
+      case "TaskResponded": {
+        const args = log.args as TaskResponseArgs;
+        logger.log(
+          "INFO",
+          "New Task Response. " + "Output: " + args.taskResponse.output,
+          args.taskResponse.referenceTaskIndex,
+          blockNumber
+        );
+        break;
+      }
+      case "TaskChallenged": {
+        const args = log.args as TaskChallengedArgs;
+        logger.log("WARN", "Task Challenged", args.taskIndex, blockNumber);
+        break;
+      }
+      case "TaskChallengedUnsuccessfully": {
+        const args = log.args as TaskChallengedUnsuccessfullyArgs;
+        logger.log(
+          "SUCCESS",
+          "Task Proven. Prover: " + args.prover,
+          args.taskIndex,
+          blockNumber
+        );
+        break;
+      }
+      case "TaskChallengedSuccessfully": {
+        const args = log.args as TaskChallengedSuccessfullyArgs;
+        logger.log(
+          "ERROR",
+          "Task Challenge Confirmed. Challenger: " + args.challenger,
+          args.taskIndex,
+          blockNumber
+        );
+        break;
+      }
+      case "TaskRespondedWithProof": {
+        const args = log.args as TaskRespondedWithProofArgs;
+        logger.log(
+          "SUCCESS",
+          "Task Responded With Proof. Confirmed Output: " +
+            args.output.toString() +
+            ". Proven by: " +
+            args.prover +
+            ".",
+          args.taskIndex,
+          blockNumber
+        );
+        break;
+      }
     }
   });
 };
