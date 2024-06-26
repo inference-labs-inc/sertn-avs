@@ -1,5 +1,5 @@
 import { PublicClient, getContract } from "viem";
-import { ModelDBAddress, backendUrl } from "./constants";
+import { modelDBAddress, backendUrl } from "./constants";
 import {
   InferenceResponse,
   Log,
@@ -105,7 +105,7 @@ export const fetchInference = async (
 
 export const getModels = async (client: PublicClient) => {
   const modelContract = getContract({
-    address: ModelDBAddress,
+    address: modelDBAddress,
     abi: ModelDBAbi,
     client,
   });
@@ -114,8 +114,8 @@ export const getModels = async (client: PublicClient) => {
   const models = [];
 
   for (let i = 0n; i < latest; i++) {
-    let address = await modelContract.read.modelAddresses([i]);
-    let model = await modelContract.read.modelVerifiers([address]);
+    const address = await modelContract.read.modelAddresses([i]);
+    const model = await modelContract.read.modelVerifiers([address]);
     const [name, description, _] = model;
     models.push({ name, description, address });
   }

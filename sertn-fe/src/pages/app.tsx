@@ -151,19 +151,21 @@ const App = () => {
               </div>
               <Logger logs={logs} inference={inference} />
               <div class="flex justify-center gap-2 mb-4">
-                {availableModels.map((m) => {
+                {availableModels.map((modelChoice) => {
                   return (
                     <a
                       href="#"
                       onMouseDown={(e) => {
                         e.preventDefault();
-                        setModel(m.address);
+                        setModel(modelChoice.address);
                       }}
                       class={`p-2 rounded-full px-4 ${
-                        model == m.address ? "bg-slate-600" : "bg-slate-400"
+                        model == modelChoice.address
+                          ? "bg-slate-600"
+                          : "bg-slate-400"
                       } text-white text-xs`}
                     >
-                      {m.name}
+                      {modelChoice.name}
                     </a>
                   );
                 })}
