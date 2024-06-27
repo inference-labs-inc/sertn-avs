@@ -137,9 +137,9 @@ func (mr *MockAvsWritererMockRecorder) SendAggregatedResponse(arg0, arg1, arg2, 
 }
 
 // SendNewTaskInput mocks base method.
-func (m *MockAvsWriterer) SendNewTaskInput(arg0 context.Context, arg1 [5]*big.Int, arg2 types.QuorumThresholdPercentage, arg3 types.QuorumNums, arg4 bool) (contractSertnTaskManager.ITaskStructTask, uint32, error) {
+func (m *MockAvsWriterer) SendNewTaskInput(arg0 context.Context, arg1 [5]*big.Int, arg2 types.QuorumThresholdPercentage, arg3 types.QuorumNums, arg4 bool, arg5 common.Address) (contractSertnTaskManager.ITaskStructTask, uint32, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendNewTaskInput", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "SendNewTaskInput", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(contractSertnTaskManager.ITaskStructTask)
 	ret1, _ := ret[1].(uint32)
 	ret2, _ := ret[2].(error)
@@ -147,9 +147,9 @@ func (m *MockAvsWriterer) SendNewTaskInput(arg0 context.Context, arg1 [5]*big.In
 }
 
 // SendNewTaskInput indicates an expected call of SendNewTaskInput.
-func (mr *MockAvsWritererMockRecorder) SendNewTaskInput(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
+func (mr *MockAvsWritererMockRecorder) SendNewTaskInput(arg0, arg1, arg2, arg3, arg4, arg5 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendNewTaskInput", reflect.TypeOf((*MockAvsWriterer)(nil).SendNewTaskInput), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendNewTaskInput", reflect.TypeOf((*MockAvsWriterer)(nil).SendNewTaskInput), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
 // UpdateStakesOfEntireOperatorSetForQuorums mocks base method.

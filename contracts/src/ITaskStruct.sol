@@ -14,6 +14,7 @@ interface ITaskStruct {
         bytes quorumNumbers;
         uint32 quorumThresholdPercentage;
         bool provenOnResponse;
+        address modelVerifier;
     }
 
     // Task response is hashed and signed by operators.

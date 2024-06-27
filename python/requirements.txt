@@ -1,3 +1,4 @@
 torch
 ezkl==10.2.9
 numpy
+onnx

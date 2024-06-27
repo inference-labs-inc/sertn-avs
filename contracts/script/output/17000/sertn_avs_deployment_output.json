@@ -9,6 +9,7 @@
     "sertnServiceManagerImplementation": "0xb80eef2666BBDE56931A73d8c52061324749023b",
     "sertnTaskManager": "0x28410d159554A95545571A1362c7F51c37D31021",
     "sertnTaskManagerImplementation": "0xCd759C8108910FAc2879F452Aeda50b57dc9fF2d",
-    "zkVerifier": "0xbefe06E29C9B39391697d8f22Bf459b006E25165"
+    "zkVerifier": "0xbefe06E29C9B39391697d8f22Bf459b006E25165",
+    "proxyAdmin": "0xA2dAf1d19E16b39fE9456eb93C8458ed31c0c533"
   }
 }

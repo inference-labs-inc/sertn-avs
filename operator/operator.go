@@ -309,7 +309,7 @@ func (o *Operator) Start(ctx context.Context) error {
 			sub = o.avsSubscriber.SubscribeToNewTasks(o.newTaskCreatedChan)
 		case newTaskChallengedLog := <-o.newTaskChallengedChan:
 			o.logger.Info("CHALLENGE DETECTED", "newTaskChallengedLog", newTaskChallengedLog)
-			o.ProveAndSubmitResponseToChain(newTaskChallengedLog.TaskIndex)
+			o.ProveAndSubmitResponseToChain(newTaskChallengedLog.TaskIndex, newTaskChallengedLog.Task.ModelVerifier)
 		case newTaskCreatedLog := <-o.newTaskCreatedChan:
 			o.metrics.IncNumTasksReceived()
 			taskResponse := o.ProcessNewTaskCreatedLog(newTaskCreatedLog)
@@ -322,9 +322,9 @@ func (o *Operator) Start(ctx context.Context) error {
 	}
 }
 
-func (o *Operator) RunModelFromBigIntInputs(rawInputs [5]*big.Int) *big.Int {
+func (o *Operator) RunModelFromBigIntInputs(rawInputs [5]*big.Int, modelVerifier common.Address) *big.Int {
 	inputs := core.FormatBigIntInputsToString(rawInputs)
-	cmd := exec.Command("python", core.RelativeUrl("python/run.py"), "-i", inputs)
+	cmd := exec.Command("python", core.RelativeUrl("python/run.py"), "-i", inputs, "-m", modelVerifier.Hex())
 
 	stdout, err := cmd.CombinedOutput()
 	if err != nil {
@@ -350,11 +350,12 @@ func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.Con
 		"quorumNumbers", newTaskCreatedLog.Task.QuorumNumbers,
 		"QuorumThresholdPercentage", newTaskCreatedLog.Task.QuorumThresholdPercentage,
 		"ProvenOnResponse", newTaskCreatedLog.Task.ProvenOnResponse,
+		"Model Verifier", newTaskCreatedLog.Task.ModelVerifier,
 	)
 
 	if newTaskCreatedLog.Task.ProvenOnResponse {
 		inputString := core.FormatBigIntInputsToString(newTaskCreatedLog.Task.Inputs)
-		output, proof := o.OutputAndProofFromInputs(inputString)
+		output, proof := o.OutputAndProofFromInputs(inputString, newTaskCreatedLog.Task.ModelVerifier)
 		instances := append(newTaskCreatedLog.Task.Inputs[:], output)
 		tx, err := o.avsWriter.RespondToTaskWithProof(context.Background(), newTaskCreatedLog.Task, newTaskCreatedLog.TaskIndex, instances, proof)
 
@@ -370,7 +371,7 @@ func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.Con
 		}
 	}
 
-	output := o.RunModelFromBigIntInputs(newTaskCreatedLog.Task.Inputs)
+	output := o.RunModelFromBigIntInputs(newTaskCreatedLog.Task.Inputs, newTaskCreatedLog.Task.ModelVerifier)
 
 	o.logger.Info("OUTPUT FOR TASK - OPERATOR",
 		"inputs", newTaskCreatedLog.Task.Inputs,
@@ -400,7 +401,7 @@ func (o *Operator) SignTaskResponse(taskResponse *cstaskmanager.ITaskStructTaskR
 	return signedTaskResponse, nil
 }
 
-func (o *Operator) ProveAndSubmitResponseToChain(taskId uint32) {
+func (o *Operator) ProveAndSubmitResponseToChain(taskId uint32, modelVerifier common.Address) {
 	var inputs [5]*big.Int
 	callOpts := &bind.CallOpts{Pending: false}
 	for i := 0; i < 5; i++ {
@@ -411,7 +412,7 @@ func (o *Operator) ProveAndSubmitResponseToChain(taskId uint32) {
 		inputs[i] = currentInput
 	}
 	inputString := core.FormatBigIntInputsToString(inputs)
-	output, proof := o.OutputAndProofFromInputs(inputString)
+	output, proof := o.OutputAndProofFromInputs(inputString, modelVerifier)
 	instances := append(inputs[:], output)
 
 	tx, err := o.avsWriter.ProveResponseAccurate(context.Background(), taskId, instances, proof)
@@ -422,8 +423,8 @@ func (o *Operator) ProveAndSubmitResponseToChain(taskId uint32) {
 	o.logger.Info("Transaction for proof submitted", "txHash", tx.TxHash)
 }
 
-func (o *Operator) OutputAndProofFromInputs(inputs string) (*big.Int, []byte) {
-	cmd := exec.Command("python", core.RelativeUrl("python/prove.py"), "--input", inputs)
+func (o *Operator) OutputAndProofFromInputs(inputs string, modelVerifier common.Address) (*big.Int, []byte) {
+	cmd := exec.Command("python", core.RelativeUrl("python/prove.py"), "-i", inputs, "-m", modelVerifier.Hex())
 
 	stdout, err := cmd.CombinedOutput()
 	if err != nil {

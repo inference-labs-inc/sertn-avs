@@ -28,18 +28,8 @@ contract SertnTaskManager is
 
     /* STORAGE */
 
-    // mapping of task indices to all tasks hashes
-    // when a task is created, task hash is stored here,
-    // and responses need to pass the actual task,
-    // which is hashed onchain and checked against this mapping
-    mapping(uint32 => bytes32) public allTaskHashes;
-
-    // mapping of task indices to hash of abi.encode(taskResponse, taskResponseMetadata)
-    mapping(uint32 => bytes32) public allTaskResponses;
-
     address public aggregator;
     address public generator;
-
     IInferenceDB inferenceDB;
     /* MODIFIERS */
     modifier onlyAggregator() {
@@ -65,18 +55,13 @@ contract SertnTaskManager is
         return inferenceDB.challengeInstances(id, index);
     }
 
-    function initialize(
-        IPauserRegistry _pauserRegistry,
-        address initialOwner,
-        address _aggregator,
-        address _generator,
-        address _inferenceDB
-    ) public initializer {
-        _initializePauser(_pauserRegistry, UNPAUSE_ALL);
-        _transferOwnership(initialOwner);
-        aggregator = _aggregator;
-        generator = _generator;
+    function setNewInferenceDB(address _inferenceDB) public onlyTaskGenerator {
         inferenceDB = IInferenceDB(_inferenceDB);
+    }
+
+    function setNewAggregator(address _aggregator) public onlyAggregator {
+        aggregator = _aggregator;
+        generator = _aggregator;
     }
 
     /* FUNCTIONS */
@@ -85,7 +70,8 @@ contract SertnTaskManager is
         uint256[5] calldata inputs,
         uint32 quorumThresholdPercentage,
         bytes calldata quorumNumbers,
-        bool provenOnResponce
+        bool provenOnResponce,
+        address modelVerifier
     ) external onlyTaskGenerator {
         // create a new task struct
         Task memory newTask;
@@ -94,6 +80,7 @@ contract SertnTaskManager is
         newTask.quorumThresholdPercentage = quorumThresholdPercentage;
         newTask.quorumNumbers = quorumNumbers;
         newTask.provenOnResponse = provenOnResponce;
+        newTask.modelVerifier = modelVerifier;
 
         uint32 taskNum = inferenceDB.createNewTask(
             keccak256(abi.encode(newTask))
@@ -169,7 +156,7 @@ contract SertnTaskManager is
         TaskResponseMetadata calldata taskResponseMetadata
     ) external {
         inferenceDB.challenge(task, taskResponse, taskResponseMetadata);
-        emit TaskChallenged(taskResponse.referenceTaskIndex);
+        emit TaskChallenged(taskResponse.referenceTaskIndex, task);
     }
 
     function proveResultAccurate(
@@ -282,9 +269,6 @@ contract SertnTaskManager is
         //     }
         // }
 
-        // the task response has been challenged successfully
-        //taskSuccesfullyChallenged[referenceTaskIndex] = true;
-
         emit TaskChallengedSuccessfully(referenceTaskIndex, msg.sender);
     }
 
@@ -307,7 +291,7 @@ contract SertnTaskManager is
         address indexed prover
     );
 
-    event TaskChallenged(uint32 indexed taskIndex);
+    event TaskChallenged(uint32 indexed taskIndex, Task task);
 
     event TaskRespondedWithProof(
         uint32 indexed taskIndex,

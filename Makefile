@@ -5,11 +5,12 @@ help:
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 FORK_RPC=https://holesky.gateway.tenderly.co
+RPC_URL=http://localhost:8545
 CHAINID=17000
 
 AGGREGATOR_ECDSA_PRIV_KEY=0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
 CHALLENGER_ECDSA_PRIV_KEY=0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a
-MAIN_ECDSA_KEY=${AGGREGATOR_ECDSA_PRIV_KEY}
+MAIN_ECDSA_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 OPERATOR_ECDSA_PRIV_KEY=c6373064c6eb0c3b09d55ec5a85cf9a39003ffc39245157584d8eeed8bed041d
 
 DEPLOYMENT_FILES_DIR=contracts/script/output/${CHAINID}
@@ -19,7 +20,7 @@ STRATEGY_ADDRESS=0x80528D6e9A2BAbFc766965E0E26d5aB08D9CFaF9
 
 OPERATOR_ADDRESS=0x6dBC2B9174B0b51B7B308e064358a31E50beeBfa
 CHALLENGER_ADDRESS=0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
-AGGREGATOR_ADDRESS=0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+AGGREGATOR_ADDRESS=0xa0ee7a142d267c1f36714e4a8f75612f20a79720
 -----------------------------: ## 
 
 ___CONTRACTS___: ## 
@@ -37,11 +38,17 @@ setup: setup-python build-contracts
 deploy-contracts: 
 	./tests/anvil/deploy-avs-save-anvil-state.sh
 
+update-contracts:
+	cast send 0x232582B6B105FD467218a5A28A446a2E9625bdc6 --value 0.25ether --private-key=${MAIN_ECDSA_KEY} && cd contracts && forge script UpdateContracts --rpc-url=${RPC_URL} --unlocked --broadcast
+
+test-contracts:
+	cd contracts && forge script TestContracts --rpc-url=${RPC_URL} --unlocked
+
 update-metadata: 
 	sh ./tests/anvil/update-metadata.sh
 
 start-chain: ## starts anvil from a saved state file (with el and avs contracts deployed)
-	anvil --fork-url ${FORK_RPC}
+	anvil --fork-url ${FORK_RPC} --auto-impersonate
 
 bindings: ## generates contract bindings
 	cd contracts && ./generate-go-bindings.sh
@@ -66,13 +73,13 @@ cli-print-operator-status: ##
 	go run cli/main.go --config config-files/operator.anvil.yaml print-operator-status
 
 send-funds-operator: 
-	cast send ${OPERATOR_ADDRESS} --value 0.25ether --private-key ${MAIN_ECDSA_KEY}
+	cast send ${OPERATOR_ADDRESS} --value 0.25ether --private-key ${MAIN_ECDSA_KEY} --rpc-url ${RPC_URL}
 
 send-funds: ## sends fund to the operator challwnger and aggregator saved in tests/keys/test.ecdsa.key.json
 	cast send ${AGGREGATOR_ADDRESS} --value 0.25ether --private-key ${MAIN_ECDSA_KEY} && cast send ${CHALLENGER_ADDRESS} --value 0.25ether --private-key ${MAIN_ECDSA_KEY}
 
 wrap-eth:
-	cast send ${WETH_ADDRESS} "deposit()" --value 0.125ether --private-key ${OPERATOR_ECDSA_PRIV_KEY}
+	cast send ${WETH_ADDRESS} "deposit()" --value 0.125ether --private-key ${OPERATOR_ECDSA_PRIV_KEY} --rpc-url ${RPC_URL}
 
 -----------------------------: ## 
 # We pipe all zapper logs through https://github.com/maoueh/zap-pretty so make sure to install it

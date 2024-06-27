@@ -108,7 +108,7 @@ func TestRaiseChallenge(t *testing.T) {
 		challenger.taskResponses[TASK_INDEX].TaskResponse,
 		challenger.taskResponses[TASK_INDEX].TaskResponseMetadata,
 	).Return(mocks.MockRaiseAndResolveChallengeCall(BLOCK_NUMBER, TASK_INDEX), nil)
-	err = challenger.raiseChallenge(TASK_INDEX, OUTPUT, PROOF)
+	err = challenger.raiseChallenge(TASK_INDEX, OUTPUT)
 	assert.Nil(t, err)
 }
 

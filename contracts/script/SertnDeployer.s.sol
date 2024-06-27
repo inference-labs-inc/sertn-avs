@@ -23,7 +23,7 @@ import {SertnTaskManager} from "../src/SertnTaskManager.sol";
 import {ISertnTaskManager} from "../src/ISertnTaskManager.sol";
 import "../src/ERC20Mock.sol";
 
-import {ZKVerifier} from "../src/ZKVerifier.sol";
+import {Halo2Verifier} from "../src/models/model_0/ZKVerifier.sol";
 import {InferenceDB} from "../src/InferenceDB.sol";
 import {Utils} from "./utils/Utils.sol";
 
@@ -321,7 +321,7 @@ contract SertnDeployer is Script, Utils {
         sertnTaskManagerImplementation = new SertnTaskManager(
             registryCoordinator
         );
-        ZKVerifier zkVerifier = new ZKVerifier();
+        Halo2Verifier zkVerifier = new Halo2Verifier();
 
         InferenceDB inferenceDB = new InferenceDB(
             TASK_CHALLENGE_WINDOW_BLOCK,
@@ -330,18 +330,18 @@ contract SertnDeployer is Script, Utils {
         inferenceDB.updateTaskManager(address(sertnTaskManager));
 
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
-        sertnProxyAdmin.upgradeAndCall(
-            TransparentUpgradeableProxy(payable(address(sertnTaskManager))),
-            address(sertnTaskManagerImplementation),
-            abi.encodeWithSelector(
-                sertnTaskManager.initialize.selector,
-                sertnPauserReg,
-                sertnCommunityMultisig,
-                AGGREGATOR_ADDR,
-                TASK_GENERATOR_ADDR,
-                address(inferenceDB)
-            )
-        );
+        // sertnProxyAdmin.upgradeAndCall(
+        //     TransparentUpgradeableProxy(payable(address(sertnTaskManager))),
+        //     address(sertnTaskManagerImplementation),
+        //     abi.encodeWithSelector(
+        //         sertnTaskManager.initialize.selector,
+        //         sertnPauserReg,
+        //         sertnCommunityMultisig,
+        //         AGGREGATOR_ADDR,
+        //         TASK_GENERATOR_ADDR,
+        //         address(inferenceDB)
+        //     )
+        // );
 
         // WRITE JSON DATA
         string memory parent_object = "parent object";
@@ -391,6 +391,11 @@ contract SertnDeployer is Script, Utils {
             deployed_addresses,
             "zkVerifier",
             address(zkVerifier)
+        );
+        vm.serializeAddress(
+            deployed_addresses,
+            "proxyAdmin",
+            address(sertnProxyAdmin)
         );
         string memory deployed_addresses_output = vm.serializeAddress(
             deployed_addresses,

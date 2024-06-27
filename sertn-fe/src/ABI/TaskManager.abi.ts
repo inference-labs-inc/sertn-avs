@@ -15,21 +15,13 @@ export const sertn = {
       type: "function",
       name: "aggregator",
       inputs: [],
-      outputs: [{ name: "", type: "address", internalType: "address" }],
-      stateMutability: "view",
-    },
-    {
-      type: "function",
-      name: "allTaskHashes",
-      inputs: [{ name: "", type: "uint32", internalType: "uint32" }],
-      outputs: [{ name: "", type: "bytes32", internalType: "bytes32" }],
-      stateMutability: "view",
-    },
-    {
-      type: "function",
-      name: "allTaskResponses",
-      inputs: [{ name: "", type: "uint32", internalType: "uint32" }],
-      outputs: [{ name: "", type: "bytes32", internalType: "bytes32" }],
+      outputs: [
+        {
+          name: "",
+          type: "address",
+          internalType: "address",
+        },
+      ],
       stateMutability: "view",
     },
     {
@@ -49,18 +41,40 @@ export const sertn = {
       type: "function",
       name: "challengeInstances",
       inputs: [
-        { name: "id", type: "uint32", internalType: "uint32" },
-        { name: "index", type: "uint256", internalType: "uint256" },
+        {
+          name: "id",
+          type: "uint32",
+          internalType: "uint32",
+        },
+        {
+          name: "index",
+          type: "uint256",
+          internalType: "uint256",
+        },
       ],
-      outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+      outputs: [
+        {
+          name: "",
+          type: "uint256",
+          internalType: "uint256",
+        },
+      ],
       stateMutability: "view",
     },
     {
       type: "function",
       name: "checkSignatures",
       inputs: [
-        { name: "msgHash", type: "bytes32", internalType: "bytes32" },
-        { name: "quorumNumbers", type: "bytes", internalType: "bytes" },
+        {
+          name: "msgHash",
+          type: "bytes32",
+          internalType: "bytes32",
+        },
+        {
+          name: "quorumNumbers",
+          type: "bytes",
+          internalType: "bytes",
+        },
         {
           name: "referenceBlockNumber",
           type: "uint32",
@@ -82,8 +96,16 @@ export const sertn = {
               type: "tuple[]",
               internalType: "struct BN254.G1Point[]",
               components: [
-                { name: "X", type: "uint256", internalType: "uint256" },
-                { name: "Y", type: "uint256", internalType: "uint256" },
+                {
+                  name: "X",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
+                {
+                  name: "Y",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
               ],
             },
             {
@@ -91,8 +113,16 @@ export const sertn = {
               type: "tuple[]",
               internalType: "struct BN254.G1Point[]",
               components: [
-                { name: "X", type: "uint256", internalType: "uint256" },
-                { name: "Y", type: "uint256", internalType: "uint256" },
+                {
+                  name: "X",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
+                {
+                  name: "Y",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
               ],
             },
             {
@@ -117,8 +147,16 @@ export const sertn = {
               type: "tuple",
               internalType: "struct BN254.G1Point",
               components: [
-                { name: "X", type: "uint256", internalType: "uint256" },
-                { name: "Y", type: "uint256", internalType: "uint256" },
+                {
+                  name: "X",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
+                {
+                  name: "Y",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
               ],
             },
             {
@@ -157,7 +195,11 @@ export const sertn = {
             },
           ],
         },
-        { name: "", type: "bytes32", internalType: "bytes32" },
+        {
+          name: "",
+          type: "bytes32",
+          internalType: "bytes32",
+        },
       ],
       stateMutability: "view",
     },
@@ -195,6 +237,11 @@ export const sertn = {
               type: "bool",
               internalType: "bool",
             },
+            {
+              name: "modelVerifier",
+              type: "address",
+              internalType: "address",
+            },
           ],
         },
         {
@@ -207,7 +254,11 @@ export const sertn = {
               type: "uint32",
               internalType: "uint32",
             },
-            { name: "output", type: "uint256", internalType: "uint256" },
+            {
+              name: "output",
+              type: "uint256",
+              internalType: "uint256",
+            },
           ],
         },
         {
@@ -232,8 +283,16 @@ export const sertn = {
           type: "tuple[]",
           internalType: "struct BN254.G1Point[]",
           components: [
-            { name: "X", type: "uint256", internalType: "uint256" },
-            { name: "Y", type: "uint256", internalType: "uint256" },
+            {
+              name: "X",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "Y",
+              type: "uint256",
+              internalType: "uint256",
+            },
           ],
         },
       ],
@@ -254,8 +313,21 @@ export const sertn = {
           type: "uint32",
           internalType: "uint32",
         },
-        { name: "quorumNumbers", type: "bytes", internalType: "bytes" },
-        { name: "provenOnResponce", type: "bool", internalType: "bool" },
+        {
+          name: "quorumNumbers",
+          type: "bytes",
+          internalType: "bytes",
+        },
+        {
+          name: "provenOnResponce",
+          type: "bool",
+          internalType: "bool",
+        },
+        {
+          name: "modelVerifier",
+          type: "address",
+          internalType: "address",
+        },
       ],
       outputs: [],
       stateMutability: "nonpayable",
@@ -277,7 +349,13 @@ export const sertn = {
       type: "function",
       name: "generator",
       inputs: [],
-      outputs: [{ name: "", type: "address", internalType: "address" }],
+      outputs: [
+        {
+          name: "",
+          type: "address",
+          internalType: "address",
+        },
+      ],
       stateMutability: "view",
     },
     {
@@ -342,7 +420,11 @@ export const sertn = {
           type: "uint32",
           internalType: "uint32",
         },
-        { name: "quorumNumbers", type: "bytes", internalType: "bytes" },
+        {
+          name: "quorumNumbers",
+          type: "bytes",
+          internalType: "bytes",
+        },
         {
           name: "nonSignerOperatorIds",
           type: "bytes32[]",
@@ -389,8 +471,16 @@ export const sertn = {
           type: "address",
           internalType: "contract IRegistryCoordinator",
         },
-        { name: "quorumNumbers", type: "bytes", internalType: "bytes" },
-        { name: "blockNumber", type: "uint32", internalType: "uint32" },
+        {
+          name: "quorumNumbers",
+          type: "bytes",
+          internalType: "bytes",
+        },
+        {
+          name: "blockNumber",
+          type: "uint32",
+          internalType: "uint32",
+        },
       ],
       outputs: [
         {
@@ -408,7 +498,11 @@ export const sertn = {
               type: "bytes32",
               internalType: "bytes32",
             },
-            { name: "stake", type: "uint96", internalType: "uint96" },
+            {
+              name: "stake",
+              type: "uint96",
+              internalType: "uint96",
+            },
           ],
         },
       ],
@@ -423,11 +517,23 @@ export const sertn = {
           type: "address",
           internalType: "contract IRegistryCoordinator",
         },
-        { name: "operatorId", type: "bytes32", internalType: "bytes32" },
-        { name: "blockNumber", type: "uint32", internalType: "uint32" },
+        {
+          name: "operatorId",
+          type: "bytes32",
+          internalType: "bytes32",
+        },
+        {
+          name: "blockNumber",
+          type: "uint32",
+          internalType: "uint32",
+        },
       ],
       outputs: [
-        { name: "", type: "uint256", internalType: "uint256" },
+        {
+          name: "",
+          type: "uint256",
+          internalType: "uint256",
+        },
         {
           name: "",
           type: "tuple[][]",
@@ -443,7 +549,11 @@ export const sertn = {
               type: "bytes32",
               internalType: "bytes32",
             },
-            { name: "stake", type: "uint96", internalType: "uint96" },
+            {
+              name: "stake",
+              type: "uint96",
+              internalType: "uint96",
+            },
           ],
         },
       ],
@@ -463,37 +573,32 @@ export const sertn = {
           type: "bytes32[]",
           internalType: "bytes32[]",
         },
-        { name: "blockNumber", type: "uint32", internalType: "uint32" },
+        {
+          name: "blockNumber",
+          type: "uint32",
+          internalType: "uint32",
+        },
       ],
-      outputs: [{ name: "", type: "uint256[]", internalType: "uint256[]" }],
+      outputs: [
+        {
+          name: "",
+          type: "uint256[]",
+          internalType: "uint256[]",
+        },
+      ],
       stateMutability: "view",
-    },
-    {
-      type: "function",
-      name: "initialize",
-      inputs: [
-        {
-          name: "_pauserRegistry",
-          type: "address",
-          internalType: "contract IPauserRegistry",
-        },
-        {
-          name: "initialOwner",
-          type: "address",
-          internalType: "address",
-        },
-        { name: "_aggregator", type: "address", internalType: "address" },
-        { name: "_generator", type: "address", internalType: "address" },
-        { name: "_inferenceDB", type: "address", internalType: "address" },
-      ],
-      outputs: [],
-      stateMutability: "nonpayable",
     },
     {
       type: "function",
       name: "owner",
       inputs: [],
-      outputs: [{ name: "", type: "address", internalType: "address" }],
+      outputs: [
+        {
+          name: "",
+          type: "address",
+          internalType: "address",
+        },
+      ],
       stateMutability: "view",
     },
     {
@@ -519,15 +624,33 @@ export const sertn = {
     {
       type: "function",
       name: "paused",
-      inputs: [{ name: "index", type: "uint8", internalType: "uint8" }],
-      outputs: [{ name: "", type: "bool", internalType: "bool" }],
+      inputs: [
+        {
+          name: "index",
+          type: "uint8",
+          internalType: "uint8",
+        },
+      ],
+      outputs: [
+        {
+          name: "",
+          type: "bool",
+          internalType: "bool",
+        },
+      ],
       stateMutability: "view",
     },
     {
       type: "function",
       name: "paused",
       inputs: [],
-      outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+      outputs: [
+        {
+          name: "",
+          type: "uint256",
+          internalType: "uint256",
+        },
+      ],
       stateMutability: "view",
     },
     {
@@ -547,13 +670,21 @@ export const sertn = {
       type: "function",
       name: "proveResultAccurate",
       inputs: [
-        { name: "taskId", type: "uint32", internalType: "uint32" },
+        {
+          name: "taskId",
+          type: "uint32",
+          internalType: "uint32",
+        },
         {
           name: "instances",
           type: "uint256[]",
           internalType: "uint256[]",
         },
-        { name: "proof", type: "bytes", internalType: "bytes" },
+        {
+          name: "proof",
+          type: "bytes",
+          internalType: "bytes",
+        },
       ],
       outputs: [],
       stateMutability: "nonpayable",
@@ -592,6 +723,11 @@ export const sertn = {
               type: "bool",
               internalType: "bool",
             },
+            {
+              name: "modelVerifier",
+              type: "address",
+              internalType: "address",
+            },
           ],
         },
         {
@@ -604,7 +740,11 @@ export const sertn = {
               type: "uint32",
               internalType: "uint32",
             },
-            { name: "output", type: "uint256", internalType: "uint256" },
+            {
+              name: "output",
+              type: "uint256",
+              internalType: "uint256",
+            },
           ],
         },
         {
@@ -682,6 +822,11 @@ export const sertn = {
               type: "bool",
               internalType: "bool",
             },
+            {
+              name: "modelVerifier",
+              type: "address",
+              internalType: "address",
+            },
           ],
         },
         {
@@ -694,7 +839,11 @@ export const sertn = {
               type: "uint32",
               internalType: "uint32",
             },
-            { name: "output", type: "uint256", internalType: "uint256" },
+            {
+              name: "output",
+              type: "uint256",
+              internalType: "uint256",
+            },
           ],
         },
         {
@@ -713,8 +862,16 @@ export const sertn = {
               type: "tuple[]",
               internalType: "struct BN254.G1Point[]",
               components: [
-                { name: "X", type: "uint256", internalType: "uint256" },
-                { name: "Y", type: "uint256", internalType: "uint256" },
+                {
+                  name: "X",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
+                {
+                  name: "Y",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
               ],
             },
             {
@@ -722,8 +879,16 @@ export const sertn = {
               type: "tuple[]",
               internalType: "struct BN254.G1Point[]",
               components: [
-                { name: "X", type: "uint256", internalType: "uint256" },
-                { name: "Y", type: "uint256", internalType: "uint256" },
+                {
+                  name: "X",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
+                {
+                  name: "Y",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
               ],
             },
             {
@@ -748,8 +913,16 @@ export const sertn = {
               type: "tuple",
               internalType: "struct BN254.G1Point",
               components: [
-                { name: "X", type: "uint256", internalType: "uint256" },
-                { name: "Y", type: "uint256", internalType: "uint256" },
+                {
+                  name: "X",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
+                {
+                  name: "Y",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
               ],
             },
             {
@@ -807,15 +980,54 @@ export const sertn = {
               type: "bool",
               internalType: "bool",
             },
+            {
+              name: "modelVerifier",
+              type: "address",
+              internalType: "address",
+            },
           ],
         },
-        { name: "taskIndex", type: "uint32", internalType: "uint32" },
+        {
+          name: "taskIndex",
+          type: "uint32",
+          internalType: "uint32",
+        },
         {
           name: "instances",
           type: "uint256[]",
           internalType: "uint256[]",
         },
-        { name: "proof", type: "bytes", internalType: "bytes" },
+        {
+          name: "proof",
+          type: "bytes",
+          internalType: "bytes",
+        },
+      ],
+      outputs: [],
+      stateMutability: "nonpayable",
+    },
+    {
+      type: "function",
+      name: "setNewAggregator",
+      inputs: [
+        {
+          name: "_aggregator",
+          type: "address",
+          internalType: "address",
+        },
+      ],
+      outputs: [],
+      stateMutability: "nonpayable",
+    },
+    {
+      type: "function",
+      name: "setNewInferenceDB",
+      inputs: [
+        {
+          name: "_inferenceDB",
+          type: "address",
+          internalType: "address",
+        },
       ],
       outputs: [],
       stateMutability: "nonpayable",
@@ -836,7 +1048,13 @@ export const sertn = {
     {
       type: "function",
       name: "setStaleStakesForbidden",
-      inputs: [{ name: "value", type: "bool", internalType: "bool" }],
+      inputs: [
+        {
+          name: "value",
+          type: "bool",
+          internalType: "bool",
+        },
+      ],
       outputs: [],
       stateMutability: "nonpayable",
     },
@@ -857,13 +1075,25 @@ export const sertn = {
       type: "function",
       name: "staleStakesForbidden",
       inputs: [],
-      outputs: [{ name: "", type: "bool", internalType: "bool" }],
+      outputs: [
+        {
+          name: "",
+          type: "bool",
+          internalType: "bool",
+        },
+      ],
       stateMutability: "view",
     },
     {
       type: "function",
       name: "transferOwnership",
-      inputs: [{ name: "newOwner", type: "address", internalType: "address" }],
+      inputs: [
+        {
+          name: "newOwner",
+          type: "address",
+          internalType: "address",
+        },
+      ],
       outputs: [],
       stateMutability: "nonpayable",
     },
@@ -871,14 +1101,26 @@ export const sertn = {
       type: "function",
       name: "trySignatureAndApkVerification",
       inputs: [
-        { name: "msgHash", type: "bytes32", internalType: "bytes32" },
+        {
+          name: "msgHash",
+          type: "bytes32",
+          internalType: "bytes32",
+        },
         {
           name: "apk",
           type: "tuple",
           internalType: "struct BN254.G1Point",
           components: [
-            { name: "X", type: "uint256", internalType: "uint256" },
-            { name: "Y", type: "uint256", internalType: "uint256" },
+            {
+              name: "X",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "Y",
+              type: "uint256",
+              internalType: "uint256",
+            },
           ],
         },
         {
@@ -886,8 +1128,16 @@ export const sertn = {
           type: "tuple",
           internalType: "struct BN254.G2Point",
           components: [
-            { name: "X", type: "uint256[2]", internalType: "uint256[2]" },
-            { name: "Y", type: "uint256[2]", internalType: "uint256[2]" },
+            {
+              name: "X",
+              type: "uint256[2]",
+              internalType: "uint256[2]",
+            },
+            {
+              name: "Y",
+              type: "uint256[2]",
+              internalType: "uint256[2]",
+            },
           ],
         },
         {
@@ -895,14 +1145,30 @@ export const sertn = {
           type: "tuple",
           internalType: "struct BN254.G1Point",
           components: [
-            { name: "X", type: "uint256", internalType: "uint256" },
-            { name: "Y", type: "uint256", internalType: "uint256" },
+            {
+              name: "X",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "Y",
+              type: "uint256",
+              internalType: "uint256",
+            },
           ],
         },
       ],
       outputs: [
-        { name: "pairingSuccessful", type: "bool", internalType: "bool" },
-        { name: "siganatureIsValid", type: "bool", internalType: "bool" },
+        {
+          name: "pairingSuccessful",
+          type: "bool",
+          internalType: "bool",
+        },
+        {
+          name: "siganatureIsValid",
+          type: "bool",
+          internalType: "bool",
+        },
       ],
       stateMutability: "view",
     },
@@ -972,6 +1238,11 @@ export const sertn = {
               name: "provenOnResponse",
               type: "bool",
               internalType: "bool",
+            },
+            {
+              name: "modelVerifier",
+              type: "address",
+              internalType: "address",
             },
           ],
         },
@@ -1058,6 +1329,44 @@ export const sertn = {
           indexed: true,
           internalType: "uint32",
         },
+        {
+          name: "task",
+          type: "tuple",
+          indexed: false,
+          internalType: "struct ITaskStruct.Task",
+          components: [
+            {
+              name: "inputs",
+              type: "uint256[5]",
+              internalType: "uint256[5]",
+            },
+            {
+              name: "taskCreatedBlock",
+              type: "uint32",
+              internalType: "uint32",
+            },
+            {
+              name: "quorumNumbers",
+              type: "bytes",
+              internalType: "bytes",
+            },
+            {
+              name: "quorumThresholdPercentage",
+              type: "uint32",
+              internalType: "uint32",
+            },
+            {
+              name: "provenOnResponse",
+              type: "bool",
+              internalType: "bool",
+            },
+            {
+              name: "modelVerifier",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+        },
       ],
       anonymous: false,
     },
@@ -1127,7 +1436,11 @@ export const sertn = {
               type: "uint32",
               internalType: "uint32",
             },
-            { name: "output", type: "uint256", internalType: "uint256" },
+            {
+              name: "output",
+              type: "uint256",
+              internalType: "uint256",
+            },
           ],
         },
         {
@@ -1193,7 +1506,6 @@ export const sertn = {
           internalType: "uint256",
         },
       ],
-      anonymous: false,
     },
   ],
 };

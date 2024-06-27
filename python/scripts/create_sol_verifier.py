@@ -4,11 +4,13 @@ import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
 
-from utils import relative_file_path
-vk_path = relative_file_path("./model_data/test.vk")
-settings_path = relative_file_path("./model_data/settings.json")
+model_path = "models/model_1"
 
-sol_code_path = relative_file_path('../contracts/src/ZKVerifier.sol')
+from utils import relative_file_path
+vk_path = relative_file_path(model_path + "/test.vk")
+settings_path = relative_file_path(model_path + "/settings.json")
+
+sol_code_path = relative_file_path('../contracts/src/'+model_path+'/ZKVerifier.sol')
 abi_path = relative_file_path('../contracts/abi/ZKVerifier.abi.json')
 
 print ("INFO: Generating solidity contract")

@@ -9,9 +9,10 @@ import {
   Log,
   LogLevel,
   LogMessage,
+  Model,
   ProofTypes,
 } from "../common/types";
-import { fetchInference, handleEvents } from "../common/utils";
+import { fetchInference, getModels, handleEvents } from "../common/utils";
 import Logger from "../components/Logger";
 
 let blockNumber = 0n;
@@ -34,6 +35,8 @@ const App = () => {
   const [proofType, setProofType] = useState(0);
   const { connectors, connect } = useConnect();
   const { address, isConnected } = useAccount();
+  const [model, setModel] = useState("");
+  const [availableModels, setAvailableModels] = useState<Model[]>([]);
 
   const client = usePublicClient({ config: config });
 
@@ -62,6 +65,11 @@ const App = () => {
 
   useEffect(() => {
     if (!client) return;
+    (async () => {
+      const models = await getModels(client);
+      setAvailableModels(models);
+    })();
+
     //Implementing the setInterval method
     const interval = setInterval(() => {
       (async () => {
@@ -75,11 +83,11 @@ const App = () => {
           fromBlock: blockNumber,
         });
         if (logs.length) {
-          blockNumber = logs[logs.length - 1].blockNumber + 1n;
+          blockNumber = logs[logs.length - 1].blockNumber;
           handleEvents(logs as unknown as Log[], logger);
         }
       })();
-    }, 2000);
+    }, 5000);
     return () => clearInterval(interval);
   }, [client]);
 
@@ -113,13 +121,14 @@ const App = () => {
                   setInference(
                     await fetchInference(
                       inferenceForm.input.value,
-                      inferenceForm.type.value === "Pre Prove"
+                      inferenceForm.type.value === "Pre Prove",
+                      model
                     )
                   );
                 })();
               }}
             >
-              <div class="flex tems-center mb-6">
+              <div class="flex items-center mb-6">
                 <input
                   class="bg-gray-100 border border-r-0 border-gray-400 rounded-sm rounded-r-none py-2 px-4 text-gray-700 leading-tight focus:outline-none  focus:border-slate-500 flex-grow w-3/5"
                   id="inline-full-name"
@@ -141,6 +150,26 @@ const App = () => {
                 </select>
               </div>
               <Logger logs={logs} inference={inference} />
+              <div class="flex justify-center gap-2 mb-4">
+                {availableModels.map((modelChoice) => {
+                  return (
+                    <a
+                      href="#"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setModel(modelChoice.address);
+                      }}
+                      class={`p-2 rounded-full px-4 ${
+                        model == modelChoice.address
+                          ? "bg-slate-600"
+                          : "bg-slate-400"
+                      } text-white text-xs`}
+                    >
+                      {modelChoice.name}
+                    </a>
+                  );
+                })}
+              </div>
               <div class="flex justify-center gap-4 w-full">
                 <button
                   class="shadow bg-slate-200 hover:bg-slate-400 focus:shadow-outline focus:outline-none hover:text-white py-2 px-4 rounded"

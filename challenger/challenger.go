@@ -3,7 +3,6 @@ package challenger
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"math/big"
 	"os/exec"
 	"strconv"
@@ -15,7 +14,8 @@ import (
 	ethclient "github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/inference-labs-inc/sertn-avs/common"
+	"github.com/ethereum/go-ethereum/common"
+	sertnCommon "github.com/inference-labs-inc/sertn-avs/common"
 	"github.com/inference-labs-inc/sertn-avs/core"
 	"github.com/inference-labs-inc/sertn-avs/core/config"
 
@@ -153,45 +153,38 @@ func (c *Challenger) FormatInstancesForSolidity(inputs [5]*big.Int, output *big.
 	return instances
 }
 
-func (c *Challenger) OutputAndProofFromInputs(inputs string) (*big.Int, []byte) {
-	cmd := exec.Command("python", core.RelativeUrl("python/prove.py"), "--input", inputs)
+func (c *Challenger) RunModelFromBigIntInputs(rawInputs [5]*big.Int, modelVerifier common.Address) *big.Int {
+	inputs := core.FormatBigIntInputsToString(rawInputs)
+	cmd := exec.Command("python", core.RelativeUrl("python/run.py"), "-i", inputs, "-m", modelVerifier.Hex())
+
 	stdout, err := cmd.CombinedOutput()
 	if err != nil {
-		c.logger.Error("Challenger failed to prove computation:", "err", err)
+		c.logger.Error(err.Error())
 	}
-
-	result := string(stdout)
-	instancesAndProof := strings.Split(result, "\n")
-
-	proof, err := hex.DecodeString(instancesAndProof[1])
+	// convert output string into int64
+	output, err := strconv.ParseInt(strings.Split(string(stdout), "\n")[0], 10, 64)
 	if err != nil {
-		c.logger.Error("Challenger failed to decode hex of proof:", "err", err, "hex", instancesAndProof[1])
+		c.logger.Error("Error parsing integer from python response", "error", err.Error(), "python output", string(stdout))
 	}
 
-	output, err := strconv.ParseInt(instancesAndProof[0], 16, 64)
-	if err != nil {
-		c.logger.Error("Challenger failed to decode hex of output:", "err", err, "hex", instancesAndProof[0])
-	}
-
-	return big.NewInt(output), proof
+	return big.NewInt(output)
 }
 
 func (c *Challenger) callChallengeModule(taskIndex uint32) error {
-	inputs := core.FormatBigIntInputsToString(c.tasks[taskIndex].Inputs)
-	responce := c.taskResponses[taskIndex].TaskResponse.Output
-	output, proof := c.OutputAndProofFromInputs(inputs)
-	c.logger.Info("CHALLENGER - OPERATOR-OUTPUT", "response", responce)
+	response := c.taskResponses[taskIndex].TaskResponse.Output
+	output := c.RunModelFromBigIntInputs(c.tasks[taskIndex].Inputs, c.tasks[taskIndex].ModelVerifier)
+	c.logger.Info("CHALLENGER - OPERATOR-OUTPUT", "response", response)
 	c.logger.Info("CHALLENGER - REAL-OUTPUT", "output", output)
-	//checking if the answer in the response submitted by aggregator is correct
-	if output.Cmp(responce) != 0 || true {
+	// checking if the answer in the response submitted by aggregator is correct
+	if output.Cmp(response) != 0 || true {
 		c.logger.Infof("OUTPUT FROM OPERATOR INCORRECT")
 		// raise challenge
-		c.raiseChallenge(taskIndex, output, proof)
+		c.raiseChallenge(taskIndex, output)
 		return nil
 	}
 	c.logger.Infof("OUTPUT FROM OPERATOR CORRECT")
 	return nil
-	//return types.NoErrorInTaskResponse
+	// return types.NoErrorInTaskResponse
 }
 
 func (c *Challenger) getNonSigningOperatorPubKeys(vLog *cstaskmanager.ContractSertnTaskManagerTaskResponded) []cstaskmanager.BN254G1Point {
@@ -211,7 +204,7 @@ func (c *Challenger) getNonSigningOperatorPubKeys(vLog *cstaskmanager.ContractSe
 	calldata := tx.Data()
 	c.logger.Info("calldata", "calldata", calldata)
 
-	cstmAbi, err := abi.JSON(bytes.NewReader(common.TaskManagerAbi))
+	cstmAbi, err := abi.JSON(bytes.NewReader(sertnCommon.TaskManagerAbi))
 
 	if err != nil {
 		c.logger.Error("Error getting Abi", "err", err)
@@ -263,7 +256,7 @@ func (c *Challenger) getNonSigningOperatorPubKeys(vLog *cstaskmanager.ContractSe
 	return nonSigningOperatorPubKeys
 }
 
-func (c *Challenger) raiseChallenge(taskIndex uint32, output *big.Int, proof []byte) error {
+func (c *Challenger) raiseChallenge(taskIndex uint32, output *big.Int) error {
 	c.logger.Info("Challenger raising challenge.", "taskIndex", taskIndex)
 	c.logger.Info("Task", "Task", c.tasks[taskIndex])
 	c.logger.Info("TaskResponse", "TaskResponse", c.taskResponses[taskIndex].TaskResponse)
@@ -276,7 +269,6 @@ func (c *Challenger) raiseChallenge(taskIndex uint32, output *big.Int, proof []b
 	instances := c.FormatInstancesForSolidity(c.tasks[taskIndex].Inputs, output)
 
 	c.logger.Info("CHALLENGER - INSTANCES", "instances", instances)
-	// c.logger.Info("Proof", "proof", proof)
 
 	receipt, err := c.avsWriter.RaiseChallenge(
 		context.Background(),

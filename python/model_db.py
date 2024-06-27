@@ -1,0 +1,4 @@
+models = {
+    "0x6b4871BCDAA29ef43fb69837e9B08ED715A91FBf" : "model_0",
+    "0xb63A6908A6cd558799E17B92E10E843d254248F2" : "model_1",
+}
