@@ -204,7 +204,7 @@ contract SertnServiceManager is
                 allocatedEth[_model.operator_][i] += _model.ethShares_[i];
             }
 
-            allocatedSer[_model.operator_] += _task.poc_;
+            allocatedSer[_model.operator_] += 10*_task.poc_;
 
             emit newTask(_model.operator_, _taskId);
         } else {
@@ -283,7 +283,7 @@ contract SertnServiceManager is
             _verifyTask(_taskResponse.taskId_, _proof);
 
             if (taskVerified[_taskResponse.taskId_]) {
-                _clearTask(_taskResponse.taskId_);
+                _clearTask(_taskResponse.taskId_, false);
             }
 
             else {
@@ -292,7 +292,6 @@ contract SertnServiceManager is
             }
 
         }
-        
         
         submittedTasks[msg.sender] = _pushToByteArray(_taskResponse.taskId_, submittedTasks[msg.sender]);
 
@@ -322,12 +321,12 @@ contract SertnServiceManager is
     }
 
     function clearTask(bytes memory _taskId) external onlyAggregators() {
-        _clearTask(_taskId);
+        _clearTask(_taskId, false);
     }
 
-    function _clearTask(bytes memory _taskId) internal {
+    function _clearTask(bytes memory _taskId, bool _slashed) internal {
         Task memory _task = abi.decode(_taskId, (Task));
-        require(_task.startingBlock_ + TASK_EXPIRY_BLOCKS < block.number || taskVerified[_taskId], "Task has not expired");
+        require(_task.startingBlock_ + TASK_EXPIRY_BLOCKS < block.number || taskVerified[_taskId] || _slashed, "Task has not expired");
 
         uint8 _modelId = _task.modelId_;
 
@@ -396,10 +395,51 @@ contract SertnServiceManager is
                 allocatedEth[_model.operator_][i] -= _model.ethShares_[i];
             }
         
-        allocatedSer[_model.operator_] -= _task.poc_;
+        allocatedSer[_model.operator_] -= 10*_task.poc_;
 
         
 
+    }
+
+    function _slashOperator(bytes memory _taskId, string memory _whySlashed) external onlyAggregators() {
+
+        Task memory _task = abi.decode(_taskId, (Task));
+
+        uint8 _modelId = _task.modelId_;
+
+        if (0 > _modelId || numModels < _modelId) {
+            revert NotModelId("Not Model Id");
+        }
+
+        Model memory _model = modelInfo[_modelId];
+
+        address[] memory _operator = new address[](1);
+        _operator[0] = _model.operator_;
+
+        IStrategy[] memory _strategies = new IStrategy[](_model.ethStrategies_.length + 1);
+        for (uint8 i = 0; i < _model.ethStrategies_.length; i++) {
+            _strategies[i] = _model.ethStrategies_[i];
+        }
+
+        _strategies[_model.ethStrategies_.length] = tokenToStrategy[address(ser)];
+
+        uint256[] memory _wadsToSlash = new uint256[](_strategies.length);
+
+        uint256[] memory _operatorShares = delegationManager.getOperatorShares(_model.operator_, _strategies);
+        
+        for (uint8 i = 0; i < _model.ethStrategies_.length; i++) {
+            _wadsToSlash[i] = 1 ether * (_model.ethShares_[i]) / (allocationManager.getAllocation(_model.operator_, opSet, _strategies[i]).currentMagnitude * _operatorShares[i]);
+        }
+
+        _wadsToSlash[_model.ethStrategies_.length] = (1 ether * 10 * _task.poc_)/(allocationManager.getAllocation(_model.operator_, opSet, _strategies[_model.ethStrategies_.length]).currentMagnitude * _operatorShares[_model.ethStrategies_.length]);
+
+        IAllocationManagerTypes.SlashingParams memory _slashParams = IAllocationManagerTypes.SlashingParams({operator: _model.operator_, operatorSetId: 0, strategies: _strategies, wadsToSlash: _wadsToSlash, description: _whySlashed});
+
+        allocationManager.slashOperator(address(this), _slashParams);
+
+        emit operatorSlashed(_model.operator_, _taskId);
+
+        _clearTask(_taskId, true);
     }
 
     function _pushToByteArray(bytes memory _element, bytes[] memory _arr) internal returns (bytes[] memory){

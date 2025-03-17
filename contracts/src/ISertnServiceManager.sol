@@ -50,6 +50,7 @@ interface ISertnServiceManagerEvents {
     event taskResponded(uint8 indexed model, bytes indexed taskId, ISertnServiceManagerTypes.TaskResponse task);
     event upForSlashing(address indexed operator, bytes indexed taskId);
     event proofRequested(address indexed operator, bytes indexed taskId);
+    event operatorSlashed(address indexed operator, bytes indexed taskId);
 }
 
 interface ISertnServiceManagerTypes {
