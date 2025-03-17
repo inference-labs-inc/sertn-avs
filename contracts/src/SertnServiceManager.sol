@@ -47,6 +47,7 @@ contract SertnServiceManager is
 
     IAllocationManager allocationManager;
     IDelegationManager delegationManager;
+    IRewardsCoordinator rewardsCoordinator;
     OperatorSet opSet;
 
     modifier onlyAggregators() {
@@ -70,6 +71,7 @@ contract SertnServiceManager is
 
         allocationManager = IAllocationManager(_allocationManager);
         delegationManager = IDelegationManager(_delegationManager);
+        rewardsCoordinator = IRewardsCoordinator(_rewardsCoordinator);
 
         _registerToEigen(_strategies, _avsMetadata);
 
@@ -123,6 +125,8 @@ contract SertnServiceManager is
         uint32[] calldata operatorSetIds,
         bytes calldata data
     ) external {
+        require(avs==address(this), "wrong AVS");
+        require(operatorSetIds.length == 1 && operatorSetIds[0] == 0, "wrong operatorSetIds");
         (
             Model[] memory _models,
             bytes32[] memory _computeUnitNames,
@@ -337,95 +341,41 @@ contract SertnServiceManager is
 
         Model memory _model = modelInfo[_modelId];
 
-        bytes[] memory _taskArr = openTasks[_model.operator_];
-        bool _equal = true;
-        for (uint8 i = 0; i < _taskArr.length; i++) {
-            _equal = true;
-            if (_taskId.length != _taskArr[i].length) {
-                continue;
-            }
-            for (uint8 j = 0; j < _taskId.length; j++) {
-
-                if (_taskId[j] != _taskArr[i][j]) {
-                    _equal = false;
-                    break;
-                }
-            }
-            if (!_equal) {
-                continue;
-            }
-            delete openTasks[_model.operator_][i];
-            break;
-            }
-        
-        _taskArr = proofRequests[_model.operator_];
-        for (uint8 i = 0; i < _taskArr.length; i++) {
-            _equal = true;
-            if (_taskId.length != _taskArr[i].length) {
-                continue;
-            }
-            for (uint8 j = 0; j < _taskId.length; j++) {
-
-                if (_taskId[j] != _taskArr[i][j]) {
-                    _equal = false;
-                    break;
-                }
-            }
-            if (!_equal) {
-                continue;
-            }
-            delete proofRequests[_model.operator_][i];
-            break;
-            }
+        openTasks[_model.operator_] = _removeBytesElement(openTasks[_model.operator_], _taskId);
+        proofRequests[_model.operator_] = _removeBytesElement(proofRequests[_model.operator_], _taskId);
         if(_slashed) {
-        _taskArr = submittedTasks[_model.operator_];
-        for (uint8 i = 0; i < _taskArr.length; i++) {
-            _equal = true;
-            if (_taskId.length != _taskArr[i].length) {
-                continue;
-            }
-            for (uint8 j = 0; j < _taskId.length; j++) {
-                if (_taskId[j] != _taskArr[i][j]) {
-                    _equal = false;
-                    break;
-                }
-            }
-            if (!_equal) {
-                continue;
-            }
-            delete submittedTasks[_model.operator_][i];
-            break;
-            }
+            submittedTasks[_model.operator_] = _removeBytesElement(submittedTasks[_model.operator_], _taskId);
         }
         
-        _taskArr = slashingQueue[_model.operator_];
-        for (uint8 i = 0; i < _taskArr.length; i++) {
-            _equal = true;
-            if (_taskId.length != _taskArr[i].length) {
-                continue;
-            }
-            for (uint8 j = 0; j < _taskId.length; j++) {
-
-                if (_taskId[j] != _taskArr[i][j]) {
-                    _equal = false;
-                    break;
-                }
-            }
-            if (!_equal) {
-                continue;
-            }
-            delete slashingQueue[_model.operator_][i];
-            break;
-            }
+        slashingQueue[_model.operator_] = _removeBytesElement(slashingQueue[_model.operator_], _taskId);
 
         for (uint8 i = 0; i < allocatedEth[_model.operator_].length; i++) {
                 allocatedEth[_model.operator_][i] -= _model.ethShares_[i];
             }
         
         allocatedSer[_model.operator_] -= 10*_task.poc_;
+    }
 
-        
+    function _removeBytesElement(bytes[] memory _byteArray, bytes memory _byteElement) internal pure returns(bytes[] memory) {
+        bool _equal = true;
+        for (uint8 i = 0; i < _byteArray.length; i++) {
+            _equal = true;
+            if (_byteElement.length != _byteArray[i].length) {
+                continue;
+            }
+            for (uint8 j = 0; j < _byteElement.length; j++) {
 
+                if (_byteElement[j] != _byteArray[i][j]) {
+                    _equal = false;
+                    break;
+                }
+            }
+            if (!_equal) {
+                continue;
+            }
+            delete _byteArray[i];
+            return _byteArray;
+            }
     }
 
     function _slashOperator(bytes memory _taskId, string memory _whySlashed) external onlyAggregators() {
@@ -469,7 +419,7 @@ contract SertnServiceManager is
         _clearTask(_taskId, true);
     }
 
-    function _pushToByteArray(bytes memory _element, bytes[] memory _arr) internal returns (bytes[] memory){
+    function _pushToByteArray(bytes memory _element, bytes[] memory _arr) internal pure returns (bytes[] memory){
         bytes[] memory _tempBytesArr = new bytes[](_arr.length + 1);
         for (uint8 i = 0; i < _arr.length; i++) {
             _tempBytesArr[i] = _arr[i];
@@ -478,7 +428,7 @@ contract SertnServiceManager is
         return _tempBytesArr;
     }
 
-    function _pushToUint8Array(uint8 _element, uint8[] memory _arr) internal returns (uint8[] memory){
+    function _pushToUint8Array(uint8 _element, uint8[] memory _arr) internal pure returns (uint8[] memory){
         uint8[] memory _tempArr = new uint8[](_arr.length + 1);
         for (uint8 i = 0; i < _arr.length; i++) {
             _tempArr[i] = _arr[i];
