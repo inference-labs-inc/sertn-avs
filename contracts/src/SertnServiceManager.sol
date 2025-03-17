@@ -22,6 +22,7 @@ import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationMa
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
 import {IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
+import {IVerifier} from "./IVerifier.sol";
 import "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
 
 import "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
@@ -257,7 +258,17 @@ contract SertnServiceManager is
 
     function _verifyTask(bytes memory _taskId, bytes memory _proof) internal {
         //logic to verify task
-        taskVerified[_taskId] = true;
+        Task memory _task = abi.decode(_taskId, (Task));
+
+        uint8 _modelId = _task.modelId_;
+
+        if (0 > _modelId || numModels < _modelId) {
+            revert NotModelId("Not Model Id");
+        }
+
+        Model memory _model = modelInfo[_modelId];
+
+        taskVerified[_taskId] = IVerifier(_model.verifier_).verifyProof(_proof);
     }
 
     function submitTask(TaskResponse memory _taskResponse, bool _verification, bytes memory _proof) external {
