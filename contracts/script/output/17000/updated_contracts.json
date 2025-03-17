@@ -1,9 +1,0 @@
-{
-  "addresses": {
-    "inferenceDB": "0xe88179F9781b4BC9D9e46918e7B5F1D52C061fe8",
-    "modelDB": "0x2Fe80512816f10F254E0d9593199cdc54d5B2456",
-    "model_0": "0x6b4871BCDAA29ef43fb69837e9B08ED715A91FBf",
-    "model_1": "0xb63A6908A6cd558799E17B92E10E843d254248F2",
-    "operatorStateRetriever": "0x7f8185b1c877Ea1f0036f8E3455B0f2f99ACBB7e"
-  }
-}

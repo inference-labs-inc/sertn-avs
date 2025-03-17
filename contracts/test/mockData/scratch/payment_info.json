@@ -1,0 +1,11 @@
+{
+    "paymentInfo": {
+        "recipient": "0x5555666677778888999900001111222233334444",
+        "numPayments": 8,
+        "amountPerPayment": "100000000000",
+        "duration": 2592000,
+        "startTimestamp": 864000,
+        "endTimestamp": 1701907200,
+        "indexToProve": 0
+    }
+}

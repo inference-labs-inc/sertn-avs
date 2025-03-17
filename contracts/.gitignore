@@ -3,7 +3,7 @@ cache/
 out/
 
 # Ignores development broadcast logs
-/broadcast/**
+broadcast/*
 
 # Docs
 docs/
@@ -11,5 +11,8 @@ docs/
 # Dotenv file
 .env
 
-# Not sure what this folder is for.. so removing for now
-data/
+
+# DS_store files
+.DS_Store
+lib/.DS_Store
+

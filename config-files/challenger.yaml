@@ -1,4 +1,0 @@
-# 'production' only prints info and above. 'development' also prints debug
-environment: production
-eth_rpc_url: http://localhost:8545
-eth_ws_url: ws://localhost:8545
