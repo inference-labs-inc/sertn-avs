@@ -332,47 +332,7 @@ contract SertnServiceManager is
     function _clearTask(bytes memory _taskId) internal {
         Task memory _task = abi.decode(_taskId, (Task));
         require(_task.startingBlock_ + TASK_EXPIRY_BLOCKS < block.number || taskVerified[_taskId], "Task has not expired");
-        bytes[] memory _taskArr = openTasks[msg.sender];
-        for (uint8 i = 0; i < _taskArr.length; i++) {
-            if (_taskId.length != _taskArr[i].length) {
-                continue;
-            }
-            for (uint8 j = 0; j < _taskId.length; j++) {
-                if (_taskId[j] != _taskArr[i][j]) {
-                    break;
-                }
-            }
-            delete openTasks[msg.sender][i];
-            break;
-            }
-        
-        _taskArr = proofRequests[msg.sender];
-        for (uint8 i = 0; i < _taskArr.length; i++) {
-            if (_taskId.length != _taskArr[i].length) {
-                continue;
-            }
-            for (uint8 j = 0; j < _taskId.length; j++) {
-                if (_taskId[j] != _taskArr[i][j]) {
-                    break;
-                }
-            }
-            delete proofRequests[msg.sender][i];
-            break;
-            }
-        _taskArr = submittedTasks[msg.sender];
-        for (uint8 i = 0; i < _taskArr.length; i++) {
-            if (_taskId.length != _taskArr[i].length) {
-                continue;
-            }
-            for (uint8 j = 0; j < _taskId.length; j++) {
-                if (_taskId[j] != _taskArr[i][j]) {
-                    break;
-                }
-            }
-            delete submittedTasks[msg.sender][i];
-            break;
-            }
-        
+
         uint8 _modelId = _task.modelId_;
 
         if (0 > _modelId || numModels < _modelId) {
@@ -380,6 +340,61 @@ contract SertnServiceManager is
         }
 
         Model memory _model = modelInfo[_modelId];
+
+        bytes[] memory _taskArr = openTasks[_model.operator_];
+        for (uint8 i = 0; i < _taskArr.length; i++) {
+            if (_taskId.length != _taskArr[i].length) {
+                continue;
+            }
+            for (uint8 j = 0; j < _taskId.length; j++) {
+                if (_taskId[j] != _taskArr[i][j]) {
+                    break;
+                }
+            }
+            delete openTasks[_model.operator_][i];
+            break;
+            }
+        
+        _taskArr = proofRequests[_model.operator_];
+        for (uint8 i = 0; i < _taskArr.length; i++) {
+            if (_taskId.length != _taskArr[i].length) {
+                continue;
+            }
+            for (uint8 j = 0; j < _taskId.length; j++) {
+                if (_taskId[j] != _taskArr[i][j]) {
+                    break;
+                }
+            }
+            delete proofRequests[_model.operator_][i];
+            break;
+            }
+        _taskArr = submittedTasks[_model.operator_];
+        for (uint8 i = 0; i < _taskArr.length; i++) {
+            if (_taskId.length != _taskArr[i].length) {
+                continue;
+            }
+            for (uint8 j = 0; j < _taskId.length; j++) {
+                if (_taskId[j] != _taskArr[i][j]) {
+                    break;
+                }
+            }
+            delete submittedTasks[_model.operator_][i];
+            break;
+            }
+        
+        _taskArr = slashingQueue[_model.operator_];
+        for (uint8 i = 0; i < _taskArr.length; i++) {
+            if (_taskId.length != _taskArr[i].length) {
+                continue;
+            }
+            for (uint8 j = 0; j < _taskId.length; j++) {
+                if (_taskId[j] != _taskArr[i][j]) {
+                    break;
+                }
+            }
+            delete slashingQueue[_model.operator_][i];
+            break;
+            }
 
         for (uint8 i = 0; i < allocatedEth[_model.operator_].length; i++) {
                 allocatedEth[_model.operator_][i] -= _model.ethShares_[i];
