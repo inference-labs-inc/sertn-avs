@@ -291,33 +291,7 @@ contract SertnServiceManager is
             _verifyTask(_taskResponse.taskId_, _proof);
 
             if (taskVerified[_taskResponse.taskId_]) {
-                bytes[] memory _taskId = openTasks[msg.sender];
-                for (uint8 i = 0; i < openTasks[msg.sender].length; i++) {
-                    if (_taskResponse.taskId_.length != _taskId[i].length) {
-                        continue;
-                    }
-                    for (uint8 j = 0; j < openTasks[msg.sender].length; j++) {
-                        if (_taskResponse.taskId_[j] != _taskId[i][j]) {
-                            break;
-                        }
-                    }
-                    delete openTasks[msg.sender][i];
-                    break;
-                    }
-                
-                _taskId = proofRequests[msg.sender];
-                for (uint8 i = 0; i < proofRequests[msg.sender].length; i++) {
-                    if (_taskResponse.taskId_.length != _taskId[i].length) {
-                        continue;
-                    }
-                    for (uint8 j = 0; j < proofRequests[msg.sender].length; j++) {
-                        if (_taskResponse.taskId_[j] != _taskId[i][j]) {
-                            break;
-                        }
-                    }
-                    delete proofRequests[msg.sender][i];
-                    break;
-                    }
+                _clearTask(_taskResponse.taskId_);
             }
 
             else {
@@ -336,7 +310,8 @@ contract SertnServiceManager is
     }
 
     function requestProof(bytes memory _taskId) external {
-        
+
+        require(bountyHunter[_taskId] == address(0), "bounty already set");
         Task memory _task = abi.decode(_taskId, (Task));
         Model memory _model = modelInfo[_task.modelId_];
 
@@ -345,6 +320,74 @@ contract SertnServiceManager is
         ser.transferFrom(msg.sender, address(this), _amount);
 
         proofRequests[_model.operator_] = _pushToByteArray(_taskId, proofRequests[_model.operator_]);
+
+        proofRequestExponents[_model.operator_][0] += 500;
+
+        bountyHunter[_taskId] = msg.sender;
+
+        emit proofRequested(_model.operator_, _taskId);
+
+    }
+
+    function _clearTask(bytes memory _taskId) internal {
+        Task memory _task = abi.decode(_taskId, (Task));
+        require(_task.startingBlock_ + TASK_EXPIRY_BLOCKS < block.number || taskVerified[_taskId], "Task has not expired");
+        bytes[] memory _taskArr = openTasks[msg.sender];
+        for (uint8 i = 0; i < _taskArr.length; i++) {
+            if (_taskId.length != _taskArr[i].length) {
+                continue;
+            }
+            for (uint8 j = 0; j < _taskId.length; j++) {
+                if (_taskId[j] != _taskArr[i][j]) {
+                    break;
+                }
+            }
+            delete openTasks[msg.sender][i];
+            break;
+            }
+        
+        _taskArr = proofRequests[msg.sender];
+        for (uint8 i = 0; i < _taskArr.length; i++) {
+            if (_taskId.length != _taskArr[i].length) {
+                continue;
+            }
+            for (uint8 j = 0; j < _taskId.length; j++) {
+                if (_taskId[j] != _taskArr[i][j]) {
+                    break;
+                }
+            }
+            delete proofRequests[msg.sender][i];
+            break;
+            }
+        _taskArr = submittedTasks[msg.sender];
+        for (uint8 i = 0; i < _taskArr.length; i++) {
+            if (_taskId.length != _taskArr[i].length) {
+                continue;
+            }
+            for (uint8 j = 0; j < _taskId.length; j++) {
+                if (_taskId[j] != _taskArr[i][j]) {
+                    break;
+                }
+            }
+            delete submittedTasks[msg.sender][i];
+            break;
+            }
+        
+        uint8 _modelId = _task.modelId_;
+
+        if (0 > _modelId || numModels < _modelId) {
+            revert NotModelId("Not Model Id");
+        }
+
+        Model memory _model = modelInfo[_modelId];
+
+        for (uint8 i = 0; i < allocatedEth[_model.operator_].length; i++) {
+                allocatedEth[_model.operator_][i] -= _model.ethShares_[i];
+            }
+        
+        allocatedSer[_model.operator_] -= _task.poc_;
+
+        
 
     }
 
