@@ -289,6 +289,7 @@ contract SertnServiceManager is
             else {
                 slashingQueue[msg.sender] = _pushToByteArray(_taskResponse.taskId_, slashingQueue[msg.sender]);
                 emit upForSlashing(_model.operator_, _taskResponse.taskId_);
+                return;
             }
 
         }
@@ -337,14 +338,21 @@ contract SertnServiceManager is
         Model memory _model = modelInfo[_modelId];
 
         bytes[] memory _taskArr = openTasks[_model.operator_];
+        bool _equal = true;
         for (uint8 i = 0; i < _taskArr.length; i++) {
+            _equal = true;
             if (_taskId.length != _taskArr[i].length) {
                 continue;
             }
             for (uint8 j = 0; j < _taskId.length; j++) {
+
                 if (_taskId[j] != _taskArr[i][j]) {
+                    _equal = false;
                     break;
                 }
+            }
+            if (!_equal) {
+                continue;
             }
             delete openTasks[_model.operator_][i];
             break;
@@ -352,40 +360,59 @@ contract SertnServiceManager is
         
         _taskArr = proofRequests[_model.operator_];
         for (uint8 i = 0; i < _taskArr.length; i++) {
+            _equal = true;
             if (_taskId.length != _taskArr[i].length) {
                 continue;
             }
             for (uint8 j = 0; j < _taskId.length; j++) {
+
                 if (_taskId[j] != _taskArr[i][j]) {
+                    _equal = false;
                     break;
                 }
+            }
+            if (!_equal) {
+                continue;
             }
             delete proofRequests[_model.operator_][i];
             break;
             }
+        if(_slashed) {
         _taskArr = submittedTasks[_model.operator_];
         for (uint8 i = 0; i < _taskArr.length; i++) {
+            _equal = true;
             if (_taskId.length != _taskArr[i].length) {
                 continue;
             }
             for (uint8 j = 0; j < _taskId.length; j++) {
                 if (_taskId[j] != _taskArr[i][j]) {
+                    _equal = false;
                     break;
                 }
+            }
+            if (!_equal) {
+                continue;
             }
             delete submittedTasks[_model.operator_][i];
             break;
             }
+        }
         
         _taskArr = slashingQueue[_model.operator_];
         for (uint8 i = 0; i < _taskArr.length; i++) {
+            _equal = true;
             if (_taskId.length != _taskArr[i].length) {
                 continue;
             }
             for (uint8 j = 0; j < _taskId.length; j++) {
+
                 if (_taskId[j] != _taskArr[i][j]) {
+                    _equal = false;
                     break;
                 }
+            }
+            if (!_equal) {
+                continue;
             }
             delete slashingQueue[_model.operator_][i];
             break;
