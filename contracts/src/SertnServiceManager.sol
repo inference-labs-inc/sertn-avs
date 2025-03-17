@@ -136,7 +136,7 @@ contract SertnServiceManager is
             _models[i].operator_ = operator;
             modelInfo[modelNum] = _models[i];
             //Allows users to access similar model names, for instance "llama" could correspond to model id's 1, 3, and 7
-            modelsByName[_models[i].modelName_].push(modelNum);
+            modelsByName[_models[i].modelName_] = _pushToUint8Array(modelNum, modelsByName[_models[i].modelName_]);
             
         }
 
@@ -148,14 +148,6 @@ contract SertnServiceManager is
             models_: _modelIds,
             computeUnits_: _computeUnitNames
         });
-
-        bytes[] memory tempBytesArr;
-        // Note: open tasks also denotes tasks which have been completed but are still slashable
-
-        openTasks[operator] = tempBytesArr;
-        submittedTasks[operator] = tempBytesArr;
-        slashingQueue[operator] = tempBytesArr;
-        proofRequests[operator] = tempBytesArr;
 
         allocatedEth[operator] = new uint256[](_models[0].ethShares_.length);
         for (uint8 i = 0; i < allocatedEth[operator].length; i++) {
@@ -200,7 +192,7 @@ contract SertnServiceManager is
             ser.transferFrom(msg.sender, address(this), 1.5e3*(_model.baseFee_ + _task.poc_)/1e3))
         ) {
             bytes memory _taskId = abi.encode(_task);
-
+            // Note: open tasks also denotes tasks which have been completed but are still slashable
             openTasks[_model.operator_] = _pushToByteArray(_taskId, openTasks[_model.operator_]);
             if (_task.proveOnResponse_) {
                 proofRequests[_model.operator_] = _pushToByteArray(_taskId, proofRequests[_model.operator_]);
@@ -329,6 +321,10 @@ contract SertnServiceManager is
 
     }
 
+    function clearTask(bytes memory _taskId) external onlyAggregators() {
+        _clearTask(_taskId);
+    }
+
     function _clearTask(bytes memory _taskId) internal {
         Task memory _task = abi.decode(_taskId, (Task));
         require(_task.startingBlock_ + TASK_EXPIRY_BLOCKS < block.number || taskVerified[_taskId], "Task has not expired");
@@ -413,6 +409,15 @@ contract SertnServiceManager is
         }
         _tempBytesArr[_arr.length] = _element;
         return _tempBytesArr;
+    }
+
+    function _pushToUint8Array(uint8 _element, uint8[] memory _arr) internal returns (uint8[] memory){
+        uint8[] memory _tempArr = new uint8[](_arr.length + 1);
+        for (uint8 i = 0; i < _arr.length; i++) {
+            _tempArr[i] = _arr[i];
+        }
+        _tempArr[_arr.length] = _element;
+        return _tempArr;
     }
 
     function deregisterOperator(
