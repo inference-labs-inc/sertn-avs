@@ -7,7 +7,7 @@ import {IStrategy} from "eigenlayer-contracts/src/contracts/interfaces/IStrategy
 
 abstract contract SertnServiceManagerStorage is ISertnServiceManager, ISertnServiceManagerTypes {
 
-
+    uint256 PROOF_REQUEST_COST = 100;
     mapping(address => IStrategy) public tokenToStrategy;
     mapping(address => Operator) internal opInfo;
     mapping(address => bool) internal isAggregator;
@@ -24,4 +24,5 @@ abstract contract SertnServiceManagerStorage is ISertnServiceManager, ISertnServ
     mapping(address => bytes[]) internal slashingQueue;
     mapping(address => uint256[]) internal allocatedEth;
     mapping(address => uint256) internal allocatedSer;
+    mapping(address => uint32[2]) internal proofRequestExponents;
 }

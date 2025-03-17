@@ -165,6 +165,8 @@ contract SertnServiceManager is
 
         operators.push(operator);
         isOperator[operator] = true;
+        uint32[2] memory tempProofRequestExponents = [uint32(1e3),uint32(1e3)];
+        proofRequestExponents[operator] = tempProofRequestExponents;
 
         // allocationManager.getAllocatedStrategies(operator, )
 
@@ -184,7 +186,7 @@ contract SertnServiceManager is
 
         Model memory _model = modelInfo[_modelId];
 
-        _checkFinancialSecurity(_task.poc_, _model, _model.maxBlocks_);
+        _checkFinancialSecurity(_task.poc_*10, _model, _model.maxBlocks_);
 
         if (_task.proveOnResponse_ && !_model.proveOnResponse_) {
             revert NoProofOnResponse("Prove On Response Not Available");
@@ -192,9 +194,12 @@ contract SertnServiceManager is
 
         if (
             _model.available_ &&
-            (computeUnits[_model.operator_][_model.computeType_] > 0)
+            (computeUnits[_model.operator_][_model.computeType_] > 0 && 
+            //payment, should probably implement rounding
+            ser.transferFrom(msg.sender, address(this), 1.5e3*(_model.baseFee_ + _task.poc_)/1e3))
         ) {
             bytes memory _taskId = abi.encode(_task);
+
             openTasks[_model.operator_] = _pushToByteArray(_taskId, openTasks[_model.operator_]);
             if (_task.proveOnResponse_) {
                 proofRequests[_model.operator_] = _pushToByteArray(_taskId, proofRequests[_model.operator_]);
@@ -325,8 +330,11 @@ contract SertnServiceManager is
         Model memory _model = modelInfo[_task.modelId_];
 
 
-        uint256 _amount = 
+        uint256 _amount = PROOF_REQUEST_COST*(proofRequestExponents[_model.operator_][0]/proofRequestExponents[_model.operator_][1]);
         ser.transferFrom(msg.sender, address(this), _amount);
+
+        proofRequests[_model.operator_] = _pushToByteArray(_taskId, proofRequests[_model.operator_]);
+
     }
 
     function _pushToByteArray(bytes memory _element, bytes[] memory _arr) internal returns (bytes[] memory){
