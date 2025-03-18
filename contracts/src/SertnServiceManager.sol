@@ -51,12 +51,12 @@ contract SertnServiceManager is
     OperatorSet opSet;
 
     modifier onlyAggregators() {
-        require(isAggregator[msg.sender]);
+        require(isAggregator[msg.sender], "Not registered aggregator");
         _;
     }
 
     modifier onlyOperators() {
-        require(isOperator[msg.sender]);
+        require(isOperator[msg.sender], "Not registered operator");
         _;
     }
 
@@ -302,6 +302,8 @@ contract SertnServiceManager is
 
         taskResponse[msg.sender][_taskResponse.taskId_] = _taskResponse;
 
+        computeUnits[_model.operator_][_model.computeType_] += 1;
+
         emit taskResponded(_modelId, _taskResponse.taskId_, _taskResponse);
     }
 
@@ -417,6 +419,10 @@ contract SertnServiceManager is
         emit operatorSlashed(_model.operator_, _taskId);
 
         _clearTask(_taskId, true);
+    }
+
+    function _sendRewards(IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[] calldata operatorDirectedRewardsSubmissions) external onlyAggregators() {
+        rewardsCoordinator.createOperatorDirectedAVSRewardsSubmission(address(this), operatorDirectedRewardsSubmissions);
     }
 
     function _pushToByteArray(bytes memory _element, bytes[] memory _arr) internal pure returns (bytes[] memory){
