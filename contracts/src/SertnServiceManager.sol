@@ -460,7 +460,22 @@ contract SertnServiceManager is
         _clearTask(_taskId, true);
     }
 
-    function _sendRewards(IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[] calldata operatorDirectedRewardsSubmissions) external onlyAggregators() {
+    function _sendRewards(IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[] calldata operatorDirectedRewardsSubmissions, bytes[][] memory _rewardedTasks) external onlyAggregators() {
+
+        for (uint8 i = 0; i < operatorDirectedRewardsSubmissions[0].operatorRewards.length; i ++) {
+            Operator memory _operator = opInfo[operatorDirectedRewardsSubmissions[0].operatorRewards[i].operator];
+            for (uint8 j = 0; j < _rewardedTasks[i].length; j ++) {
+                Task memory _task = abi.decode(_rewardedTasks[i][j], (Task));
+                require(_task.startingBlock_ + TASK_EXPIRY_BLOCKS < block.number || taskVerified[_rewardedTasks[i][j]], "Task has not expired");
+                require(_removeBytesElement(_operator.submittedTasks_, _rewardedTasks[i][j]).length == _operator.submittedTasks_.length - 1, "Not in submitted Tasks");
+                _operator.submittedTasks_ = _removeBytesElement(_operator.submittedTasks_, _rewardedTasks[i][j]);
+                opInfo[operatorDirectedRewardsSubmissions[0].operatorRewards[i].operator] = _operator;
+                if (_removeBytesElement(_operator.openTasks_, _rewardedTasks[i][j]).length == _operator.submittedTasks_.length - 1) {
+                    _clearTask(_rewardedTasks[i][j], false);
+                }
+            }
+        }
+
         rewardsCoordinator.createOperatorDirectedAVSRewardsSubmission(address(this), operatorDirectedRewardsSubmissions);
     }
 
