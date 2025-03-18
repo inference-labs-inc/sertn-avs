@@ -3,7 +3,7 @@ pragma solidity ^0.8.28;
 
 import {ISertnServiceManager} from "./ISertnServiceManager.sol";
 import {ISertnServiceManagerTypes} from "./ISertnServiceManager.sol";
-import {IStrategy} from "eigenlayer-contracts/src/contracts/interfaces/IStrategy.sol";
+import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
 
 abstract contract SertnServiceManagerStorage is ISertnServiceManager, ISertnServiceManagerTypes {
 

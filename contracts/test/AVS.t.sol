@@ -23,7 +23,6 @@ import {AllocationManager} from "@eigenlayer/contracts/core/AllocationManager.so
 import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {IAVSRegistrar} from "@eigenlayer/contracts/interfaces/IAVSRegistrar.sol";
-import {SertnRegistrar} from "../src/SertnRegistrar.sol";
 import {OperatorSet} from "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
 
 import {Test, console2 as console} from "forge-std/Test.sol";
@@ -194,7 +193,6 @@ contract RegisterOperatorToAVS is AVSSetup {
     ISertnServiceManager internal sm;
     ECDSAStakeRegistry internal stakeRegistry;
     IPermissionController internal permissionController;
-    SertnRegistrar internal sertnRegistrar;
 
     IStrategy[] strat;
     IAllocationManagerTypes.CreateSetParams[] setParams;
@@ -211,7 +209,6 @@ contract RegisterOperatorToAVS is AVSSetup {
         
         vm.startPrank(address(sm));
 
-        sertnRegistrar = new SertnRegistrar();
         allocationManager.updateAVSMetadataURI(address(sm), "");
         // allocationManager.setAVSRegistrar(address(sm), sertnRegistrar);
         delete strat;
@@ -238,8 +235,8 @@ contract RegisterOperatorToAVS is AVSSetup {
             registerAsOperatorToAVS(operators[i]);
         }
     }
-    function test_run() public {
-        console2.log(allocationManager.getMemberCount(opSet[0]));
-    }
+    // function test_run() public {
+    //     console2.log(allocationManager.getMemberCount(opSet[0]));
+    // }
 
 }

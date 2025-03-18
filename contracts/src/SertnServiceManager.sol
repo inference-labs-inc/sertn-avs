@@ -399,25 +399,12 @@ contract SertnServiceManager is
     }
 
     function _removeBytesElement(bytes[] memory _byteArray, bytes memory _byteElement) internal pure returns(bytes[] memory) {
-        bool _equal = true;
         for (uint8 i = 0; i < _byteArray.length; i++) {
-            _equal = true;
-            if (_byteElement.length != _byteArray[i].length) {
-                continue;
+            if (keccak256(_byteElement) == keccak256(_byteArray[i])) {
+                delete _byteArray[i];
+                return _byteArray;
             }
-            for (uint8 j = 0; j < _byteElement.length; j++) {
-
-                if (_byteElement[j] != _byteArray[i][j]) {
-                    _equal = false;
-                    break;
-                }
-            }
-            if (!_equal) {
-                continue;
-            }
-            delete _byteArray[i];
-            return _byteArray;
-            }
+        }
     }
 
     function _slashOperator(bytes memory _taskId, string memory _whySlashed) external onlyAggregators() {
