@@ -9,7 +9,8 @@ abstract contract SertnServiceManagerStorage is ISertnServiceManager, ISertnServ
 
     uint256 PROOF_REQUEST_COST = 100;
     uint256 TASK_EXPIRY_BLOCKS = 1e3;
-    
+    uint256 BOUNTY = 500;
+
     mapping(address => IStrategy) public tokenToStrategy;
     mapping(address => Operator) internal opInfo;
     mapping(address => bool) internal isAggregator;
@@ -17,15 +18,14 @@ abstract contract SertnServiceManagerStorage is ISertnServiceManager, ISertnServ
     mapping(uint8 => Model) internal modelInfo;
     mapping(address => mapping(bytes32 => uint8)) internal computeUnits;
     mapping(bytes32 => uint8[]) internal modelsByName;
-    mapping(address => bytes[]) internal openTasks;
-    mapping(address => bytes[]) internal submittedTasks;
+    // mapping(address => bytes[]) internal openTasks;
+    // mapping(address => bytes[]) internal submittedTasks;
     mapping(bytes => bool) internal taskVerified;
-    mapping(address => mapping(bytes => Task)) internal taskInfo;
-    mapping(address => mapping(bytes => TaskResponse)) internal taskResponse;
-    mapping(address => bytes[]) internal proofRequests;
-    mapping(address => bytes[]) internal slashingQueue;
-    mapping(address => uint256[]) internal allocatedEth;
-    mapping(address => uint256) internal allocatedSer;
-    mapping(address => uint32[2]) internal proofRequestExponents;
+    mapping(bytes  => TaskResponse) internal taskResponse;
+    // mapping(address => bytes[]) internal proofRequests;
+    mapping(address => bytes[]) internal operatorSlashingQueue;
+    // mapping(address => uint256[]) internal allocatedEth;
+    // mapping(address => uint256) internal allocatedSer;
+    // mapping(address => uint32[2]) internal proofRequestExponents;
     mapping(bytes => address) internal bountyHunter;
 }

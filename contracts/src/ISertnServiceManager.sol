@@ -58,6 +58,12 @@ interface ISertnServiceManagerTypes {
     struct Operator {
         uint8[] models_;
         bytes32[] computeUnits_;
+        bytes[] openTasks_;
+        bytes[] submittedTasks_;
+        bytes[] proofRequests_;
+        uint256[] allocatedEth_;
+        uint256 allocatedSer_;
+        uint32[2] proofRequestExponents_;
     }
 
     struct Model {

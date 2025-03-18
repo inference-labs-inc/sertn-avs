@@ -42,6 +42,7 @@ contract SertnServiceManager is
     uint8 numModels = 0;
     address[] aggregators;
     address[] operators;
+    bytes[] slashingQueue;
 
     IERC20 ser;
 
@@ -150,20 +151,21 @@ contract SertnServiceManager is
 
         opInfo[operator] = Operator({
             models_: _modelIds,
-            computeUnits_: _computeUnitNames
+            computeUnits_: _computeUnitNames,
+            openTasks_: new bytes[](0),
+            submittedTasks_: new bytes[](0),
+            proofRequests_: new bytes[](0),
+            allocatedEth_: new uint256[](_models[0].ethShares_.length),
+            allocatedSer_: 0,
+            proofRequestExponents_: [uint32(1e3),uint32(1e3)]
         });
 
-        allocatedEth[operator] = new uint256[](_models[0].ethShares_.length);
-        for (uint8 i = 0; i < allocatedEth[operator].length; i++) {
-            allocatedEth[operator][i] = 0;
+        for (uint8 i = 0; i < _models[0].ethShares_.length; i++) {
+            opInfo[operator].allocatedEth_[i] = 0;
         }
-        
-        allocatedSer[operator] = 0;
 
         operators.push(operator);
         isOperator[operator] = true;
-        uint32[2] memory tempProofRequestExponents = [uint32(1e3),uint32(1e3)];
-        proofRequestExponents[operator] = tempProofRequestExponents;
 
         // allocationManager.getAllocatedStrategies(operator, )
 
@@ -185,6 +187,8 @@ contract SertnServiceManager is
 
         _checkFinancialSecurity(_task.poc_*10, _model, _model.maxBlocks_);
 
+        Operator memory _operator = opInfo[_model.operator_];
+
         if (_task.proveOnResponse_ && !_model.proveOnResponse_) {
             revert NoProofOnResponse("Prove On Response Not Available");
         }
@@ -197,18 +201,25 @@ contract SertnServiceManager is
         ) {
             bytes memory _taskId = abi.encode(_task);
             // Note: open tasks also denotes tasks which have been completed but are still slashable
-            openTasks[_model.operator_] = _pushToByteArray(_taskId, openTasks[_model.operator_]);
+            _operator.openTasks_ = _pushToByteArray(_taskId, _operator.openTasks_);
+            // openTasks[_model.operator_] = _pushToByteArray(_taskId, openTasks[_model.operator_]);
             if (_task.proveOnResponse_) {
-                proofRequests[_model.operator_] = _pushToByteArray(_taskId, proofRequests[_model.operator_]);
+                _operator.proofRequests_ = _pushToByteArray(_taskId, _operator.proofRequests_);
+                // proofRequests[_model.operator_] = _pushToByteArray(_taskId, proofRequests[_model.operator_]);
             }
 
             computeUnits[_model.operator_][_model.computeType_] -= 1;
             
-            for (uint8 i = 0; i < allocatedEth[_model.operator_].length; i++) {
-                allocatedEth[_model.operator_][i] += _model.ethShares_[i];
+            for (uint8 i = 0; i < _operator.allocatedEth_.length; i++) {
+                _operator.allocatedEth_[i] += _model.ethShares_[i];
             }
-
-            allocatedSer[_model.operator_] += 10*_task.poc_;
+            // for (uint8 i = 0; i < allocatedEth[_model.operator_].length; i++) {
+            //     allocatedEth[_model.operator_][i] += _model.ethShares_[i];
+            // }
+            
+            _operator.allocatedSer_ += 10*_task.poc_;
+            // allocatedSer[_model.operator_] += 10*_task.poc_;
+            opInfo[_model.operator_] = _operator; 
 
             emit newTask(_model.operator_, _taskId);
         } else {
@@ -231,8 +242,10 @@ contract SertnServiceManager is
                 _model.ethStrategies_,
                 uint32(block.number) + _securityDuration
             )[0];
+        Operator memory _operator = opInfo[_model.operator_];
         for (uint8 i = 0; i < _ethSecurity.length; i++) {
-            if (_ethSecurity[i] > _model.ethShares_[i] + allocatedEth[_model.operator_][i]) {
+            if (_ethSecurity[i] > _model.ethShares_[i] + _operator.allocatedEth_[i]) {
+            // if (_ethSecurity[i] > _model.ethShares_[i] + allocatedEth[_model.operator_][i]) {
                 revert TaskCouldNotBeSent("Not enough eth backed security");
             }
         }
@@ -246,7 +259,8 @@ contract SertnServiceManager is
                 _pocStrategy,
                 uint32(block.number) + _securityDuration
             )[0][0] >
-            _poc + allocatedSer[_model.operator_]
+            _poc + _operator.allocatedSer_
+            // _poc + allocatedSer[_model.operator_]
         ) {
             revert TaskCouldNotBeSent("Not enough ser backed security");
         }
@@ -279,6 +293,8 @@ contract SertnServiceManager is
 
         Model memory _model = modelInfo[_modelId];
 
+        Operator memory _operator = opInfo[_model.operator_];
+
         require(msg.sender == _model.operator_, "Not operator assigned to task");
 
         _checkFinancialSecurity(_task.poc_, _model, 0);
@@ -291,16 +307,20 @@ contract SertnServiceManager is
             }
 
             else {
-                slashingQueue[msg.sender] = _pushToByteArray(_taskResponse.taskId_, slashingQueue[msg.sender]);
+                operatorSlashingQueue[msg.sender] = _pushToByteArray(_taskResponse.taskId_, operatorSlashingQueue[msg.sender]);
+                slashingQueue.push(_taskResponse.taskId_);
                 emit upForSlashing(_model.operator_, _taskResponse.taskId_);
                 return;
             }
 
         }
         
-        submittedTasks[msg.sender] = _pushToByteArray(_taskResponse.taskId_, submittedTasks[msg.sender]);
+        _operator.submittedTasks_ = _pushToByteArray(_taskResponse.taskId_, _operator.submittedTasks_);
+        // submittedTasks[msg.sender] = _pushToByteArray(_taskResponse.taskId_, submittedTasks[msg.sender]);
 
-        taskResponse[msg.sender][_taskResponse.taskId_] = _taskResponse;
+        opInfo[_model.operator_] = _operator;
+
+        taskResponse[_taskResponse.taskId_] = _taskResponse;
 
         computeUnits[_model.operator_][_model.computeType_] += 1;
 
@@ -312,15 +332,19 @@ contract SertnServiceManager is
         require(bountyHunter[_taskId] == address(0), "bounty already set");
         Task memory _task = abi.decode(_taskId, (Task));
         Model memory _model = modelInfo[_task.modelId_];
+        Operator memory _operator = opInfo[_model.operator_];
 
-
-        uint256 _amount = PROOF_REQUEST_COST*(proofRequestExponents[_model.operator_][0]/proofRequestExponents[_model.operator_][1]);
+        uint256 _amount = PROOF_REQUEST_COST*(_operator.proofRequestExponents_[0]/_operator.proofRequestExponents_[1]);
+        // uint256 _amount = PROOF_REQUEST_COST*(proofRequestExponents[_model.operator_][0]/proofRequestExponents[_model.operator_][1]);
         ser.transferFrom(msg.sender, address(this), _amount);
 
-        proofRequests[_model.operator_] = _pushToByteArray(_taskId, proofRequests[_model.operator_]);
+        _operator.proofRequests_ = _pushToByteArray(_taskId, _operator.proofRequests_);
+        // proofRequests[_model.operator_] = _pushToByteArray(_taskId, proofRequests[_model.operator_]);
 
-        proofRequestExponents[_model.operator_][0] += 500;
+        _operator.proofRequestExponents_[0] += 500;
+        // proofRequestExponents[_model.operator_][0] += 500;
 
+        opInfo[_model.operator_] = _operator;
         bountyHunter[_taskId] = msg.sender;
 
         emit proofRequested(_model.operator_, _taskId);
@@ -342,20 +366,29 @@ contract SertnServiceManager is
         }
 
         Model memory _model = modelInfo[_modelId];
-
-        openTasks[_model.operator_] = _removeBytesElement(openTasks[_model.operator_], _taskId);
-        proofRequests[_model.operator_] = _removeBytesElement(proofRequests[_model.operator_], _taskId);
+        Operator memory _operator = opInfo[_model.operator_];
+        _operator.openTasks_ = _removeBytesElement(_operator.openTasks_, _taskId);
+        // openTasks[_model.operator_] = _removeBytesElement(openTasks[_model.operator_], _taskId);
+        _operator.proofRequests_ = _removeBytesElement(_operator.proofRequests_, _taskId);
+        // proofRequests[_model.operator_] = _removeBytesElement(proofRequests[_model.operator_], _taskId);
         if(_slashed) {
-            submittedTasks[_model.operator_] = _removeBytesElement(submittedTasks[_model.operator_], _taskId);
+            _operator.submittedTasks_ = _removeBytesElement(_operator.submittedTasks_, _taskId);
+            // submittedTasks[_model.operator_] = _removeBytesElement(submittedTasks[_model.operator_], _taskId);
         }
         
-        slashingQueue[_model.operator_] = _removeBytesElement(slashingQueue[_model.operator_], _taskId);
-
-        for (uint8 i = 0; i < allocatedEth[_model.operator_].length; i++) {
-                allocatedEth[_model.operator_][i] -= _model.ethShares_[i];
-            }
+        operatorSlashingQueue[_model.operator_] = _removeBytesElement(operatorSlashingQueue[_model.operator_], _taskId);
+        slashingQueue = _removeBytesElement(slashingQueue, _taskId);
         
-        allocatedSer[_model.operator_] -= 10*_task.poc_;
+        // for (uint8 i = 0; i < allocatedEth[_model.operator_].length; i++) {
+        for (uint8 i = 0; i < _operator.allocatedEth_.length; i++) {
+            _operator.allocatedEth_[i] -= _model.ethShares_[i];
+            // allocatedEth[_model.operator_][i] -= _model.ethShares_[i];
+        }
+        
+        _operator.allocatedSer_ -= 10*_task.poc_;
+        // allocatedSer[_model.operator_] -= 10*_task.poc_;
+
+        opInfo[_model.operator_] = _operator;
     }
 
     function _removeBytesElement(bytes[] memory _byteArray, bytes memory _byteElement) internal pure returns(bytes[] memory) {
@@ -417,6 +450,12 @@ contract SertnServiceManager is
         allocationManager.slashOperator(address(this), _slashParams);
 
         emit operatorSlashed(_model.operator_, _taskId);
+        //May want to implements some custom logic to change bounty amount
+        if (bountyHunter[_taskId] != address(0)) {
+            ser.transferFrom(address(this), bountyHunter[_taskId], BOUNTY);
+            opInfo[_model.operator_].proofRequestExponents_[0] -= 500;
+            // proofRequestExponents[_model.operator_][0] -= 500;
+        }
 
         _clearTask(_taskId, true);
     }
@@ -442,6 +481,48 @@ contract SertnServiceManager is
         _tempArr[_arr.length] = _element;
         return _tempArr;
     }
+
+    function getModelsByName(bytes32 _name) external view returns (uint8[] memory) {
+        return modelsByName[_name];
+    }
+
+    function getModelInfo(uint8 _modelId) external view returns (Model memory) {
+        return modelInfo[_modelId];
+    }
+
+    function getOperators() external view returns (address[] memory) {
+        return operators;
+    }
+
+    function getOperatorInfo(address _operator) external view returns (Operator memory) {
+        return opInfo[_operator];
+    }
+    
+    function getAggregators() external view returns (address[] memory) {
+        return aggregators;
+    }
+
+    // function getOpenTasks(address _operator) external view returns (bytes[] memory) {
+    //     return openTasks[_operator];
+    // }
+
+    // function getSubmittedTasks(address _operator) external view returns (bytes[] memory) {
+    //     return submittedTasks[_operator];
+    // }
+
+    function getSlashingQueue() external view returns (bytes[] memory) {
+        return slashingQueue;
+    }
+
+    function getOperatorSlashingQueue(address _operator) external view returns (bytes[] memory) {
+        return operatorSlashingQueue[_operator];
+    }
+
+    function getTaskResponse(bytes memory _taskId) external view returns (TaskResponse memory) {
+        return taskResponse[_taskId];
+    }
+
+
 
     function deregisterOperator(
         address operator,
