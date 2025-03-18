@@ -479,6 +479,45 @@ contract SertnServiceManager is
         rewardsCoordinator.createOperatorDirectedAVSRewardsSubmission(address(this), operatorDirectedRewardsSubmissions);
     }
 
+    function modifyModelParameters(Model memory _model, uint8 _modelId) external onlyOperators() {
+        Model memory _oldModel = modelInfo[_modelId];
+        require(_oldModel.operator_ == msg.sender, "Sender is not model owner");
+        if (_oldModel.modelName_ != _model.modelName_) {
+            for (uint8 i = 0; i < modelsByName[_oldModel.modelName_].length; i ++) {
+                if (modelsByName[_oldModel.modelName_][i] == _modelId) {
+                    delete modelsByName[_oldModel.modelName_][i];
+                }
+            modelsByName[_model.modelName_] = _pushToUint8Array(_modelId, modelsByName[_model.modelName_]);
+            }
+        }
+        modelInfo[_modelId] = _model;
+        emit modelUpdated(_modelId, _model);
+    }
+
+    function addModels(Model[] memory _models) external onlyOperators() {
+        uint8[] memory _modelIds = new uint8[](_models.length);
+        for (uint8 i = 0; i < _models.length; i++) {
+            numModels++;
+            uint8 modelNum = numModels;
+            _modelIds[i] = modelNum;
+            _models[i].operator_ = msg.sender;
+            modelInfo[modelNum] = _models[i];
+            //Allows users to access similar model names, for instance "llama" could correspond to model id's 1, 3, and 7
+            modelsByName[_models[i].modelName_] = _pushToUint8Array(modelNum, modelsByName[_models[i].modelName_]);
+        }
+        emit newModels(_modelIds);
+    }
+
+    function addCompute(bytes32[] memory _computeUnitNames, uint8[] memory _computeUnits) external onlyOperators() {
+        for (uint8 i = 0; i < _computeUnitNames.length; i++) {
+            computeUnits[msg.sender][_computeUnitNames[i]] = _computeUnits[i];
+        }
+    }
+
+    function updateOperator() external onlyOperators() {
+        
+    }
+
     function _pushToByteArray(bytes memory _element, bytes[] memory _arr) internal pure returns (bytes[] memory){
         bytes[] memory _tempBytesArr = new bytes[](_arr.length + 1);
         for (uint8 i = 0; i < _arr.length; i++) {
