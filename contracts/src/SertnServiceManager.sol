@@ -56,6 +56,11 @@ contract SertnServiceManager is
         _;
     }
 
+    modifier onlyAggregatorsOrOperator(address _operator) {
+        require(isAggregator[msg.sender] || _operator == msg.sender, "Not registered aggregator or concerned operator");
+        _;
+    }
+
     modifier onlyOperators() {
         require(isOperator[msg.sender], "Not registered operator");
         _;
@@ -157,7 +162,8 @@ contract SertnServiceManager is
             proofRequests_: new bytes[](0),
             allocatedEth_: new uint256[](_models[0].ethShares_.length),
             allocatedSer_: 0,
-            proofRequestExponents_: [uint32(1e3),uint32(1e3)]
+            proofRequestExponents_: [uint32(1e3),uint32(1e3)],
+            pausedBlock_: 0
         });
 
         for (uint8 i = 0; i < _models[0].ethShares_.length; i++) {
@@ -198,6 +204,7 @@ contract SertnServiceManager is
             (computeUnits[_model.operator_][_model.computeType_] > 0 && 
             //payment, should probably implement rounding
             ser.transferFrom(msg.sender, address(this), 1.5e3*(_model.baseFee_ + _task.poc_)/1e3))
+            && _operator.pausedBlock_ == 0
         ) {
             bytes memory _taskId = abi.encode(_task);
             // Note: open tasks also denotes tasks which have been completed but are still slashable
@@ -502,24 +509,46 @@ contract SertnServiceManager is
             _modelIds[i] = modelNum;
             _models[i].operator_ = msg.sender;
             modelInfo[modelNum] = _models[i];
-            //Allows users to access similar model names, for instance "llama" could correspond to model id's 1, 3, and 7
             modelsByName[_models[i].modelName_] = _pushToUint8Array(modelNum, modelsByName[_models[i].modelName_]);
+            opInfo[msg.sender].models_ = _pushToUint8Array(modelNum, opInfo[msg.sender].models_);
         }
         emit newModels(_modelIds);
     }
 
-    function addCompute(bytes32[] memory _computeUnitNames, uint8[] memory _computeUnits) external onlyOperators() {
+    function modifyCompute(bytes32[] memory _computeUnitNames, uint8[] memory _computeUnits) external onlyOperators() {
         for (uint8 i = 0; i < _computeUnitNames.length; i++) {
             computeUnits[msg.sender][_computeUnitNames[i]] = _computeUnits[i];
         }
+        opInfo[msg.sender].computeUnits_ = _computeUnitNames;
+        emit opInfoChanged(msg.sender, opInfo[msg.sender]);
     }
 
-    function updateOperator() external onlyOperators() {
-        
+    function updateOperator(address _operator, Operator memory _opInfo) external onlyAggregators() {
+        opInfo[_operator] = _opInfo;
+        emit opInfoChanged(_operator, _opInfo);
+    }
+
+    function pauseOperator() external onlyOperators() {
+        opInfo[msg.sender].pausedBlock_ = uint32(block.number);
+        emit opInfoChanged(msg.sender, opInfo[msg.sender]);
+    }
+
+    function _unpauseOperator() external onlyOperators() {
+        opInfo[msg.sender].pausedBlock_ = 0;
+        emit opInfoChanged(msg.sender, opInfo[msg.sender]);
     }
 
     function _pushToByteArray(bytes memory _element, bytes[] memory _arr) internal pure returns (bytes[] memory){
         bytes[] memory _tempBytesArr = new bytes[](_arr.length + 1);
+        for (uint8 i = 0; i < _arr.length; i++) {
+            _tempBytesArr[i] = _arr[i];
+        }
+        _tempBytesArr[_arr.length] = _element;
+        return _tempBytesArr;
+    }
+
+    function _pushToByte32Array(bytes32 _element, bytes32[] memory _arr) internal pure returns (bytes32[] memory){
+        bytes32[] memory _tempBytesArr = new bytes32[](_arr.length + 1);
         for (uint8 i = 0; i < _arr.length; i++) {
             _tempBytesArr[i] = _arr[i];
         }
@@ -582,5 +611,19 @@ contract SertnServiceManager is
         address operator,
         address avs,
         uint32[] calldata operatorSetIds
-    ) external override {}
+    ) external onlyAggregatorsOrOperator(operator) {
+        require(address(this) == avs, "Wrong AVS");
+        Operator memory _operator = opInfo[operator];
+        require(isAggregator[msg.sender] || uint256(_operator.pausedBlock_) + 2*TASK_EXPIRY_BLOCKS < block.number || _operator.pausedBlock_ > 0, "Not paused long enough");
+        for (uint8 i = 0; i < _operator.models_.length; i ++) {
+            delete modelInfo[_operator.models_[i]];
+        }
+        delete opInfo[operator];
+        for (uint8 i = 0; i < operators.length; i ++) {
+            if (operators[i] == operator) {
+                delete operators[i];
+            }
+        }
+        emit operatorDeleted(operator, operatorSetIds);
+    }
 }

@@ -52,6 +52,8 @@ interface ISertnServiceManagerEvents {
     event proofRequested(address indexed operator, bytes indexed taskId);
     event operatorSlashed(address indexed operator, bytes indexed taskId);
     event modelUpdated(uint8 indexed modelId, ISertnServiceManagerTypes.Model model);
+    event opInfoChanged(address indexed _operator, ISertnServiceManagerTypes.Operator _opInfo);
+    event operatorDeleted(address indexed _operator, uint32[] opSetIds);
 }
 
 interface ISertnServiceManagerTypes {
@@ -65,6 +67,7 @@ interface ISertnServiceManagerTypes {
         uint256[] allocatedEth_;
         uint256 allocatedSer_;
         uint32[2] proofRequestExponents_;
+        uint32 pausedBlock_;
     }
 
     struct Model {
