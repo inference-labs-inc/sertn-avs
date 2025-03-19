@@ -8,12 +8,14 @@ optimizer = true
 via-ir = true
 
 remappings = [
-    "@eigenlayer/=lib/eigenlayer-middleware/lib/eigenlayer-contracts/src/",
-    "@eigenlayer-scripts/=lib/eigenlayer-middleware/lib/eigenlayer-contracts/script/",
-    "@eigenlayer-middleware/=lib/eigenlayer-middleware/",
-    "@openzeppelin/=lib/eigenlayer-middleware/lib/eigenlayer-contracts/lib/openzeppelin-contracts-v4.9.0/",
-    "@openzeppelin-upgrades/=lib/eigenlayer-middleware/lib/eigenlayer-contracts/lib/openzeppelin-contracts-upgradeable-v4.9.0/",
-    "forge-std/=lib/forge-std/src/",
+  "@eigenlayer/=lib/eigenlayer-contracts/src/",
+  "@eigenlayer-scripts/=lib/eigenlayer-contracts/script/",
+  "@eigenlayer-middleware/=lib/eigenlayer-middleware/",
+  "@openzeppelin/=lib/eigenlayer-middleware/lib/eigenlayer-contracts/lib/openzeppelin-contracts/",
+  "@openzeppelin-upgrades/=lib/eigenlayer-middleware/lib/eigenlayer-contracts/lib/openzeppelin-contracts-upgradeable/",
+  "forge-std/=lib/forge-std/src/",
+  "@eigenlayer/contracts/=lib/eigenlayer-contracts/src/contracts/",
+  "@eigenlayer-contracts/=lib/eigenlayer-contracts/src/",
 ]
 
 
