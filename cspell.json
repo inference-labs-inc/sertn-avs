@@ -1,0 +1,19 @@
+{
+    "version": "0.2",
+    "ignorePaths": [],
+    "dictionaryDefinitions": [],
+    "dictionaries": [],
+    "words": [
+        "avsregistry",
+        "chainio",
+        "eigensdk",
+        "operatorsinfo",
+        "pycache",
+        "pycodestyle",
+        "pyproject",
+        "sdist",
+        "venv"
+    ],
+    "ignoreWords": [],
+    "import": []
+}
