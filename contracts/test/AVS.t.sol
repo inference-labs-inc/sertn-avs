@@ -2,11 +2,12 @@
 pragma solidity ^0.8.12;
 
 import {SertnServiceManager} from "../src/SertnServiceManager.sol";
+import "../src/ISertnServiceManager.sol";
 import {MockAVSDeployer} from "@eigenlayer-middleware/test/utils/MockAVSDeployer.sol";
 import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {console2} from "forge-std/Test.sol";
-import {SertnDeploymentLib} from "../script/utils/SertnDeploymentLib.sol";
+// import {SertnDeploymentLib} from "../script/utils/SertnDeploymentLib.sol";
 import {CoreDeploymentLib} from "../script/utils/CoreDeploymentLib.sol";
 import {UpgradeableProxyLib} from "../script/utils/UpgradeableProxyLib.sol";
 import {ERC20Mock} from "./ERC20Mock.sol";
@@ -45,19 +46,26 @@ contract AVSSetup is Test {
     Operator[] internal operators;
     AVSOwner internal owner;
 
-    SertnDeploymentLib.DeploymentData internal sertnDeployment;
+    // SertnDeploymentLib.DeploymentData internal sertnDeployment;
     CoreDeploymentLib.DeploymentData internal coreDeployment;
     CoreDeploymentLib.DeploymentConfigData coreConfigData;
 
     IStrategy[] _tokenToStrategy;
+    IStrategy[] _ethStrategies;
+    IStrategy _serStrategy;
 
     uint32[] opSetIds;
 
-    ERC20Mock public mockToken;
+    ERC20Mock public ethToken1;
+    ERC20Mock public ethToken2;
+    ERC20Mock public serToken;
+
+    SertnServiceManager sertnServiceManager;
 
     mapping(address => IStrategy) public tokenToStrategy;
 
     function setUp() public virtual {
+        console.log("a");
         owner = AVSOwner({key: vm.createWallet("owner_wallet")});
 
         address proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
@@ -66,15 +74,36 @@ contract AVSSetup is Test {
             CoreDeploymentLib.readDeploymentConfigValues("test/mockData/config/core/", 1337); // TODO: Fix this to correct path
         coreDeployment = CoreDeploymentLib.deployContracts(proxyAdmin, coreConfigData);
 
-        mockToken = new ERC20Mock();
+        ethToken1 = new ERC20Mock();
+        ethToken2 = new ERC20Mock();
+        serToken = new ERC20Mock();
 
-        IStrategy strategy = addStrategy(address(mockToken));
-        quorum.strategies.push(IECDSAStakeRegistryTypes.StrategyParams({strategy: strategy, multiplier: 10_000}));
+        IStrategy strategy1 = addStrategy(address(ethToken1));
+        IStrategy strategy2 = addStrategy(address(ethToken2));
+        _serStrategy = addStrategy(address(serToken));
+        IStrategy[] memory strategies = new IStrategy[](3);
+        strategies[0] = strategy1;
+        strategies[1] = strategy2;
+        strategies[2] = _serStrategy;
 
-        sertnDeployment = SertnDeploymentLib.deployContracts(
-            proxyAdmin, coreDeployment, quorum, owner.key.addr, owner.key.addr
+        _ethStrategies.push(strategy1);
+        _ethStrategies.push(strategy2);
+
+
+        // quorum.strategies.push(IECDSAStakeRegistryTypes.StrategyParams({strategy: strategy, multiplier: 10_000}));
+
+        // sertnDeployment = SertnDeploymentLib.deployContracts(
+        //     proxyAdmin, coreDeployment, quorum, owner.key.addr, owner.key.addr
+        // );
+        sertnServiceManager = new SertnServiceManager(
+            coreDeployment.rewardsCoordinator,
+            coreDeployment.delegationManager,
+            coreDeployment.allocationManager,
+            strategies,
+            ""
         );
-        labelContracts(coreDeployment, sertnDeployment);
+        labelContracts(coreDeployment);
+        opSetIds.push(0);
     }
 
     function addStrategy(
@@ -91,8 +120,7 @@ contract AVSSetup is Test {
     }
 
     function labelContracts(
-        CoreDeploymentLib.DeploymentData memory coreDeployment,
-        SertnDeploymentLib.DeploymentData memory sertnDeployment
+        CoreDeploymentLib.DeploymentData memory coreDeployment
     ) internal {
         vm.label(coreDeployment.delegationManager, "DelegationManager");
         vm.label(coreDeployment.allocationManager, "AllocationManager");
@@ -103,8 +131,8 @@ contract AVSSetup is Test {
         vm.label(coreDeployment.pauserRegistry, "PauserRegistry");
         vm.label(coreDeployment.strategyFactory, "StrategyFactory");
         vm.label(coreDeployment.strategyBeacon, "StrategyBeacon");
-        vm.label(sertnDeployment.sertnServiceManager, "SertnServiceManager");
-        vm.label(sertnDeployment.stakeRegistry, "StakeRegistry");
+        vm.label(address(sertnServiceManager), "SertnServiceManager");
+        // vm.label(sertnDeployment.stakeRegistry, "StakeRegistry");
     }
 
      function signWithOperatorKey(
@@ -124,7 +152,9 @@ contract AVSSetup is Test {
     }
 
     function mintMockTokens(Operator memory operator, uint256 amount) internal {
-        mockToken.mint(operator.key.addr, amount);
+        ethToken1.mint(operator.key.addr, amount);
+        ethToken2.mint(operator.key.addr, amount);
+        serToken.mint(operator.key.addr, amount);
     }
 
     function depositTokenIntoStrategy(
@@ -137,7 +167,10 @@ contract AVSSetup is Test {
         IStrategyManager strategyManager = IStrategyManager(coreDeployment.strategyManager);
 
         vm.startPrank(operator.key.addr);
-        mockToken.approve(address(strategyManager), amount);
+        ethToken1.approve(address(strategyManager), amount);
+        ethToken2.approve(address(strategyManager), amount);
+        serToken.approve(address(strategyManager), amount);
+
         uint256 shares = strategyManager.depositIntoStrategy(strategy, IERC20(token), amount);
         vm.stopPrank();
 
@@ -161,10 +194,33 @@ contract AVSSetup is Test {
 
     function registerAsOperatorToAVS(Operator memory operator) internal {
         IAllocationManager allocationManager = IAllocationManager(coreDeployment.allocationManager);
-        ISertnServiceManager sm = ISertnServiceManager(sertnDeployment.sertnServiceManager);
-        delete opSetIds;
-        opSetIds.push(0);
-        IAllocationManagerTypes.RegisterParams memory registerParams = IAllocationManagerTypes.RegisterParams({avs:address(sm), operatorSetIds: opSetIds, data: bytes("")});
+        ISertnServiceManager sm = ISertnServiceManager(address(sertnServiceManager));
+        ISertnServiceManagerTypes.Model[] memory _model = new ISertnServiceManagerTypes.Model[](1);
+        uint256[] memory _ethShares = new uint256[](2);
+        _ethShares[0] = 10;
+        _ethShares[1] = 10;
+        _model[0] = ISertnServiceManagerTypes.Model({
+            modelName_: bytes32("1"), 
+            operator_: operator.key.addr,
+            verifier_: address(0),
+            benchData_: "",
+            inputs_: bytes(""),
+            output_: bytes(""),
+            maxBlocks_: 1000,
+            ethStrategies_: _ethStrategies,
+            ethShares_: _ethShares,
+            baseFee_: 1,
+            maxSer_: 20,
+            computeType_: bytes32("model1"),
+            proveOnResponse_: false,
+            available_: true
+            });
+        bytes32[] memory _computeUnitNames = new bytes32[](1);
+        _computeUnitNames[0] = bytes32("model1");
+        uint8[] memory _computeUnits = new uint8[](1);
+        _computeUnits[0] = 10;
+        bytes memory _data = abi.encode(_model, _computeUnitNames, _computeUnits);
+        IAllocationManagerTypes.RegisterParams memory registerParams = IAllocationManagerTypes.RegisterParams({avs:address(sm), operatorSetIds: opSetIds, data: _data});
         vm.startPrank(operator.key.addr);
         allocationManager.registerForOperatorSets(operator.key.addr, registerParams);
         vm.stopPrank();
@@ -187,11 +243,10 @@ contract AVSSetup is Test {
 contract RegisterOperatorToAVS is AVSSetup {
     uint256 internal constant INITIAL_BALANCE = 100 ether;
     uint256 internal constant DEPOSIT_AMOUNT = 1 ether;
-    uint256 internal constant OPERATOR_COUNT = 4;
+    uint256 internal constant OPERATOR_COUNT = 1;
     IDelegationManager internal delegationManager;
     AllocationManager internal allocationManager;
     ISertnServiceManager internal sm;
-    ECDSAStakeRegistry internal stakeRegistry;
     IPermissionController internal permissionController;
 
     IStrategy[] strat;
@@ -199,44 +254,47 @@ contract RegisterOperatorToAVS is AVSSetup {
 
     function setUp() public virtual override {
         super.setUp();
+        console.log("a");
         /// Setting to internal state for convenience
         delegationManager = IDelegationManager(coreDeployment.delegationManager);
         allocationManager = AllocationManager(coreDeployment.allocationManager);
         permissionController = IPermissionController(coreDeployment.permissionController);
-        
+        console.log("b");
        
-        sm = ISertnServiceManager(sertnDeployment.sertnServiceManager);
-        
-        vm.startPrank(address(sm));
+        sm = ISertnServiceManager(address(sertnServiceManager));
+        console.log("c");
+        // vm.startPrank(address(sm));
 
-        allocationManager.updateAVSMetadataURI(address(sm), "");
+        // allocationManager.updateAVSMetadataURI(address(sm), "");
         // allocationManager.setAVSRegistrar(address(sm), sertnRegistrar);
-        delete strat;
-        strat.push(tokenToStrategy[address(mockToken)]);
-        delete setParams;
-        setParams.push(IAllocationManagerTypes.CreateSetParams({operatorSetId:0, strategies: strat}));
-        allocationManager.createOperatorSets(address(sm), setParams);
+        // delete strat;
+        // strat.push(tokenToStrategy[address(mockToken)]);
+        // delete setParams;
+        // setParams.push(IAllocationManagerTypes.CreateSetParams({operatorSetId:0, strategies: strat}));
+        // allocationManager.createOperatorSets(address(sm), setParams);
         
-        vm.stopPrank();
+        // vm.stopPrank();
 
-        addStrategy(address(mockToken));
-
+        // addStrategy(address(mockToken));
+        console.log("d");
         while (operators.length < OPERATOR_COUNT) {
             createAndAddOperator();
         }
-
+        console.log("e");
         for (uint256 i = 0; i < OPERATOR_COUNT; i++) {
             mintMockTokens(operators[i], INITIAL_BALANCE);
-
-            depositTokenIntoStrategy(operators[i], address(mockToken), DEPOSIT_AMOUNT);
-
+            console.log("f");
+            depositTokenIntoStrategy(operators[i], address(ethToken1), DEPOSIT_AMOUNT);
+            depositTokenIntoStrategy(operators[i], address(ethToken2), DEPOSIT_AMOUNT);
+            depositTokenIntoStrategy(operators[i], address(serToken), DEPOSIT_AMOUNT);
+            console.log("g");
             registerAsOperator(operators[i]);
-
+            console.log("h");
             registerAsOperatorToAVS(operators[i]);
         }
     }
-    // function test_run() public {
-    //     console2.log(allocationManager.getMemberCount(opSet[0]));
-    // }
+    function test_run() public {
+        console2.log("works?");
+    }
 
 }

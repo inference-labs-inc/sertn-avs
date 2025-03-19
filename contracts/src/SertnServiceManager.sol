@@ -97,12 +97,12 @@ contract SertnServiceManager is
             strategies: _strategies
         });
         allocationManager.createOperatorSets(address(this), setParams);
-        _addStrategies(_strategies);
+        // _addStrategies(_strategies);
     }
 
-    function _addStrategies(
+    function addStrategies(
         IStrategy[] memory _strategies
-    ) internal {
+    ) external onlyAggregators() {
         for (uint8 i = 0; i < _strategies.length; i++) {
             tokenToStrategy[
                 address(_strategies[i].underlyingToken())
