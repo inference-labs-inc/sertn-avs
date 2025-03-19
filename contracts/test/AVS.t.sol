@@ -50,6 +50,8 @@ contract AVSSetup is Test {
     AVSOwner internal owner;
     User internal user;
 
+    OperatorSet internal opSet;
+
     // SertnDeploymentLib.DeploymentData internal sertnDeployment;
     CoreDeploymentLib.DeploymentData internal coreDeployment;
     CoreDeploymentLib.DeploymentConfigData coreConfigData;
@@ -57,6 +59,7 @@ contract AVSSetup is Test {
     IStrategy[] _tokenToStrategy;
     IStrategy[] _ethStrategies;
     IStrategy _serStrategy;
+    IStrategy[] strategies;
 
     uint32[] opSetIds;
 
@@ -84,10 +87,9 @@ contract AVSSetup is Test {
         IStrategy strategy1 = addStrategy(address(ethToken1));
         IStrategy strategy2 = addStrategy(address(ethToken2));
         _serStrategy = addStrategy(address(serToken));
-        IStrategy[] memory strategies = new IStrategy[](3);
-        strategies[0] = _serStrategy;
-        strategies[1] = strategy1;
-        strategies[2] = strategy2;
+        strategies.push(_serStrategy);
+        strategies.push(strategy1);
+        strategies.push(strategy2);
 
         _ethStrategies.push(strategy1);
         _ethStrategies.push(strategy2);
@@ -214,8 +216,8 @@ contract AVSSetup is Test {
             maxBlocks_: 1000,
             ethStrategies_: _ethStrategies,
             ethShares_: _ethShares,
-            baseFee_: 1,
-            maxSer_: 20,
+            baseFee_: 1e2,
+            maxSer_: 1e4,
             computeType_: bytes32("model1"),
             proveOnResponse_: false,
             available_: true
@@ -276,19 +278,42 @@ contract RegisterOperatorToAVS is AVSSetup {
         // vm.stopPrank();
 
         // addStrategy(address(mockToken));
+        opSet = OperatorSet({avs: address(sertnServiceManager), id: 0});
+
         while (operators.length < OPERATOR_COUNT) {
             createAndAddOperator();
         }
+
+        uint64[] memory _newMags = new uint64[](3);
+        _newMags[0] = 1 ether;
+        _newMags[1] = 1 ether;
+        _newMags[2] = 1 ether;
+
+        IAllocationManagerTypes.AllocateParams[] memory allocateParams = new IAllocationManagerTypes.AllocateParams[](1);
+        allocateParams[0] = IAllocationManagerTypes.AllocateParams({operatorSet: opSet, strategies: strategies, newMagnitudes: _newMags});
+
+        address[] memory _operatorKeys = new address[](OPERATOR_COUNT);
+        for (uint8 i = 0; i < OPERATOR_COUNT; i ++) {
+            _operatorKeys[i] = operators[i].key.addr;
+        }
+
+
         for (uint256 i = 0; i < OPERATOR_COUNT; i++) {
+            
             mintMockTokens(operators[i], INITIAL_BALANCE);
             depositTokenIntoStrategy(operators[i], address(ethToken1), DEPOSIT_AMOUNT);
             depositTokenIntoStrategy(operators[i], address(ethToken2), DEPOSIT_AMOUNT);
             depositTokenIntoStrategy(operators[i], address(serToken), DEPOSIT_AMOUNT);
             registerAsOperator(operators[i]);
             registerAsOperatorToAVS(operators[i]);
+            vm.startPrank(_operatorKeys[i]);
+            allocationManager.modifyAllocations(_operatorKeys[i], allocateParams);
+            vm.stopPrank();
         }
+        
     }
     function test_sendTask() public {
+        vm.roll(1e10);
         user = User({key: vm.createWallet("user_wallet")});
         vm.startPrank(user.key.addr);
 
@@ -306,7 +331,7 @@ contract RegisterOperatorToAVS is AVSSetup {
         ISertnServiceManagerTypes.Task memory task = ISertnServiceManagerTypes.Task({
             modelId_: 1,
             inputs_: bytes(""),
-            poc_: 1,
+            poc_: 1e2,
             startTime_: 0,
             startingBlock_: 0,
             proveOnResponse_: false,
@@ -327,6 +352,18 @@ contract RegisterOperatorToAVS is AVSSetup {
         _taskResponse = sertnServiceManager.getTaskResponse(_operator.openTasks_[0]);
         string memory _outputData = string(_taskResponse.output_);
         console.log(_outputData);
+        vm.startPrank(operators[0].key.addr);
+        address[] memory _operatorKeys = new address[](OPERATOR_COUNT);
+        for (uint8 i = 0; i < OPERATOR_COUNT; i ++) {
+            _operatorKeys[i] = operators[i].key.addr;
+        }
+        vm.stopPrank();
+        vm.startPrank(owner.key.addr);
+        console.log(allocationManager.getMinimumSlashableStake(opSet, _operatorKeys, strategies, uint32(vm.getBlockNumber()))[0][1], "min slashable");
+        sertnServiceManager.slashOperator(_operator.openTasks_[0], "test");
+        console.log(allocationManager.getMinimumSlashableStake(opSet, _operatorKeys, strategies, uint32(vm.getBlockNumber()))[0][1], "min slashable");
+        vm.stopPrank();
+
 
     }
         

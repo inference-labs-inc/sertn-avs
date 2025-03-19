@@ -100,22 +100,29 @@ contract SertnServiceManager is
             strategies: _strategies
         });
         allocationManager.createOperatorSets(address(this), setParams);
-        // _addStrategies(_strategies);
+        _addStrategies(_strategies, false);
     }
 
-    function addStrategies(
-        IStrategy[] memory _strategies
-    ) external onlyAggregators() {
+    function _addStrategies(
+        IStrategy[] memory _strategies, bool _newStrategies
+    ) internal {
         for (uint8 i = 0; i < _strategies.length; i++) {
             tokenToStrategy[
                 address(_strategies[i].underlyingToken())
             ] = _strategies[i];
         }
-        allocationManager.addStrategiesToOperatorSet(
+        if (_newStrategies) {
+            allocationManager.addStrategiesToOperatorSet(
             address(this),
             0,
             _strategies
         );
+        }
+    }
+    function addStrategies(
+        IStrategy[] memory _strategies, bool _newStrategies
+    ) external onlyAggregators() {
+        _addStrategies(_strategies, _newStrategies);
     }
 
     function addAggregator(address _aggregator) external onlyAggregators {
@@ -258,21 +265,25 @@ contract SertnServiceManager is
             )[0];
         Operator memory _operator = opInfo[_model.operator_];
         for (uint8 i = 0; i < _ethSecurity.length; i++) {
-            if (_ethSecurity[i] > _model.ethShares_[i] + _operator.allocatedEth_[i]) {
+
+            if (_ethSecurity[i] < _model.ethShares_[i] + _operator.allocatedEth_[i]) {
             // if (_ethSecurity[i] > _model.ethShares_[i] + allocatedEth[_model.operator_][i]) {
                 revert TaskCouldNotBeSent("Not enough eth backed security");
             }
         }
         IStrategy[] memory _pocStrategy = new IStrategy[](1);
         _pocStrategy[0] = tokenToStrategy[address(ser)];
-        if (
-            _model.maxSer_ > _poc &&
-            allocationManager.getMinimumSlashableStake(
+        uint256 _serSecurity = allocationManager.getMinimumSlashableStake(
                 opSet,
                 _operators,
                 _pocStrategy,
                 uint32(block.number) + _securityDuration
-            )[0][0] >
+            )[0][0];
+        
+
+        if (
+            _model.maxSer_ < _poc ||
+            _serSecurity <
             _poc + _operator.allocatedSer_
             // _poc + allocatedSer[_model.operator_]
         ) {
@@ -414,7 +425,7 @@ contract SertnServiceManager is
         }
     }
 
-    function _slashOperator(bytes memory _taskId, string memory _whySlashed) external onlyAggregators() {
+    function slashOperator(bytes memory _taskId, string memory _whySlashed) external onlyAggregators() {
 
         Task memory _task = abi.decode(_taskId, (Task));
 
@@ -441,13 +452,14 @@ contract SertnServiceManager is
         uint256[] memory _operatorShares = delegationManager.getOperatorShares(_model.operator_, _strategies);
         
         for (uint8 i = 0; i < _model.ethStrategies_.length; i++) {
-            _wadsToSlash[i] = 1 ether * (_model.ethShares_[i]) / (allocationManager.getAllocation(_model.operator_, opSet, _strategies[i]).currentMagnitude * _operatorShares[i]);
+            // _wadsToSlash[i] = 1 ether * (_model.ethShares_[i]) / (allocationManager.getAllocation(_model.operator_, opSet, _strategies[i]).currentMagnitude * _operatorShares[i]);
+            _wadsToSlash[i] = 1 ether * 1 ether * (_model.ethShares_[i]) / (allocationManager.getAllocation(_model.operator_, opSet, _strategies[i]).currentMagnitude * _operatorShares[i]);
         }
 
-        _wadsToSlash[_model.ethStrategies_.length] = (1 ether * 10 * _task.poc_)/(allocationManager.getAllocation(_model.operator_, opSet, _strategies[_model.ethStrategies_.length]).currentMagnitude * _operatorShares[_model.ethStrategies_.length]);
+        _wadsToSlash[_model.ethStrategies_.length] = (1 ether * 1 ether * 10 * _task.poc_)/(allocationManager.getAllocation(_model.operator_, opSet, _strategies[_model.ethStrategies_.length]).currentMagnitude * _operatorShares[_model.ethStrategies_.length]);
 
         IAllocationManagerTypes.SlashingParams memory _slashParams = IAllocationManagerTypes.SlashingParams({operator: _model.operator_, operatorSetId: 0, strategies: _strategies, wadsToSlash: _wadsToSlash, description: _whySlashed});
-
+        
         allocationManager.slashOperator(address(this), _slashParams);
 
         emit operatorSlashed(_model.operator_, _taskId);
