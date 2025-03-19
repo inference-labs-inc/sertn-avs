@@ -313,14 +313,21 @@ contract RegisterOperatorToAVS is AVSSetup {
             user_: user.key.addr
             });
         sertnServiceManager.sendTask(task);
-        console.log(user.key.addr);
         vm.stopPrank();
 
         vm.startPrank(operators[0].key.addr);
         ISertnServiceManagerTypes.Operator memory _operator = sertnServiceManager.getOperatorInfo(operators[0].key.addr);
         ISertnServiceManagerTypes.Task memory _task = abi.decode(_operator.openTasks_[0], (ISertnServiceManagerTypes.Task));
-        console.log(_task.user_);
+        require(_task.user_ == user.key.addr);
+        ISertnServiceManagerTypes.TaskResponse memory _taskResponse = ISertnServiceManagerTypes.TaskResponse({taskId_: _operator.openTasks_[0], output_: bytes("hello world"), proven_: false});
+        sertnServiceManager.submitTask(_taskResponse, false, bytes(""));
         vm.stopPrank();
+
+        vm.startPrank(user.key.addr);
+        _taskResponse = sertnServiceManager.getTaskResponse(_operator.openTasks_[0]);
+        string memory _outputData = string(_taskResponse.output_);
+        console.log(_outputData);
+
     }
         
 
