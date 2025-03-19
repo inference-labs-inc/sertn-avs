@@ -27,6 +27,8 @@ import "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
 
 import "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
 
+import {Test, console2 as console} from "forge-std/Test.sol";
+
 /**
  * @title Primary entrypoint for procuring services from Sertn.
  * @author Inference Labs, Inc.
@@ -82,6 +84,7 @@ contract SertnServiceManager is
         _registerToEigen(_strategies, _avsMetadata);
 
         opSet = OperatorSet({avs: address(this), id: 0});
+        ser = _strategies[0].underlyingToken();
     }
 
     function _registerToEigen(
@@ -184,10 +187,13 @@ contract SertnServiceManager is
         _task.startTime_ = block.timestamp;
         _task.startingBlock_ = block.number;
         
+       
 
         if (0 > _modelId || numModels < _modelId) {
             revert NotModelId("Not Model Id");
         }
+
+        
 
         Model memory _model = modelInfo[_modelId];
 
@@ -195,15 +201,17 @@ contract SertnServiceManager is
 
         Operator memory _operator = opInfo[_model.operator_];
 
+        
+
         if (_task.proveOnResponse_ && !_model.proveOnResponse_) {
             revert NoProofOnResponse("Prove On Response Not Available");
         }
-
+       
         if (
             _model.available_ &&
-            (computeUnits[_model.operator_][_model.computeType_] > 0 && 
+            computeUnits[_model.operator_][_model.computeType_] > 0 && 
             //payment, should probably implement rounding
-            ser.transferFrom(msg.sender, address(this), 1.5e3*(_model.baseFee_ + _task.poc_)/1e3))
+            ser.transferFrom(msg.sender, address(this), 1.5e3*(_model.baseFee_ + _task.poc_)/1e3)
             && _operator.pausedBlock_ == 0
         ) {
             bytes memory _taskId = abi.encode(_task);
@@ -215,6 +223,7 @@ contract SertnServiceManager is
                 // proofRequests[_model.operator_] = _pushToByteArray(_taskId, proofRequests[_model.operator_]);
             }
 
+
             computeUnits[_model.operator_][_model.computeType_] -= 1;
             
             for (uint8 i = 0; i < _operator.allocatedEth_.length; i++) {
@@ -223,11 +232,9 @@ contract SertnServiceManager is
             // for (uint8 i = 0; i < allocatedEth[_model.operator_].length; i++) {
             //     allocatedEth[_model.operator_][i] += _model.ethShares_[i];
             // }
-            
             _operator.allocatedSer_ += 10*_task.poc_;
             // allocatedSer[_model.operator_] += 10*_task.poc_;
             opInfo[_model.operator_] = _operator; 
-
             emit newTask(_model.operator_, _taskId);
         } else {
             revert TaskCouldNotBeSent("Task Could Not Be Sent");
