@@ -30,6 +30,8 @@ jobs:
     - name: Install dependencies
       working-directory: ./client
       run: |
+        uv venv
+        source .venv/bin/activate
         uv pip install -e ".[test]"
 
     - name: Run tests
