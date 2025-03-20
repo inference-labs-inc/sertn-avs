@@ -202,8 +202,6 @@ contract SertnServiceManager is
             revert NotModelId("Not Model Id");
         }
 
-        
-
         Model memory _model = modelInfo[_modelId];
 
         if (_task.proveOnResponse_ && !_model.proveOnResponse_) {
@@ -348,13 +346,14 @@ contract SertnServiceManager is
         Model memory _model = modelInfo[_modelId];
 
         Operator memory _operator = opInfo[_model.operator_];
+        require(_model.maxBlocks_ > uint32(block.number - _task.startingBlock_), "Task Expired");
 
         require(msg.sender == _model.operator_, "Not operator assigned to task");
 
         if (_verification) {
             _checkFinancialSecurity(_task.poc_, _model, 0);
         } else {
-            _checkFinancialSecurity(10*_task.poc_, _model, uint32(TASK_EXPIRY_BLOCKS - _task.startingBlock_));
+            _checkFinancialSecurity(10*_task.poc_, _model, uint32(TASK_EXPIRY_BLOCKS - (block.number - _task.startingBlock_)));
         }
         
         if (_taskResponse.proven_) {

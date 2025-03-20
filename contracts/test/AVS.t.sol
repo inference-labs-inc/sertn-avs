@@ -478,9 +478,11 @@ contract RegisterOperatorToAVS is AVSSetup {
                 proveOnResponse_: false,
                 user_: user.key.addr
             });
+
+        console.log("test");
         sertnServiceManager.sendTask(task);
         vm.stopPrank();
-
+        console.log("test2");
         vm.startPrank(operators[0].key.addr);
         ISertnServiceManagerTypes.Operator
             memory _operator = sertnServiceManager.getOperatorInfo(
@@ -498,6 +500,7 @@ contract RegisterOperatorToAVS is AVSSetup {
                 proven_: false
             });
         sertnServiceManager.submitTask(_taskResponse, false, bytes(""));
+        console.log("test3");
         vm.stopPrank();
 
         vm.startPrank(user.key.addr);
@@ -556,6 +559,7 @@ contract RegisterOperatorToAVS is AVSSetup {
         require(_task.user_ == user.key.addr);
         ISertnServiceManagerTypes.TaskResponse memory _taskResponse = ISertnServiceManagerTypes.TaskResponse({taskId_: _operator.openTasks_[0], output_: bytes("hello world"), proven_: false});
         sertnServiceManager.submitTask(_taskResponse, false, bytes(""));
+        console.log("a");
         vm.stopPrank();
         vm.roll(2e10);
         vm.warp(1e3);
@@ -573,12 +577,12 @@ contract RegisterOperatorToAVS is AVSSetup {
             });
         sertnServiceManager.sendTask(task2);
         vm.stopPrank();
-
+        console.log("b");
         vm.startPrank(operators[0].key.addr);
         _operator = sertnServiceManager.getOperatorInfo(operators[0].key.addr);
-        ISertnServiceManagerTypes.Task memory _task2 = abi.decode(_operator.openTasks_[0], (ISertnServiceManagerTypes.Task));
+        ISertnServiceManagerTypes.Task memory _task2 = abi.decode(_operator.openTasks_[1], (ISertnServiceManagerTypes.Task));
         require(_task.user_ == user.key.addr);
-        ISertnServiceManagerTypes.TaskResponse memory _taskResponse2 = ISertnServiceManagerTypes.TaskResponse({taskId_: _operator.openTasks_[0], output_: bytes("hello world"), proven_: false});
+        ISertnServiceManagerTypes.TaskResponse memory _taskResponse2 = ISertnServiceManagerTypes.TaskResponse({taskId_: _operator.openTasks_[1], output_: bytes("hello world"), proven_: false});
         sertnServiceManager.submitTask(_taskResponse2, false, bytes(""));
         vm.stopPrank();
 
