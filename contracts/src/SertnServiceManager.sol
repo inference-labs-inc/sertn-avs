@@ -15,6 +15,7 @@ import "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {SertnServiceManagerStorage} from "./SertnServiceManagerStorage.sol";
 
+import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
 import {IAVSRegistrar} from "@eigenlayer/contracts/interfaces/IAVSRegistrar.sol";
 
 import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
@@ -205,15 +206,21 @@ contract SertnServiceManager is
 
         Model memory _model = modelInfo[_modelId];
 
-        _checkFinancialSecurity(_task.poc_*10, _model, _model.maxBlocks_);
-
-        Operator memory _operator = opInfo[_model.operator_];
-
-        
-
         if (_task.proveOnResponse_ && !_model.proveOnResponse_) {
             revert NoProofOnResponse("Prove On Response Not Available");
         }
+
+        if (_task.proveOnResponse_) { 
+
+            _checkFinancialSecurity(_task.poc_, _model, _model.maxBlocks_);
+
+        } else {
+
+             _checkFinancialSecurity(_task.poc_*10, _model, _model.maxBlocks_);
+
+        }
+
+        Operator memory _operator = opInfo[_model.operator_];
        
         if (
             _model.available_ &&
@@ -323,7 +330,12 @@ contract SertnServiceManager is
 
         require(msg.sender == _model.operator_, "Not operator assigned to task");
 
-        _checkFinancialSecurity(_task.poc_, _model, 0);
+        if (_verification) {
+            _checkFinancialSecurity(_task.poc_, _model, 0);
+        } else {
+            _checkFinancialSecurity(10*_task.poc_, _model, 0);
+        }
+        
 
         if (_verification || _task.proveOnResponse_) {
             _verifyTask(_taskResponse.taskId_, _proof);

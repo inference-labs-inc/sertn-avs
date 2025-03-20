@@ -12,7 +12,7 @@ import {UpgradeableProxyLib} from "../script/utils/UpgradeableProxyLib.sol";
 import {ERC20Mock} from "./ERC20Mock.sol";
 import {IERC20, StrategyFactory} from "@eigenlayer/contracts/strategies/StrategyFactory.sol";
 import {IPermissionController} from "@eigenlayer/contracts/interfaces/IPermissionController.sol";
-import {IStrategy} from "eigenlayer-contracts/src/contracts/interfaces/IStrategy.sol";
+import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
 import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 
 import {IStrategyManager} from "@eigenlayer/contracts/interfaces/IStrategyManager.sol";
