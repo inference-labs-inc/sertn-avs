@@ -314,7 +314,24 @@ contract SertnServiceManager is
         taskVerified[_taskId] = IVerifier(_model.verifier_).verifyProof(_proof);
     }
 
-    function verifyTask(bytes memory _taskId, bool _verified) external onlyAggregators() {
+    function verifyTask(bytes memory _taskId, bytes memory _proof) external onlyOperators() {
+        //logic to verify task
+        Task memory _task = abi.decode(_taskId, (Task));
+
+        uint8 _modelId = _task.modelId_;
+
+        if (0 > _modelId || numModels < _modelId) {
+            revert NotModelId("Not Model Id");
+        }
+
+        Model memory _model = modelInfo[_modelId];
+
+        require(_model.operator_ == msg.sender, "Wrong operator for task");
+
+        taskVerified[_taskId] = IVerifier(_model.verifier_).verifyProof(_proof);
+    }
+
+    function verifiedOffChain(bytes memory _taskId, bool _verified) external onlyAggregators() {
         taskVerified[_taskId] = _verified;
     }
 
