@@ -71,6 +71,7 @@ The project uses a Makefile for common operations:
 
 - `make help` - Show available commands
 - `make build-anvil-state-with-deployed-contracts` - Build local test state
+- `forge script script/LocalnetDeploy.s.sol --rpc-url http://localhost:8545 --broadcast` - Deploy contracts to local anvil network
 - `make spam-tasks` - Generate test tasks
 
 ## Chain Configuration
