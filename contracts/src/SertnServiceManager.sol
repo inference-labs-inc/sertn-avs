@@ -216,7 +216,7 @@ contract SertnServiceManager is
 
         } else {
 
-             _checkFinancialSecurity(_task.poc_*10, _model, _model.maxBlocks_);
+             _checkFinancialSecurity(_task.poc_*10, _model, uint32(TASK_EXPIRY_BLOCKS));
 
         }
 
@@ -354,7 +354,7 @@ contract SertnServiceManager is
         if (_verification) {
             _checkFinancialSecurity(_task.poc_, _model, 0);
         } else {
-            _checkFinancialSecurity(10*_task.poc_, _model, 0);
+            _checkFinancialSecurity(10*_task.poc_, _model, uint32(TASK_EXPIRY_BLOCKS - _task.startingBlock_));
         }
         
         if (_taskResponse.proven_) {
