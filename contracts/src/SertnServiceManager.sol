@@ -26,6 +26,7 @@ import {IVerifier} from "./IVerifier.sol";
 import "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
 
 import "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
+import "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
 
 import {Test, console2 as console} from "forge-std/Test.sol";
 
@@ -425,6 +426,15 @@ contract SertnServiceManager is
         }
     }
 
+    function _inBytesArray(bytes[] memory _byteArray, bytes memory _byteElement) internal pure returns(bool) {
+        for (uint8 i = 0; i < _byteArray.length; i++) {
+            if (keccak256(_byteElement) == keccak256(_byteArray[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     function slashOperator(bytes memory _taskId, string memory _whySlashed) external onlyAggregators() {
 
         Task memory _task = abi.decode(_taskId, (Task));
@@ -473,22 +483,26 @@ contract SertnServiceManager is
         _clearTask(_taskId, true);
     }
 
-    function _sendRewards(IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[] calldata operatorDirectedRewardsSubmissions, bytes[][] memory _rewardedTasks) external onlyAggregators() {
-
+    function sendRewards(IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[] calldata operatorDirectedRewardsSubmissions, bytes[][] memory _rewardedTasks) external onlyAggregators() {
+        uint256 _approvalAmount = 0;
         for (uint8 i = 0; i < operatorDirectedRewardsSubmissions[0].operatorRewards.length; i ++) {
             Operator memory _operator = opInfo[operatorDirectedRewardsSubmissions[0].operatorRewards[i].operator];
             for (uint8 j = 0; j < _rewardedTasks[i].length; j ++) {
                 Task memory _task = abi.decode(_rewardedTasks[i][j], (Task));
                 require(_task.startingBlock_ + TASK_EXPIRY_BLOCKS < block.number || taskVerified[_rewardedTasks[i][j]], "Task has not expired");
-                require(_removeBytesElement(_operator.submittedTasks_, _rewardedTasks[i][j]).length == _operator.submittedTasks_.length - 1, "Not in submitted Tasks");
+                // require(_removeBytesElement(_operator.submittedTasks_, _rewardedTasks[i][j]).length == (_operator.submittedTasks_.length - 1), "Not in submitted Tasks");
+                require(_inBytesArray(_operator.submittedTasks_, _rewardedTasks[i][j]), "Not in submitted Tasks");
                 _operator.submittedTasks_ = _removeBytesElement(_operator.submittedTasks_, _rewardedTasks[i][j]);
                 opInfo[operatorDirectedRewardsSubmissions[0].operatorRewards[i].operator] = _operator;
-                if (_removeBytesElement(_operator.openTasks_, _rewardedTasks[i][j]).length == _operator.submittedTasks_.length - 1) {
+                if (_inBytesArray(_operator.openTasks_, _rewardedTasks[i][j])) {
                     _clearTask(_rewardedTasks[i][j], false);
                 }
             }
+            
+            _approvalAmount += operatorDirectedRewardsSubmissions[0].operatorRewards[i].amount;
         }
-
+        
+        ser.approve(address(rewardsCoordinator), _approvalAmount);
         rewardsCoordinator.createOperatorDirectedAVSRewardsSubmission(address(this), operatorDirectedRewardsSubmissions);
     }
 
