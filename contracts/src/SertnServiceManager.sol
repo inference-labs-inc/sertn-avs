@@ -314,6 +314,10 @@ contract SertnServiceManager is
         taskVerified[_taskId] = IVerifier(_model.verifier_).verifyProof(_proof);
     }
 
+    function verifyTask(bytes memory _taskId, bool _verified) external onlyAggregators() {
+        taskVerified[_taskId] = _verified;
+    }
+
     function submitTask(TaskResponse memory _taskResponse, bool _verification, bytes memory _proof) external {
         
         Task memory _task = abi.decode(_taskResponse.taskId_, (Task));
@@ -336,11 +340,9 @@ contract SertnServiceManager is
             _checkFinancialSecurity(10*_task.poc_, _model, 0);
         }
         
-
-        if (_verification || _task.proveOnResponse_) {
-            _verifyTask(_taskResponse.taskId_, _proof);
-
+        if (_taskResponse.proven_) {
             if (taskVerified[_taskResponse.taskId_]) {
+                _taskResponse.proven_ = true;
                 _clearTask(_taskResponse.taskId_, false);
             }
 
@@ -350,7 +352,22 @@ contract SertnServiceManager is
                 emit upForSlashing(_model.operator_, _taskResponse.taskId_);
                 return;
             }
+        } else {
+            if (_verification || _task.proveOnResponse_) {
+            _verifyTask(_taskResponse.taskId_, _proof);
 
+            if (taskVerified[_taskResponse.taskId_]) {
+                _taskResponse.proven_ = true;
+                _clearTask(_taskResponse.taskId_, false);
+            }
+
+            else {
+                operatorSlashingQueue[msg.sender] = _pushToByteArray(_taskResponse.taskId_, operatorSlashingQueue[msg.sender]);
+                slashingQueue.push(_taskResponse.taskId_);
+                emit upForSlashing(_model.operator_, _taskResponse.taskId_);
+                return;
+            }
+        }
         }
         
         _operator.submittedTasks_ = _pushToByteArray(_taskResponse.taskId_, _operator.submittedTasks_);
