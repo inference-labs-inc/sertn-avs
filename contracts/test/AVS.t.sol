@@ -24,6 +24,7 @@ import {IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocat
 import {IAVSRegistrar} from "@eigenlayer/contracts/interfaces/IAVSRegistrar.sol";
 import {OperatorSet} from "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
 
+import "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
 import {Test, console2 as console} from "forge-std/Test.sol";
 import {ISertnServiceManager} from "../src/ISertnServiceManager.sol";
 import {ECDSAUpgradeable} from "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
@@ -520,4 +521,117 @@ contract RegisterOperatorToAVS is AVSSetup {
         console.log(_operator.allocatedSer_);
         vm.stopPrank();
     }
+
+    function test_sendTaskc() public {
+        vm.roll(1e10);
+        user = User({key: vm.createWallet("user_wallet")});
+        vm.startPrank(user.key.addr);
+
+
+        ethToken1.mint(user.key.addr, 1 ether);
+        ethToken2.mint(user.key.addr, 1 ether);
+        serToken.mint(user.key.addr, 1 ether);
+
+
+        ethToken1.approve(address(sertnServiceManager), 1e4);
+        ethToken2.approve(address(sertnServiceManager), 1e4);
+        serToken.approve(address(sertnServiceManager), 1e4);
+
+
+        ISertnServiceManagerTypes.Task memory task = ISertnServiceManagerTypes.Task({
+            modelId_: 1,
+            inputs_: bytes(""),
+            poc_: 1e2,
+            startTime_: 0,
+            startingBlock_: 0,
+            proveOnResponse_: false,
+            user_: user.key.addr
+            });
+        sertnServiceManager.sendTask(task);
+        vm.stopPrank();
+
+        vm.startPrank(operators[0].key.addr);
+        ISertnServiceManagerTypes.Operator memory _operator = sertnServiceManager.getOperatorInfo(operators[0].key.addr);
+        ISertnServiceManagerTypes.Task memory _task = abi.decode(_operator.openTasks_[0], (ISertnServiceManagerTypes.Task));
+        require(_task.user_ == user.key.addr);
+        ISertnServiceManagerTypes.TaskResponse memory _taskResponse = ISertnServiceManagerTypes.TaskResponse({taskId_: _operator.openTasks_[0], output_: bytes("hello world"), proven_: false});
+        sertnServiceManager.submitTask(_taskResponse, false, bytes(""));
+        vm.stopPrank();
+        vm.roll(2e10);
+        vm.warp(1e3);
+
+        vm.startPrank(user.key.addr);
+
+        ISertnServiceManagerTypes.Task memory task2 = ISertnServiceManagerTypes.Task({
+            modelId_: 1,
+            inputs_: bytes(""),
+            poc_: 1e2,
+            startTime_: 0,
+            startingBlock_: 0,
+            proveOnResponse_: false,
+            user_: user.key.addr
+            });
+        sertnServiceManager.sendTask(task2);
+        vm.stopPrank();
+
+        vm.startPrank(operators[0].key.addr);
+        _operator = sertnServiceManager.getOperatorInfo(operators[0].key.addr);
+        ISertnServiceManagerTypes.Task memory _task2 = abi.decode(_operator.openTasks_[0], (ISertnServiceManagerTypes.Task));
+        require(_task.user_ == user.key.addr);
+        ISertnServiceManagerTypes.TaskResponse memory _taskResponse2 = ISertnServiceManagerTypes.TaskResponse({taskId_: _operator.openTasks_[0], output_: bytes("hello world"), proven_: false});
+        sertnServiceManager.submitTask(_taskResponse2, false, bytes(""));
+        vm.stopPrank();
+
+
+        vm.startPrank(user.key.addr);
+        _taskResponse = sertnServiceManager.getTaskResponse(_operator.openTasks_[0]);
+        string memory _outputData = string(_taskResponse.output_);
+        console.log(_outputData);
+        vm.startPrank(operators[0].key.addr);
+        address[] memory _operatorKeys = new address[](OPERATOR_COUNT);
+        for (uint8 i = 0; i < OPERATOR_COUNT; i ++) {
+            _operatorKeys[i] = operators[i].key.addr;
+        }
+        vm.stopPrank();
+        vm.startPrank(owner.key.addr);
+        vm.roll(3e10);
+        vm.warp(3e9);
+
+        _operator = sertnServiceManager.getOperatorInfo(operators[0].key.addr);
+        console.log(_operator.allocatedSer_);
+        IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[] memory operatorDirectedRewardsSubmissions = new IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[](1);
+
+        IRewardsCoordinatorTypes.OperatorReward[] memory _operatorRewards = new IRewardsCoordinatorTypes.OperatorReward[](1);
+        _operatorRewards[0] = IRewardsCoordinatorTypes.OperatorReward({operator: operators[0].key.addr, amount: 6e1});
+        IRewardsCoordinatorTypes.StrategyAndMultiplier[] memory _strategiesAndMultipliers = new IRewardsCoordinatorTypes.StrategyAndMultiplier[](1);
+        _strategiesAndMultipliers[0] = IRewardsCoordinatorTypes.StrategyAndMultiplier({strategy: _serStrategy, multiplier: 1});
+        console.log(uint32((block.timestamp)));
+        operatorDirectedRewardsSubmissions[0] = IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission({
+            strategiesAndMultipliers: _strategiesAndMultipliers,
+            token: serToken,
+            operatorRewards: _operatorRewards,
+            startTimestamp: ((uint32(block.timestamp)/86400)*86400),
+            duration: 0,
+            description: ""
+            });
+        bytes[][] memory _rewardedTasks = new bytes[][](1);
+        _rewardedTasks[0] = new bytes[](1);
+        _rewardedTasks[0][0] = _operator.openTasks_[0];
+
+        _operator = sertnServiceManager.getOperatorInfo(operators[0].key.addr);
+        console.log(_operator.allocatedSer_);
+
+        console.log(allocationManager.getMinimumSlashableStake(opSet, _operatorKeys, strategies, uint32(vm.getBlockNumber()))[0][0], "min slashable");
+
+        sertnServiceManager.sendRewards(operatorDirectedRewardsSubmissions, _rewardedTasks);
+        // sertnServiceManager.clearTask( _operator.openTasks_[0]);
+        _operator = sertnServiceManager.getOperatorInfo(operators[0].key.addr);
+        console.log(_operator.allocatedSer_);
+        vm.warp(4e9);
+        console.log(allocationManager.getMinimumSlashableStake(opSet, _operatorKeys, strategies, uint32(vm.getBlockNumber()))[0][0], "min slashable");
+
+        console.log(allocationManager.getAllocatableMagnitude(operators[0].key.addr, strategies[0]));
+        vm.stopPrank();
+    }
+        
 }
