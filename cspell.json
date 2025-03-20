@@ -12,7 +12,10 @@
         "pycodestyle",
         "pyproject",
         "sdist",
-        "venv"
+        "venv",
+        "eigenlayer",
+        "holesky",
+        "remappings"
     ],
     "ignoreWords": [],
     "import": []
