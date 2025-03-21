@@ -57,13 +57,31 @@ contract SertnTaskManager is
         _;
     }
 
+    // constructor(
+    //     address _rewardsCoordinator,
+    //     address _delegationManager,
+    //     address _allocationManager,
+    //     address _sertnServiceManager,
+    //     address _ser
+    // ) OwnableUpgradeable() {
+    //     allocationManager = IAllocationManager(_allocationManager);
+    //     delegationManager = IDelegationManager(_delegationManager);
+    //     rewardsCoordinator = IRewardsCoordinator(_rewardsCoordinator);
+    //     sertnServiceManager = SertnServiceManager(_sertnServiceManager);
+
+
+
+    //     opSet = OperatorSet({avs: address(sertnServiceManager), id: 0});
+    //     ser = IERC20(_ser);
+    // }
+
     constructor(
         address _rewardsCoordinator,
         address _delegationManager,
         address _allocationManager,
         address _sertnServiceManager,
         address _ser
-    ) OwnableUpgradeable() {
+    ) {
         allocationManager = IAllocationManager(_allocationManager);
         delegationManager = IDelegationManager(_delegationManager);
         rewardsCoordinator = IRewardsCoordinator(_rewardsCoordinator);
@@ -192,7 +210,7 @@ contract SertnTaskManager is
 
         Operator memory _operator = abi.decode(sertnServiceManager.opInfo(_model.operator_),(Operator));
 
-        if (_model.maxBlocks_ > uint32(block.number - _task.startingBlock_)) {
+        if (_model.maxBlocks_ < uint32(block.number - _task.startingBlock_)) {
             revert TaskExpired();
         }
 
@@ -363,8 +381,7 @@ contract SertnTaskManager is
 
     function _clearTask(bytes memory _taskId, bool _slashed) internal {
         Task memory _task = abi.decode(_taskId, (Task));
-
-        if (_task.startingBlock_ + TASK_EXPIRY_BLOCKS < block.number || taskVerified[_taskId] || _slashed) {
+        if (_task.startingBlock_ + TASK_EXPIRY_BLOCKS > block.number && !taskVerified[_taskId] && !_slashed) {
             revert TaskNotExpired();
         }
 
@@ -381,14 +398,11 @@ contract SertnTaskManager is
         if(_slashed) {
             _operator.submittedTasks_ = _removeBytesElement(_operator.submittedTasks_, _taskId);
         }
-
         operatorSlashingQueue[_model.operator_] = _removeBytesElement(operatorSlashingQueue[_model.operator_], _taskId);
         slashingQueue = _removeBytesElement(slashingQueue, _taskId);
-
         for (uint8 i = 0; i < _operator.allocatedEth_.length; i++) {
             _operator.allocatedEth_[i] -= _model.ethShares_[i];
         }
-
         _operator.allocatedSer_ -= 10*_task.poc_;
 
         sertnServiceManager.updateOperator(_model.operator_, _operator);
@@ -411,28 +425,32 @@ contract SertnTaskManager is
     }
 
     function _removeBytesElement(bytes[] memory _byteArray, bytes memory _byteElement) internal pure returns(bytes[] memory) {
+        if (_inBytesArray(_byteArray, _byteElement)) {
+            bytes[] memory newArray = new bytes[](_byteArray.length - 1);
+            bytes32 elementHash = keccak256(_byteElement);
+            bool found = false;
+            uint256 writeIndex = 0;
 
-        bytes[] memory newArray = new bytes[](_byteArray.length - 1);
-        bytes32 elementHash = keccak256(_byteElement);
-        bool found = false;
-        uint256 writeIndex = 0;
+            for (uint256 readIndex = 0; readIndex < _byteArray.length; readIndex++) {
+                if (!found && elementHash == keccak256(_byteArray[readIndex])) {
+                    found = true;
+                    continue;
+                }
 
-        for (uint256 readIndex = 0; readIndex < _byteArray.length; readIndex++) {
-            if (!found && elementHash == keccak256(_byteArray[readIndex])) {
-                found = true;
-                continue;
+                if (writeIndex >= newArray.length) {
+                    revert("Array length mismatch");
+                }
+
+                newArray[writeIndex] = _byteArray[readIndex];
+                writeIndex++;
             }
 
-            if (writeIndex >= newArray.length) {
-                revert("Array length mismatch");
-            }
 
-            newArray[writeIndex] = _byteArray[readIndex];
-            writeIndex++;
+            return newArray;
+        } else {
+            return _byteArray;
         }
-
-
-        return newArray;
+        
     }
     function _pushToBytesArray(bytes memory _element, bytes[] memory _array) internal returns (bytes[] memory) {
         bytes[] memory _newArray = new bytes[](_array.length + 1);

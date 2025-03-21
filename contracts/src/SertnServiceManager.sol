@@ -74,13 +74,34 @@ contract SertnServiceManager is
         _;
     }
 
+    // constructor(
+    //     address _rewardsCoordinator,
+    //     address _delegationManager,
+    //     address _allocationManager,
+    //     IStrategy[] memory _strategies,
+    //     string memory _avsMetadata
+    // ) OwnableUpgradeable() {
+    //     // Set the deployer as an aggregator
+    //     isAggregator[msg.sender] = true;
+    //     console.log(owner(), msg.sender);
+
+    //     allocationManager = IAllocationManager(_allocationManager);
+    //     delegationManager = IDelegationManager(_delegationManager);
+    //     rewardsCoordinator = IRewardsCoordinator(_rewardsCoordinator);
+
+    //     _registerToEigen(_strategies, _avsMetadata);
+
+    //     opSet = OperatorSet({avs: address(this), id: 0});
+    //     ser = _strategies[0].underlyingToken();
+    // }
+
     constructor(
         address _rewardsCoordinator,
         address _delegationManager,
         address _allocationManager,
         IStrategy[] memory _strategies,
         string memory _avsMetadata
-    ) OwnableUpgradeable() {
+    ) {
         // Set the deployer as an aggregator
         isAggregator[msg.sender] = true;
 
@@ -94,7 +115,20 @@ contract SertnServiceManager is
         ser = _strategies[0].underlyingToken();
     }
 
-    function setTaskManager(address _sertnTaskManager) external onlyOwner {
+    // function setTaskManager(address _sertnTaskManager) external onlyOwner {
+    //     if (_sertnTaskManager == address(0)) {
+    //         revert InvalidTaskManager();
+    //     }
+    //     // Check if the task manager is already set, if so revoke approval first
+    //     if (address(sertnTaskManager) != address(0)) {
+    //         ser.approve(address(sertnTaskManager), 0);
+    //     }
+    //     sertnTaskManager = SertnTaskManager(_sertnTaskManager);
+    //     isAggregator[_sertnTaskManager] = true;
+    //     ser.approve(address(sertnTaskManager), 100 ether);
+    // }
+
+    function setTaskManager(address _sertnTaskManager) external onlyAggregators() {
         if (_sertnTaskManager == address(0)) {
             revert InvalidTaskManager();
         }
@@ -487,7 +521,7 @@ contract SertnServiceManager is
     }
 
     function setTaskResponse(TaskResponse memory _taskResponse) external onlyTaskManager() {
-        taskResponse[_taskResponse.taskId_] = _taskResponse;
+        taskResponse[_taskResponse.taskId_] = abi.encode(_taskResponse);
     }
 
     function setBountyHunter(bytes memory _taskId, address _bountyHunter) external onlyTaskManager() {

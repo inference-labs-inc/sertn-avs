@@ -98,6 +98,8 @@ contract SertnDeployer is Script, Test {
             address(serToken)
         );
 
+        // sertnServiceManager.setTaskManager(address(sertnTaskManager));
+
         console.log(address(sertnServiceManager));
         vm.stopBroadcast();
         // verifyDeployment();
