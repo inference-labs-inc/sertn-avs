@@ -12,10 +12,11 @@ abstract contract SertnServiceManagerStorage is ISertnServiceManager, ISertnServ
     uint256 BOUNTY = 500;
 
     mapping(address => IStrategy) public tokenToStrategy;
-    mapping(address => Operator) public opInfo;
+    mapping(address => bytes) public opInfo;
     mapping(address => bool) public isAggregator;
     mapping(address => bool) public isOperator;
-    mapping(uint256 => Model) public modelInfo;
+    mapping(uint256 => bytes) public modelInfo;
+    // mapping(uint256 => Model) public modelInfo;
     mapping(address => mapping(bytes32 => uint8)) public computeUnits;
     mapping(bytes32 => uint8[]) public modelsByName;
     mapping(bytes => bool) public taskVerified;
