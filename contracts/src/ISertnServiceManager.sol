@@ -22,6 +22,8 @@ interface ISertnServiceManagerErrors {
     error TaskExpired();
     error NotPausedLongEnough();
     error NotRegisteredAggregatorOrOperator();
+    error TransferFailed();
+    error BountyAlreadySet();
 }
 
 interface ISertnServiceManagerEvents {
