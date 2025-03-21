@@ -142,7 +142,10 @@ contract SertnTaskManager is
             for (uint8 i = 0; i < _operator.allocatedEth_.length; i++) {
                 _operator.allocatedEth_[i] += _model.ethShares_[i];
             }
-            _operator.allocatedSer_ += 10 * _task.poc_;
+            _operator.allocatedSer_ += _task.poc_;
+            if (!_task.proveOnResponse_) {
+                _operator.allocatedSer_ += 9 * _task.poc_;
+            }
             sertnServiceManager.updateOperator(_model.operator_, _operator);
             emit newTask(_model.operator_, _taskId);
         } else {
@@ -403,7 +406,12 @@ contract SertnTaskManager is
         for (uint8 i = 0; i < _operator.allocatedEth_.length; i++) {
             _operator.allocatedEth_[i] -= _model.ethShares_[i];
         }
-        _operator.allocatedSer_ -= 10*_task.poc_;
+
+        _operator.allocatedSer_ -= _task.poc_;
+        if (!_task.proveOnResponse_) {
+            _operator.allocatedSer_ -= 9*_task.poc_;
+        }
+        
 
         sertnServiceManager.updateOperator(_model.operator_, _operator);
 
