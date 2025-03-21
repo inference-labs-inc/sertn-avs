@@ -18,14 +18,8 @@ abstract contract SertnServiceManagerStorage is ISertnServiceManager, ISertnServ
     mapping(uint8 => Model) internal modelInfo;
     mapping(address => mapping(bytes32 => uint8)) internal computeUnits;
     mapping(bytes32 => uint8[]) internal modelsByName;
-    // mapping(address => bytes[]) internal openTasks;
-    // mapping(address => bytes[]) internal submittedTasks;
     mapping(bytes => bool) internal taskVerified;
     mapping(bytes  => TaskResponse) internal taskResponse;
-    // mapping(address => bytes[]) internal proofRequests;
     mapping(address => bytes[]) internal operatorSlashingQueue;
-    // mapping(address => uint256[]) internal allocatedEth;
-    // mapping(address => uint256) internal allocatedSer;
-    // mapping(address => uint32[2]) internal proofRequestExponents;
     mapping(bytes => address) internal bountyHunter;
 }
