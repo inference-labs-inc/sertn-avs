@@ -17,6 +17,11 @@ interface ISertnServiceManagerErrors {
     error AggregatorAlreadyExists();
     error NoProofOnResponse(string);
     error TaskCouldNotBeSent(string);
+    error IncorrectOperator();
+    error TaskNotExpired();
+    error TaskExpired();
+    error NotPausedLongEnough();
+    error NotRegisteredAggregatorOrOperator();
 }
 
 interface ISertnServiceManagerEvents {

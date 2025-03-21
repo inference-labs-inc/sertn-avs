@@ -57,7 +57,10 @@ contract SertnServiceManager is
     }
 
     modifier onlyAggregatorsOrOperator(address _operator) {
-        require(isAggregator[msg.sender] || _operator == msg.sender, "Not registered aggregator or concerned operator");
+        // TODO: Evaluate usage of this modifier
+        if (!isAggregator[msg.sender] && _operator != msg.sender) {
+            revert NotRegisteredAggregatorOrOperator();
+        }
         _;
     }
 
@@ -242,7 +245,9 @@ contract SertnServiceManager is
 
         Model memory _model = modelInfo[_modelId];
 
-        require(_model.operator_ == msg.sender, "Wrong operator for task");
+        if (_model.operator_ != msg.sender) {
+            revert IncorrectOperator();
+        }
 
         taskVerified[_taskId] = IVerifier(_model.verifier_).verifyProof(_proof);
     }
@@ -256,7 +261,10 @@ contract SertnServiceManager is
 
     function _clearTask(bytes memory _taskId, bool _slashed) internal {
         Task memory _task = abi.decode(_taskId, (Task));
-        require(_task.startingBlock_ + TASK_EXPIRY_BLOCKS < block.number || taskVerified[_taskId] || _slashed, "Task has not expired");
+
+        if (_task.startingBlock_ + TASK_EXPIRY_BLOCKS < block.number || taskVerified[_taskId] || _slashed) {
+            revert TaskNotExpired();
+        }
 
         uint256 _modelId = _task.modelId_;
 
@@ -302,9 +310,23 @@ contract SertnServiceManager is
         return false;
     }
     function modifyModelParameters(Model memory _model, uint8 _modelId) external onlyOperators() {
-        Model memory _oldModel = modelInfo[_modelId];
-        require(_oldModel.operator_ == msg.sender, "Sender is not model owner");
-        modelInfo[_modelId] = _model;
+        Model storage _oldModel = modelInfo[_modelId];
+        if (_oldModel.operator_ != msg.sender) {
+            revert IncorrectOperator();
+        }
+        _oldModel.modelName_ = _model.modelName_;
+        _oldModel.verifier_ = _model.verifier_;
+        _oldModel.benchData_ = _model.benchData_;
+        _oldModel.inputs_ = _model.inputs_;
+        _oldModel.output_ = _model.output_;
+        _oldModel.maxBlocks_ = _model.maxBlocks_;
+        _oldModel.ethStrategies_ = _model.ethStrategies_;
+        _oldModel.ethShares_ = _model.ethShares_;
+        _oldModel.baseFee_ = _model.baseFee_;
+        _oldModel.maxSer_ = _model.maxSer_;
+        _oldModel.computeType_ = _model.computeType_;
+        _oldModel.proveOnResponse_ = _model.proveOnResponse_;
+        _oldModel.available_ = _model.available_;
         emit modelUpdated(_modelId, _model);
     }
 
@@ -381,9 +403,13 @@ contract SertnServiceManager is
         address avs,
         uint32[] calldata operatorSetIds
     ) external onlyAggregatorsOrOperator(operator) {
-        require(address(this) == avs, "Wrong AVS");
+        if (address(this) != avs) {
+            revert IncorrectAVS();
+        }
         Operator memory _operator = opInfo[operator];
-        require(isAggregator[msg.sender] || uint256(_operator.pausedBlock_) + 2*TASK_EXPIRY_BLOCKS < block.number || _operator.pausedBlock_ > 0, "Not paused long enough");
+        if (isAggregator[msg.sender] || uint256(_operator.pausedBlock_) + 2*TASK_EXPIRY_BLOCKS < block.number || _operator.pausedBlock_ > 0) {
+            revert NotPausedLongEnough();
+        }
         for (uint8 i = 0; i < _operator.models_.length; i ++) {
             delete modelInfo[_operator.models_[i]];
         }
