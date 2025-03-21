@@ -177,7 +177,7 @@ contract SertnTaskManager is
     }
 
     function submitTask(TaskResponse memory _taskResponse, bool _verification, bytes memory _proof) external {
-        
+
         Task memory _task = abi.decode(_taskResponse.taskId_, (Task));
 
         uint8 _modelId = _task.modelId_;
@@ -198,7 +198,7 @@ contract SertnTaskManager is
         } else {
             _checkFinancialSecurity(10*_task.poc_, _model, uint32(TASK_EXPIRY_BLOCKS - (block.number - _task.startingBlock_)));
         }
-        
+
         if (_taskResponse.proven_) {
             if (sertnServiceManager.isTaskVerified(_taskResponse.taskId_)) {
                 _taskResponse.proven_ = true;
@@ -232,7 +232,7 @@ contract SertnTaskManager is
             }
         }
         }
-        
+
         _operator.submittedTasks_ = _pushToByteArray(_taskResponse.taskId_, _operator.submittedTasks_);
 
 
@@ -289,14 +289,14 @@ contract SertnTaskManager is
                     sertnServiceManager.clearTask(_rewardedTasks[i][j]);
                 }
             }
-            
+
             _approvalAmount += operatorDirectedRewardsSubmissions[0].operatorRewards[i].amount;
         }
-        
+
         ser.approve(address(rewardsCoordinator), _approvalAmount);
         rewardsCoordinator.createOperatorDirectedAVSRewardsSubmission(address(sertnServiceManager), operatorDirectedRewardsSubmissions);
     }
-    
+
     //Have to figure out how to whitelist task manager for slashing, or use storage and set and get from there
     function slashOperator(bytes memory _taskId, string memory _whySlashed) external onlyAggregators() {
 
@@ -317,13 +317,13 @@ contract SertnTaskManager is
         for (uint8 i = 0; i < _model.ethStrategies_.length; i++) {
             _strategies[i] = _model.ethStrategies_[i];
         }
-        
+
         _strategies[_model.ethStrategies_.length] = sertnServiceManager.getTokenToStrategy(address(ser));
 
         uint256[] memory _wadsToSlash = new uint256[](_strategies.length);
 
         uint256[] memory _operatorShares = delegationManager.getOperatorShares(_model.operator_, _strategies);
-        
+
         for (uint8 i = 0; i < _model.ethStrategies_.length; i++) {
             _wadsToSlash[i] = 1 ether * 1 ether * (_model.ethShares_[i]) / (allocationManager.getAllocation(_model.operator_, opSet, _strategies[i]).currentMagnitude * _operatorShares[i]);
         }
@@ -331,7 +331,7 @@ contract SertnTaskManager is
         _wadsToSlash[_model.ethStrategies_.length] = (1 ether * 1 ether * 10 * _task.poc_)/(allocationManager.getAllocation(_model.operator_, opSet, _strategies[_model.ethStrategies_.length]).currentMagnitude * _operatorShares[_model.ethStrategies_.length]);
 
         IAllocationManagerTypes.SlashingParams memory _slashParams = IAllocationManagerTypes.SlashingParams({operator: _model.operator_, operatorSetId: 0, strategies: _strategies, wadsToSlash: _wadsToSlash, description: _whySlashed});
-        
+
         allocationManager.slashOperator(address(sertnServiceManager), _slashParams);
 
         emit operatorSlashed(_model.operator_, _taskId);
@@ -378,10 +378,10 @@ contract SertnTaskManager is
         }
     }
 
-    
+
 
     function _isAggregator(address _aggregator) internal returns (bool) {
-        aggregators = sertnServiceManager.getAggregators(); 
+        aggregators = sertnServiceManager.getAggregators();
         for (uint8 i = 0; i <aggregators.length; i ++) {
             if (aggregators[i] == _aggregator) {
                 return true;
@@ -391,5 +391,5 @@ contract SertnTaskManager is
     }
 
 
-    
+
 }

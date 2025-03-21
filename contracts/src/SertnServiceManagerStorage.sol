@@ -12,14 +12,14 @@ abstract contract SertnServiceManagerStorage is ISertnServiceManager, ISertnServ
     uint256 BOUNTY = 500;
 
     mapping(address => IStrategy) public tokenToStrategy;
-    mapping(address => Operator) internal opInfo;
-    mapping(address => bool) internal isAggregator;
-    mapping(address => bool) internal isOperator;
-    mapping(uint8 => Model) internal modelInfo;
-    mapping(address => mapping(bytes32 => uint8)) internal computeUnits;
-    mapping(bytes32 => uint8[]) internal modelsByName;
-    mapping(bytes => bool) internal taskVerified;
-    mapping(bytes  => TaskResponse) internal taskResponse;
-    mapping(address => bytes[]) internal operatorSlashingQueue;
-    mapping(bytes => address) internal bountyHunter;
+    mapping(address => Operator) public opInfo;
+    mapping(address => bool) public isAggregator;
+    mapping(address => bool) public isOperator;
+    mapping(uint256 => Model) public modelInfo;
+    mapping(address => mapping(bytes32 => uint8)) public computeUnits;
+    mapping(bytes32 => uint8[]) public modelsByName;
+    mapping(bytes => bool) public taskVerified;
+    mapping(bytes  => TaskResponse) public taskResponse;
+    mapping(address => bytes[]) public operatorSlashingQueue;
+    mapping(bytes => address) public bountyHunter;
 }

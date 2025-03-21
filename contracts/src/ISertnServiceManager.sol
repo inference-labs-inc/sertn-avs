@@ -7,22 +7,28 @@ interface ISertnServiceManager {
 }
 
 interface ISertnServiceManagerErrors {
-    error WrongAVS();
+    error IncorrectAVS();
+    error IncorrectOperatorSetIds();
     error NotModelId(string);
+    error NotAggregator();
+    error NotOperator();
+    error NotTaskManager();
+    error InvalidTaskManager();
+    error AggregatorAlreadyExists();
     error NoProofOnResponse(string);
     error TaskCouldNotBeSent(string);
 }
 
 interface ISertnServiceManagerEvents {
     event newOperator(address opAddr_);
-    event newModels(uint8[] modelId_);
+    event newModels(uint256[] modelId_);
     event newStrategies(address[] newSupportedTokens_);
     event newTask(address indexed opAddr_, bytes indexed taskId_);
-    event taskResponded(uint8 indexed model, bytes indexed taskId, ISertnServiceManagerTypes.TaskResponse task);
+    event taskResponded(uint256 indexed model, bytes indexed taskId, ISertnServiceManagerTypes.TaskResponse task);
     event upForSlashing(address indexed operator, bytes indexed taskId);
     event proofRequested(address indexed operator, bytes indexed taskId);
     event operatorSlashed(address indexed operator, bytes indexed taskId);
-    event modelUpdated(uint8 indexed modelId, ISertnServiceManagerTypes.Model model);
+    event modelUpdated(uint256 indexed modelId, ISertnServiceManagerTypes.Model model);
     event opInfoChanged(address indexed _operator, ISertnServiceManagerTypes.Operator _opInfo);
     event operatorDeleted(address indexed _operator, uint32[] opSetIds);
 }
@@ -30,7 +36,7 @@ interface ISertnServiceManagerEvents {
 interface ISertnServiceManagerTypes {
 
     struct Operator {
-        uint8[] models_;
+        uint256[] models_;
         bytes32[] computeUnits_;
         bytes[] openTasks_;
         bytes[] submittedTasks_;
@@ -60,12 +66,12 @@ interface ISertnServiceManagerTypes {
     }
 
     struct Task {
-        uint8 modelId_;
+        uint256 modelId_;
         bytes inputs_;
         uint256 poc_;
         uint256 startTime_;
         uint256 startingBlock_;
-        bool proveOnResponse_; 
+        bool proveOnResponse_;
         address user_;
     }
 
@@ -76,6 +82,3 @@ interface ISertnServiceManagerTypes {
     }
 
 }
-
-
-
