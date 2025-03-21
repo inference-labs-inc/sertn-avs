@@ -316,7 +316,7 @@ contract SertnServiceManager is
             _modelIds[i] = modelNum;
             _models[i].operator_ = msg.sender;
             modelInfo[modelNum] = _models[i];
-            opInfo[msg.sender].models_ = _pushToUint8Array(modelNum, opInfo[msg.sender].models_);
+            opInfo[msg.sender].models_.push(uint8(modelNum));
         }
         emit newModels(_modelIds);
     }
@@ -325,7 +325,10 @@ contract SertnServiceManager is
         for (uint8 i = 0; i < _computeUnitNames.length; i++) {
             computeUnits[msg.sender][_computeUnitNames[i]] = _computeUnits[i];
         }
-        opInfo[msg.sender].computeUnits_ = _computeUnitNames;
+        delete opInfo[msg.sender].computeUnits_;
+        for (uint8 i = 0; i < _computeUnitNames.length; i++) {
+            opInfo[msg.sender].computeUnits_.push(_computeUnitNames[i]);
+        }
         emit opInfoChanged(msg.sender, opInfo[msg.sender]);
     }
 
@@ -342,33 +345,6 @@ contract SertnServiceManager is
     function _unpauseOperator() external onlyOperators() {
         opInfo[msg.sender].pausedBlock_ = 0;
         emit opInfoChanged(msg.sender, opInfo[msg.sender]);
-    }
-
-    function _pushToByteArray(bytes memory _element, bytes[] memory _arr) internal pure returns (bytes[] memory){
-        bytes[] memory _tempBytesArr = new bytes[](_arr.length + 1);
-        for (uint8 i = 0; i < _arr.length; i++) {
-            _tempBytesArr[i] = _arr[i];
-        }
-        _tempBytesArr[_arr.length] = _element;
-        return _tempBytesArr;
-    }
-
-    function _pushToByte32Array(bytes32 _element, bytes32[] memory _arr) internal pure returns (bytes32[] memory){
-        bytes32[] memory _tempBytesArr = new bytes32[](_arr.length + 1);
-        for (uint8 i = 0; i < _arr.length; i++) {
-            _tempBytesArr[i] = _arr[i];
-        }
-        _tempBytesArr[_arr.length] = _element;
-        return _tempBytesArr;
-    }
-
-    function _pushToUint8Array(uint8 _element, uint8[] memory _arr) internal pure returns (uint8[] memory){
-        uint8[] memory _tempArr = new uint8[](_arr.length + 1);
-        for (uint8 i = 0; i < _arr.length; i++) {
-            _tempArr[i] = _arr[i];
-        }
-        _tempArr[_arr.length] = _element;
-        return _tempArr;
     }
 
     function getComputeUnits(address _operator, bytes32 _computeType) external view returns (uint8) {
@@ -388,7 +364,7 @@ contract SertnServiceManager is
     }
 
     function pushToOperatorSlashingQueue(address _operator, bytes memory _taskId) external onlyTaskManager() {
-        operatorSlashingQueue[_operator] = _pushToByteArray(_taskId, operatorSlashingQueue[_operator]);
+        operatorSlashingQueue[_operator].push(_taskId);
     }
 
     function setTaskResponse(TaskResponse memory _taskResponse) external onlyTaskManager() {

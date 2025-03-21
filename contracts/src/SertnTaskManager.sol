@@ -107,15 +107,9 @@ contract SertnTaskManager is
             _operator.pausedBlock_ == 0
         ) {
             bytes memory _taskId = abi.encode(_task);
-            _operator.openTasks_ = _pushToByteArray(
-                _taskId,
-                _operator.openTasks_
-            );
+            _operator.openTasks_.push(_taskId);
             if (_task.proveOnResponse_) {
-                _operator.proofRequests_ = _pushToByteArray(
-                    _taskId,
-                    _operator.proofRequests_
-                );
+                _operator.proofRequests_.push(_taskId);
             }
             sertnServiceManager.setComputeUnits(_model.operator_,_model.computeType_, false);
             // computeUnits[_model.operator_][_model.computeType_] -= 1;
@@ -233,16 +227,10 @@ contract SertnTaskManager is
         }
         }
 
-        _operator.submittedTasks_ = _pushToByteArray(_taskResponse.taskId_, _operator.submittedTasks_);
-
+        _operator.submittedTasks_.push(_taskResponse.taskId_);
 
         sertnServiceManager.updateOperator(_model.operator_, _operator);
-        // opInfo[_model.operator_] = _operator;
-
-
         sertnServiceManager.setTaskResponse(_taskResponse);
-        // taskResponse[_taskResponse.taskId_] = _taskResponse;
-
         sertnServiceManager.setComputeUnits(_model.operator_, _model.computeType_, true);
         // computeUnits[_model.operator_][_model.computeType_] += 1;
 
@@ -261,7 +249,7 @@ contract SertnTaskManager is
         uint256 _amount = PROOF_REQUEST_COST*(_operator.proofRequestExponents_[0]/_operator.proofRequestExponents_[1]);
         ser.transferFrom(msg.sender, address(sertnServiceManager), _amount);
 
-        _operator.proofRequests_ = _pushToByteArray(_taskId, _operator.proofRequests_);
+        _operator.proofRequests_.push(_taskId);
 
         _operator.proofRequestExponents_[0] += 500;
 
@@ -347,19 +335,6 @@ contract SertnTaskManager is
         sertnServiceManager.clearTask(_taskId);
     }
 
-
-    function _pushToByteArray(
-        bytes memory _element,
-        bytes[] memory _arr
-    ) internal pure returns (bytes[] memory) {
-        bytes[] memory _tempBytesArr = new bytes[](_arr.length + 1);
-        for (uint8 i = 0; i < _arr.length; i++) {
-            _tempBytesArr[i] = _arr[i];
-        }
-        _tempBytesArr[_arr.length] = _element;
-        return _tempBytesArr;
-    }
-
     function _inBytesArray(bytes[] memory _byteArray, bytes memory _byteElement) internal pure returns(bool) {
         for (uint8 i = 0; i < _byteArray.length; i++) {
             if (keccak256(_byteElement) == keccak256(_byteArray[i])) {
@@ -369,7 +344,7 @@ contract SertnTaskManager is
         return false;
     }
 
-        function _removeBytesElement(bytes[] memory _byteArray, bytes memory _byteElement) internal pure returns(bytes[] memory) {
+    function _removeBytesElement(bytes[] memory _byteArray, bytes memory _byteElement) internal pure returns(bytes[] memory) {
         for (uint8 i = 0; i < _byteArray.length; i++) {
             if (keccak256(_byteElement) == keccak256(_byteArray[i])) {
                 delete _byteArray[i];
@@ -377,8 +352,6 @@ contract SertnTaskManager is
             }
         }
     }
-
-
 
     function _isAggregator(address _aggregator) internal returns (bool) {
         aggregators = sertnServiceManager.getAggregators();
@@ -389,7 +362,4 @@ contract SertnTaskManager is
         }
         return false;
     }
-
-
-
 }
