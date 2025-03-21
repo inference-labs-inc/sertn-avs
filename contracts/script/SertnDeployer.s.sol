@@ -1,75 +1,123 @@
-// // SPDX-License-Identifier: UNLICENSED
-// pragma solidity ^0.8.0;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.0;
 
-// import {Script} from "forge-std/Script.sol";
-// import {console2} from "forge-std/Test.sol";
+import {Script} from "forge-std/Script.sol";
+import {console2} from "forge-std/Test.sol";
 // import {SertnDeploymentLib} from "./utils/SertnDeploymentLib.sol";
-// import {CoreDeploymentLib} from "./utils/CoreDeploymentLib.sol";
-// import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
-// import {StrategyBase} from "@eigenlayer/contracts/strategies/StrategyBase.sol";
-// import {ERC20Mock} from "../test/ERC20Mock.sol";
-// import {TransparentUpgradeableProxy} from
-//     "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-// import {StrategyFactory} from "@eigenlayer/contracts/strategies/StrategyFactory.sol";
-// import {StrategyManager} from "@eigenlayer/contracts/core/StrategyManager.sol";
-// import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
+import {CoreDeploymentLib} from "./utils/CoreDeploymentLib.sol";
+import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
+import {StrategyBase} from "@eigenlayer/contracts/strategies/StrategyBase.sol";
+import {ERC20Mock} from "../test/ERC20Mock.sol";
+import {TransparentUpgradeableProxy} from
+    "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {StrategyFactory} from "@eigenlayer/contracts/strategies/StrategyFactory.sol";
+import {StrategyManager} from "@eigenlayer/contracts/core/StrategyManager.sol";
+import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
 
-// import {IStrategy} from "eigenlayer-contracts/src/contracts/interfaces/IStrategy.sol";
-// import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
+import {SertnServiceManager} from "../src/SertnServiceManager.sol";
+import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
+import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 
-// import "forge-std/Test.sol";
+import {IERC20, StrategyFactory} from "@eigenlayer/contracts/strategies/StrategyFactory.sol";
+import {SertnTaskManager} from "../src/SertnTaskManager.sol";
 
-// contract SertnDeployer is Script, Test {
-//     using CoreDeploymentLib for *;
-//     using UpgradeableProxyLib for address;
+import "forge-std/Test.sol";
 
-//     address private deployer;
-//     address proxyAdmin;
-//     address rewardsOwner;
-//     address rewardsInitiator;
-//     IStrategy sertnStrategy;
-//     CoreDeploymentLib.DeploymentData coreDeployment;
-//     SertnDeploymentLib.DeploymentData sertnDeployment;
-//     SertnDeploymentLib.DeploymentConfigData sertnConfig;
-//     IECDSAStakeRegistryTypes.Quorum internal quorum;
-//     ERC20Mock token;
+contract SertnDeployer is Script, Test {
+    using CoreDeploymentLib for *;
+    using UpgradeableProxyLib for address;
 
-//     function setUp() public virtual {
-//         deployer = vm.rememberKey(vm.envUint("PRIVATE_KEY"));
-//         vm.label(deployer, "Deployer");
+    address private deployer;
+    address proxyAdmin;
+    address rewardsOwner;
+    address rewardsInitiator;
+    IStrategy sertnStrategy;
+    CoreDeploymentLib.DeploymentData coreDeployment;
+    // SertnDeploymentLib.DeploymentData sertnDeployment;
+    // SertnDeploymentLib.DeploymentConfigData sertnConfig;
+    // IECDSAStakeRegistryTypes.Quorum internal quorum;
+    ERC20Mock token;
 
-//         sertnConfig =
-//             SertnDeploymentLib.readDeploymentConfigValues("config/sertn/", block.chainid);
+        IStrategy[] _tokenToStrategy;
+    IStrategy[] _ethStrategies;
+    IStrategy _serStrategy;
+    IStrategy[] strategies;
 
-//         coreDeployment = CoreDeploymentLib.readDeploymentJson("deployments/core/", block.chainid);
-//     }
+    uint32[] opSetIds;
 
-//     function run() external {
-//         vm.startBroadcast(deployer);
-//         rewardsOwner = sertnConfig.rewardsOwner;
-//         rewardsInitiator = sertnConfig.rewardsInitiator;
+    ERC20Mock public ethToken1;
+    ERC20Mock public ethToken2;
+    ERC20Mock public serToken;
 
-//         token = new ERC20Mock();
-//         sertnStrategy =
-//             IStrategy(StrategyFactory(coreDeployment.strategyFactory).deployNewStrategy(token));
+    SertnServiceManager sertnServiceManager;
+    SertnTaskManager sertnTaskManager;
 
-//         quorum.strategies.push(IECDSAStakeRegistryTypes.StrategyParams({strategy: sertnStrategy, multiplier: 10_000}));
+    function setUp() public virtual {
+        deployer = vm.rememberKey(vm.envUint("PRIVATE_KEY"));
+        vm.label(deployer, "Deployer");
 
-//         proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
 
-//         sertnDeployment = SertnDeploymentLib.deployContracts(
-//             proxyAdmin, coreDeployment, quorum, rewardsInitiator, rewardsOwner
-//         );
 
-//         sertnDeployment.strategy = address(sertnStrategy);
-//         sertnDeployment.token = address(token);
+        coreDeployment = CoreDeploymentLib.readDeploymentJson("deployments/core/", block.chainid);
+    }
 
-//         vm.stopBroadcast();
-//         verifyDeployment();
-//         SertnDeploymentLib.writeDeploymentJson(sertnDeployment);
-//     }
+    function run() external {
+        vm.startBroadcast(deployer);
+        ethToken1 = new ERC20Mock();
+        ethToken2 = new ERC20Mock();
+        serToken = new ERC20Mock();
 
-//     function verifyDeployment() internal view {
+        IStrategy strategy1 = addStrategy(address(ethToken1));
+        IStrategy strategy2 = addStrategy(address(ethToken2));
+        _serStrategy = addStrategy(address(serToken));
+        strategies.push(_serStrategy);
+        strategies.push(strategy1);
+        strategies.push(strategy2);
+
+        _ethStrategies.push(strategy1);
+        _ethStrategies.push(strategy2);
+
+        // quorum.strategies.push(IECDSAStakeRegistryTypes.StrategyParams({strategy: strategy, multiplier: 10_000}));
+
+        // sertnDeployment = SertnDeploymentLib.deployContracts(
+        //     proxyAdmin, coreDeployment, quorum, owner.key.addr, owner.key.addr
+        // );
+        sertnServiceManager = new SertnServiceManager(
+            coreDeployment.rewardsCoordinator,
+            coreDeployment.delegationManager,
+            coreDeployment.allocationManager,
+            strategies,
+            ""
+        );
+
+        sertnTaskManager = new SertnTaskManager(
+            coreDeployment.rewardsCoordinator,
+            coreDeployment.delegationManager,
+            coreDeployment.allocationManager,
+            address(sertnServiceManager),
+            address(serToken)
+        );
+
+        console.log(address(sertnServiceManager));
+        vm.stopBroadcast();
+        // verifyDeployment();
+        // SertnDeploymentLib.writeDeploymentJson(sertnDeployment);
+    }
+
+
+    function addStrategy(address token) public returns (IStrategy) {
+
+        StrategyFactory strategyFactory = StrategyFactory(
+            coreDeployment.strategyFactory
+        );
+        IStrategy newStrategy = strategyFactory.deployNewStrategy(
+            IERC20(token)
+        );
+        return newStrategy;
+    }
+        
+//     function verifyDeployment() internal view {y
+
 //         require(
 //             sertnDeployment.stakeRegistry != address(0), "StakeRegistry address cannot be zero"
 //         );
@@ -84,4 +132,4 @@
 //             "DelegationManager address cannot be zero"
 //         );
 //     }
-// }
+}
