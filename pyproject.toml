@@ -1,0 +1,13 @@
+[project]
+name = "sertn-avs"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "eigensdk",
+    "web3==7.4.0",
+]
+
+[tool.uv.sources]
+eigensdk = { git = "https://github.com/zellular-xyz/eigensdk-python" }
