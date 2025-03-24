@@ -7,11 +7,14 @@ help:
 AGGREGATOR_ECDSA_PRIV_KEY=0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
 CHALLENGER_ECDSA_PRIV_KEY=0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a
 
+# Network configs
 CHAINID=31337
+HOLESKY_CHAINID=17000
 # Make sure to update this if the strategy address changes
 # check in contracts/script/output/${CHAINID}/sertn_avs_deployment_output.json
 STRATEGY_ADDRESS=0x7a2088a1bFc9d81c55368AE168C2C02570cB814F
 DEPLOYMENT_FILES_DIR=contracts/script/output/${CHAINID}
+HOLESKY_DEPLOYMENT_FILES_DIR=contracts/script/output/${HOLESKY_CHAINID}
 
 
 -----------------------------: ##
@@ -60,8 +63,14 @@ tests-contract: ## runs all forge tests
 	cd contracts && forge test
 
 ___RUST_OFFCHAIN_SOFTWARE___:
-start-rust-operator: ## start operator (part of quickstart) 
+start-rust-operator: ## start operator (part of quickstart)
 	cargo run --bin start_operator
 
 spam-rust-tasks:  ## start tasks spamming (part of quickstart)
 	cargo run --bin spam_tasks
+
+___HOLESKY_DEPLOYMENT___: ##
+
+deploy-holesky-sertn: ## Deploy Sertn contracts to Holesky
+	@chmod +x ./contracts/holesky/deploy-sertn.sh
+	./contracts/holesky/deploy-sertn.sh

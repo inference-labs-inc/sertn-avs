@@ -1,0 +1,16 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+solc = "0.8.28"
+optimizer = true
+optimizer_runs = 1000000
+
+[profile.ci]
+verbosity = 4
+
+[rpc_endpoints]
+local = "http://localhost:8545"
+
+[etherscan]
+mainnet = { key = "${ETHERSCAN_API_KEY}" }
