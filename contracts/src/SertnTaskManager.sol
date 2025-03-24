@@ -20,6 +20,7 @@ import "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
 
 import "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
 import "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
+import "@openzeppelin-upgrades/contracts/utils/math/MathUpgradeable.sol";
 
 import {Test, console2 as console} from "forge-std/Test.sol";
 
@@ -119,7 +120,7 @@ contract SertnTaskManager is
                 uint32(TASK_EXPIRY_BLOCKS)
             );
         }
-
+        
         if (
             _model.available_ &&
             sertnServiceManager.computeUnits(_model.operator_,_model.computeType_) > 0 &&

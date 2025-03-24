@@ -18,6 +18,8 @@ import {IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocat
 import {IVerifier} from "./IVerifier.sol";
 import "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
 
+import "@openzeppelin-upgrades/contracts/utils/math/MathUpgradeable.sol";
+
 import "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
 import "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
 import {SertnTaskManager} from "./SertnTaskManager.sol";
@@ -95,26 +97,6 @@ contract SertnServiceManager is
         ser = _strategies[0].underlyingToken();
     }
 
-    // constructor(
-    //     address _rewardsCoordinator,
-    //     address _delegationManager,
-    //     address _allocationManager,
-    //     IStrategy[] memory _strategies,
-    //     string memory _avsMetadata
-    // ) {
-    //     // Set the deployer as an aggregator
-    //     isAggregator[msg.sender] = true;
-
-    //     allocationManager = IAllocationManager(_allocationManager);
-    //     delegationManager = IDelegationManager(_delegationManager);
-    //     rewardsCoordinator = IRewardsCoordinator(_rewardsCoordinator);
-
-    //     _registerToEigen(_strategies, _avsMetadata);
-
-    //     opSet = OperatorSet({avs: address(this), id: 0});
-    //     ser = _strategies[0].underlyingToken();
-    // }
-
     function setTaskManager(address _sertnTaskManager) external onlyOwner {
         if (_sertnTaskManager == address(0)) {
             revert InvalidTaskManager();
@@ -127,19 +109,6 @@ contract SertnServiceManager is
         isAggregator[_sertnTaskManager] = true;
         ser.approve(address(sertnTaskManager), 100 ether);
     }
-
-    // function setTaskManager(address _sertnTaskManager) external onlyAggregators() {
-    //     if (_sertnTaskManager == address(0)) {
-    //         revert InvalidTaskManager();
-    //     }
-    //     // Check if the task manager is already set, if so revoke approval first
-    //     if (address(sertnTaskManager) != address(0)) {
-    //         ser.approve(address(sertnTaskManager), 0);
-    //     }
-    //     sertnTaskManager = SertnTaskManager(_sertnTaskManager);
-    //     isAggregator[_sertnTaskManager] = true;
-    //     ser.approve(address(sertnTaskManager), 100 ether);
-    // }
 
     function _registerToEigen(
         IStrategy[] memory _strategies,
@@ -218,6 +187,7 @@ contract SertnServiceManager is
             uint256 modelNum = numModels;
             _modelIds[i] = modelNum;
             _models[i].operator_ = operator;
+            require(_models[i].maxBlocks_ < TASK_EXPIRY_BLOCKS - 1e2, "max blocks too long");
 
             modelInfo[modelNum] = abi.encode(_models[i]);
             // modelInfo[modelNum] = _models[i];
@@ -245,7 +215,7 @@ contract SertnServiceManager is
         }
 
         opInfo[operator] = abi.encode(_operator);
-
+        //was this for lower gas costs?
         // opInfo[operator] = Operator({
         //     models_: _modelIds,
         //     computeUnits_: _computeUnitNames,
@@ -418,6 +388,8 @@ contract SertnServiceManager is
         // Model memory _model = sertnServiceManager.getModelInfo(_modelId);
         address[] memory _operator = new address[](1);
         _operator[0] = _model.operator_;
+        //Should this be included?
+        require(block.number - _task.startingBlock_ < TASK_EXPIRY_BLOCKS, "Task already expired");
         IStrategy[] memory _strategies = new IStrategy[](_model.ethStrategies_.length + 1);
         for (uint8 i = 0; i < _model.ethStrategies_.length; i++) {
             _strategies[i] = _model.ethStrategies_[i];
@@ -428,7 +400,11 @@ contract SertnServiceManager is
         for (uint8 i = 0; i < _model.ethStrategies_.length; i++) {
             _wadsToSlash[i] = 1 ether * 1 ether * (_model.ethShares_[i]) / (allocationManager.getAllocation(_model.operator_, opSet, _strategies[i]).currentMagnitude * _operatorShares[i]);
         }
-        _wadsToSlash[_model.ethStrategies_.length] = (1 ether * 1 ether * 10 * _task.poc_)/(allocationManager.getAllocation(_model.operator_, opSet, _strategies[_model.ethStrategies_.length]).currentMagnitude * _operatorShares[_model.ethStrategies_.length]);
+        if (_task.proveOnResponse_) {
+            _wadsToSlash[_model.ethStrategies_.length] = (1 ether * 1 ether * _task.poc_)/(allocationManager.getAllocation(_model.operator_, opSet, _strategies[_model.ethStrategies_.length]).currentMagnitude * _operatorShares[_model.ethStrategies_.length]);
+        } else {
+            _wadsToSlash[_model.ethStrategies_.length] = (1 ether * 1 ether * 10 * _task.poc_)/(allocationManager.getAllocation(_model.operator_, opSet, _strategies[_model.ethStrategies_.length]).currentMagnitude * _operatorShares[_model.ethStrategies_.length]);
+        }
         IAllocationManagerTypes.SlashingParams memory _slashParams = IAllocationManagerTypes.SlashingParams({operator: _model.operator_, operatorSetId: 0, strategies: _strategies, wadsToSlash: _wadsToSlash, description: _whySlashed});
         allocationManager.slashOperator(address(this), _slashParams);
 
@@ -450,6 +426,7 @@ contract SertnServiceManager is
             uint256 modelNum = numModels;
             _modelIds[i] = modelNum;
             _models[i].operator_ = msg.sender;
+            require(_models[i].maxBlocks_ < TASK_EXPIRY_BLOCKS - 1e2, "max blocks too long");
             modelInfo[modelNum] = abi.encode(_models[i]);
             // modelInfo[modelNum] = _models[i];
             Operator memory _operator = abi.decode(opInfo[msg.sender], (Operator));
