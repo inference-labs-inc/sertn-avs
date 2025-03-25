@@ -58,31 +58,14 @@ contract SertnTaskManager is
         _;
     }
 
-    // constructor(
-    //     address _rewardsCoordinator,
-    //     address _delegationManager,
-    //     address _allocationManager,
-    //     address _sertnServiceManager,
-    //     address _ser
-    // ) OwnableUpgradeable() {
-    //     allocationManager = IAllocationManager(_allocationManager);
-    //     delegationManager = IDelegationManager(_delegationManager);
-    //     rewardsCoordinator = IRewardsCoordinator(_rewardsCoordinator);
-    //     sertnServiceManager = SertnServiceManager(_sertnServiceManager);
-
-
-
-    //     opSet = OperatorSet({avs: address(sertnServiceManager), id: 0});
-    //     ser = IERC20(_ser);
-    // }
-
     constructor(
         address _rewardsCoordinator,
         address _delegationManager,
         address _allocationManager,
         address _sertnServiceManager,
         address _ser
-    ) {
+    ) OwnableUpgradeable() {
+        _transferOwnership(msg.sender);
         allocationManager = IAllocationManager(_allocationManager);
         delegationManager = IDelegationManager(_delegationManager);
         rewardsCoordinator = IRewardsCoordinator(_rewardsCoordinator);
@@ -274,7 +257,7 @@ contract SertnTaskManager is
         Operator memory _operator = abi.decode(sertnServiceManager.opInfo(_model.operator_),(Operator));
 
         uint256 _amount = PROOF_REQUEST_COST*(_operator.proofRequestExponents_[0]/_operator.proofRequestExponents_[1]);
-        ser.transferFrom(msg.sender, address(sertnServiceManager), _amount);
+        require(ser.transferFrom(msg.sender, address(sertnServiceManager), _amount), "Couldn't make payment");
 
         _operator.proofRequests_ = _pushToBytesArray(_taskId, _operator.proofRequests_);
 
@@ -286,64 +269,6 @@ contract SertnTaskManager is
         emit proofRequested(_model.operator_, _taskId);
 
     }
-
-    // function sendRewards(IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[] calldata operatorDirectedRewardsSubmissions, bytes[][] memory _rewardedTasks) external onlyAggregators() {
-    //     uint256 _approvalAmount = 0;
-    //     for (uint8 i = 0; i < operatorDirectedRewardsSubmissions[0].operatorRewards.length; i ++) {
-    //         Operator memory _operator = sertnServiceManager.getOperatorInfo(operatorDirectedRewardsSubmissions[0].operatorRewards[i].operator);
-    //         for (uint8 j = 0; j < _rewardedTasks[i].length; j ++) {
-    //             Task memory _task = abi.decode(_rewardedTasks[i][j], (Task));
-    //             require(_task.startingBlock_ + TASK_EXPIRY_BLOCKS < block.number || sertnTaskManager.taskVerified[_rewardedTasks[i][j]], "Task has not expired");
-    //             require(_inBytesArray(_operator.submittedTasks_, _rewardedTasks[i][j]), "Not in submitted Tasks");
-    //             _operator.submittedTasks_ = _removeBytesElement(_operator.submittedTasks_, _rewardedTasks[i][j]);
-    //             sertnServiceManager.updateOperator(operatorDirectedRewardsSubmissions[0].operatorRewards[i].operator, _operator);
-    //             if (_inBytesArray(_operator.openTasks_, _rewardedTasks[i][j])) {
-    //                 _clearTask(_rewardedTasks[i][j], false);
-    //             }
-    //         }
-
-    //         _approvalAmount += operatorDirectedRewardsSubmissions[0].operatorRewards[i].amount;
-    //     }
-
-    //     ser.approve(address(rewardsCoordinator), _approvalAmount);
-    //     rewardsCoordinator.createOperatorDirectedAVSRewardsSubmission(address(sertnServiceManager), operatorDirectedRewardsSubmissions);
-    // }
-
-    // function slashOperator(bytes memory _taskId, string memory _whySlashed) external onlyAggregators() {
-
-    //     Task memory _task = abi.decode(_taskId, (Task));
-    //     uint8 _modelId = _task.modelId_;
-    //     if (0 > _modelId || sertnServiceManager.getNumModels() < _modelId) {
-    //         revert NotModelId("Not Model Id");
-    //     }
-    //     Model memory _model = abi.decode(sertnServiceManager.modelInfo(_modelId), (Model));
-    //     // Model memory _model = sertnServiceManager.getModelInfo(_modelId);
-    //     address[] memory _operator = new address[](1);
-    //     _operator[0] = _model.operator_;
-    //     IStrategy[] memory _strategies = new IStrategy[](_model.ethStrategies_.length + 1);
-    //     for (uint8 i = 0; i < _model.ethStrategies_.length; i++) {
-    //         _strategies[i] = _model.ethStrategies_[i];
-    //     }
-    //     _strategies[_model.ethStrategies_.length] = sertnServiceManager.getTokenToStrategy(address(ser));
-    //     uint256[] memory _wadsToSlash = new uint256[](_strategies.length);
-    //     uint256[] memory _operatorShares = delegationManager.getOperatorShares(_model.operator_, _strategies);
-    //     for (uint8 i = 0; i < _model.ethStrategies_.length; i++) {
-    //         _wadsToSlash[i] = 1 ether * 1 ether * (_model.ethShares_[i]) / (allocationManager.getAllocation(_model.operator_, opSet, _strategies[i]).currentMagnitude * _operatorShares[i]);
-    //     }
-    //     _wadsToSlash[_model.ethStrategies_.length] = (1 ether * 1 ether * 10 * _task.poc_)/(allocationManager.getAllocation(_model.operator_, opSet, _strategies[_model.ethStrategies_.length]).currentMagnitude * _operatorShares[_model.ethStrategies_.length]);
-    //     IAllocationManagerTypes.SlashingParams memory _slashParams = IAllocationManagerTypes.SlashingParams({operator: _model.operator_, operatorSetId: 0, strategies: _strategies, wadsToSlash: _wadsToSlash, description: _whySlashed});
-    //     allocationManager.slashOperator(address(sertnServiceManager), _slashParams);
-
-    //     emit operatorSlashed(_model.operator_, _taskId);
-    //     // TODO: Custom logic to change bounty amount
-    //     if (sertnServiceManager.getBountyHunter(_taskId) != address(0)) {
-    //         ser.transferFrom(address(this), sertnServiceManager.getBountyHunter(_taskId), BOUNTY);
-    //         Operator memory _operator = sertnServiceManager.getOperatorInfo(_model.operator_);
-    //         _operator.proofRequestExponents_[0] -= 500;
-    //         sertnServiceManager.updateOperator(_model.operator_, _operator);
-    //     }
-    //     sertnServiceManager.clearTask(_taskId);
-    // }
 
     function _verifyTask(bytes memory _taskId, bytes memory _proof) internal {
         //logic to verify task

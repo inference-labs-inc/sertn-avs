@@ -261,80 +261,6 @@ contract SertnServiceManager is
         rewardsCoordinator.createOperatorDirectedAVSRewardsSubmission(address(this), operatorDirectedRewardsSubmissions);
     }
 
-    // function _verifyTask(bytes memory _taskId, bytes memory _proof) external onlyTaskManager() {
-    //     //logic to verify task
-    //     Task memory _task = abi.decode(_taskId, (Task));
-
-    //     uint256 _modelId = _task.modelId_;
-
-    //     if (0 > _modelId || numModels < _modelId) {
-    //         revert NotModelId("Not Model Id");
-    //     }
-
-    //     Model memory _model = abi.decode(modelInfo[_modelId], (Model));
-
-    //     taskVerified[_taskId] = IVerifier(_model.verifier_).verifyProof(_proof);
-    // }
-
-    // function verifyTask(bytes memory _taskId, bytes memory _proof) external onlyOperators() {
-    //     //logic to verify task
-    //     Task memory _task = abi.decode(_taskId, (Task));
-
-    //     uint256 _modelId = _task.modelId_;
-
-    //     if (0 > _modelId || numModels < _modelId) {
-    //         revert NotModelId("Not Model Id");
-    //     }
-    //     Model memory _model = abi.decode(modelInfo[_modelId], (Model));
-    //     // Model memory _model = modelInfo[_modelId];
-
-    //     if (_model.operator_ != msg.sender) {
-    //         revert IncorrectOperator();
-    //     }
-
-    //     taskVerified[_taskId] = IVerifier(_model.verifier_).verifyProof(_proof);
-    // }
-
-    // function verifiedOffChain(bytes memory _taskId, bool _verified) external onlyAggregators() {
-    //     taskVerified[_taskId] = _verified;
-    // }
-    // function clearTask(bytes memory _taskId) external onlyAggregators() {
-    //     _clearTask(_taskId, false);
-    // }
-
-    // function _clearTask(bytes memory _taskId, bool _slashed) internal {
-    //     Task memory _task = abi.decode(_taskId, (Task));
-
-    //     if (_task.startingBlock_ + TASK_EXPIRY_BLOCKS < block.number || taskVerified[_taskId] || _slashed) {
-    //         revert TaskNotExpired();
-    //     }
-
-    //     uint256 _modelId = _task.modelId_;
-
-    //     if (0 > _modelId || numModels < _modelId) {
-    //         revert NotModelId("Not Model Id");
-    //     }
-    //     Model memory _model = abi.decode(modelInfo[_modelId], (Model));
-    //     // Model memory _model = modelInfo[_modelId];
-    //     Operator memory _operator = abi.decode(opInfo[_model.operator_], (Operator));
-    //     _operator.openTasks_ = _removeBytesElement(_operator.openTasks_, _taskId);
-    //     _operator.proofRequests_ = _removeBytesElement(_operator.proofRequests_, _taskId);
-    //     if(_slashed) {
-    //         _operator.submittedTasks_ = _removeBytesElement(_operator.submittedTasks_, _taskId);
-    //     }
-
-    //     operatorSlashingQueue[_model.operator_] = _removeBytesElement(operatorSlashingQueue[_model.operator_], _taskId);
-    //     slashingQueue = _removeBytesElement(slashingQueue, _taskId);
-
-    //     for (uint8 i = 0; i < _operator.allocatedEth_.length; i++) {
-    //         _operator.allocatedEth_[i] -= _model.ethShares_[i];
-    //     }
-
-    //     _operator.allocatedSer_ -= 10*_task.poc_;
-
-    //     opInfo[_model.operator_] = abi.encode(_operator);
-    // }
-
     function _removeBytesElement(bytes[] memory _byteArray, bytes memory _byteElement) internal pure returns(bytes[] memory) {
         for (uint8 i = 0; i < _byteArray.length; i++) {
             if (keccak256(_byteElement) == keccak256(_byteArray[i])) {
@@ -411,7 +337,7 @@ contract SertnServiceManager is
         emit operatorSlashed(_model.operator_, _taskId);
         // TODO: Custom logic to change bounty amount
         if (bountyHunter[_taskId] != address(0)) {
-            ser.transferFrom(address(this), bountyHunter[_taskId], BOUNTY);
+            require(ser.transferFrom(address(this), bountyHunter[_taskId], BOUNTY), "Couldn't pay bounty hunter");
             Operator memory _operator = abi.decode(opInfo[_model.operator_], (Operator));
             _operator.proofRequestExponents_[0] -= 500;
             opInfo[_model.operator_] = abi.encode(_operator);
