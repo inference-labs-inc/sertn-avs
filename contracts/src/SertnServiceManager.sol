@@ -23,6 +23,7 @@ import "@openzeppelin-upgrades/contracts/utils/math/MathUpgradeable.sol";
 import "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
 import "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
 import {SertnTaskManager} from "./SertnTaskManager.sol";
+import {ModelStorage} from "./ModelStorage.sol";
 
 import {Test, console2 as console} from "forge-std/Test.sol";
 
@@ -39,21 +40,22 @@ contract SertnServiceManager is
     ISertnServiceManagerEvents,
     OwnableUpgradeable
 {
-    uint256 public numModels = 0;
-    address[] aggregators;
-    address[] operators;
-    bytes[] slashingQueue;
+    uint256 public numOperatorModels;
+    address[] public aggregators;
+    address[] public operators;
+    bytes[] public slashingQueue;
 
-    uint256[] tempOpModels;
-    bytes32[] tempComputeUnitNames;
+    uint256[] _tempOpModels;
+    bytes32[] _tempComputeUnitNames;
 
-    IERC20 ser;
+    IERC20 public ser;
 
-    IAllocationManager allocationManager;
-    IDelegationManager delegationManager;
-    IRewardsCoordinator rewardsCoordinator;
-    OperatorSet opSet;
-    SertnTaskManager sertnTaskManager;
+    IAllocationManager public allocationManager;
+    IDelegationManager public delegationManager;
+    IRewardsCoordinator public rewardsCoordinator;
+    OperatorSet public opSet;
+    SertnTaskManager public sertnTaskManager;
+    ModelStorage public modelStorage;
 
     modifier onlyAggregators() {
         if (!isAggregator[msg.sender]) {
@@ -97,7 +99,7 @@ contract SertnServiceManager is
         ser = _strategies[0].underlyingToken();
     }
 
-    function setTaskManager(address _sertnTaskManager) external onlyOwner {
+    function setTaskManagerandModelStorage(address _sertnTaskManager, address _modelStorage) external onlyOwner {
         if (_sertnTaskManager == address(0)) {
             revert InvalidTaskManager();
         }
@@ -108,6 +110,8 @@ contract SertnServiceManager is
         sertnTaskManager = SertnTaskManager(_sertnTaskManager);
         isAggregator[_sertnTaskManager] = true;
         ser.approve(address(sertnTaskManager), 100 ether);
+
+        modelStorage = ModelStorage(_modelStorage);
     }
 
     function _registerToEigen(
@@ -176,59 +180,68 @@ contract SertnServiceManager is
         if (operatorSetIds.length != 1 || operatorSetIds[0] != 0) {
             revert IncorrectOperatorSetIds();
         }
-        (
-            Model[] memory _models,
+        (   Model[] memory _models,
+            OperatorModel[] memory _operatorModels,
             bytes32[] memory _computeUnitNames,
-            uint8[] memory _computeUnits
-        ) = abi.decode(data, (Model[], bytes32[], uint8[]));
-        uint256[] memory _modelIds = new uint256[](_models.length);
-        for (uint256 i = 0; i < _models.length; i++) {
-            numModels++;
-            uint256 modelNum = numModels;
-            _modelIds[i] = modelNum;
-            _models[i].operator_ = operator;
-            require(_models[i].maxBlocks_ < TASK_EXPIRY_BLOCKS - 1e2, "max blocks too long");
+            uint256[] memory _computeUnits
+        ) = abi.decode(data, (Model[], OperatorModel[], bytes32[], uint256[]));
+        uint256[] memory _operatorModelIds = new uint256[](_operatorModels.length);
+        for (uint256 i = 0; i < _operatorModels.length; i++) {
+            numOperatorModels++;
+            uint256 operatorModelNum = numOperatorModels;
+            _operatorModelIds[i] = operatorModelNum;
+            _operatorModels[i].operator_ = operator;
+            if (!(_operatorModels[i].maxBlocks_ < TASK_EXPIRY_BLOCKS - 1e2)) {
+                revert MaxBlocksTooLong();
+            }
 
-            modelInfo[modelNum] = abi.encode(_models[i]);
-            // modelInfo[modelNum] = _models[i];
+            if (_operatorModels[i].modelId_ > modelStorage.numModels()) {
+                modelStorage.createNewModel(_models[i]);
+            } else {
+                modelStorage.JoinOperatorList(_operatorModels[i].modelId_, msg.sender);
+            }
+            // require(_operatorModels[i].maxBlocks_ < TASK_EXPIRY_BLOCKS - 1e2, "max blocks too long");
+
+            operatorModelInfo[operatorModelNum] = abi.encode(_operatorModels[i]);
+            // operatorModelInfo[modelNum] = _operatorModels[i];
 
         }
 
-        for (uint8 i = 0; i < _computeUnitNames.length; i++) {
+        for (uint256 i = 0; i < _computeUnitNames.length; i++) {
             computeUnits[operator][_computeUnitNames[i]] = _computeUnits[i];
         }
 
         Operator memory _operator = Operator({
-            models_: _modelIds,
+            models_: _operatorModelIds,
             computeUnits_: _computeUnitNames,
             openTasks_: new bytes[](0),
             submittedTasks_: new bytes[](0),
             proofRequests_: new bytes[](0),
-            allocatedEth_: new uint256[](_models[0].ethShares_.length),
+            allocatedEth_: new uint256[](_operatorModels[0].ethShares_.length),
             allocatedSer_: 0,
             proofRequestExponents_: [uint32(1e3),uint32(1e3)],
             pausedBlock_: 0
         });
 
-        for (uint8 i = 0; i < _models[0].ethShares_.length; i++) {
+        for (uint8 i = 0; i < _operatorModels[0].ethShares_.length; i++) {
             _operator.allocatedEth_[i] = 0;
         }
 
         opInfo[operator] = abi.encode(_operator);
         //was this for lower gas costs?
         // opInfo[operator] = Operator({
-        //     models_: _modelIds,
+        //     models_: _operatorModelIds,
         //     computeUnits_: _computeUnitNames,
         //     openTasks_: new bytes[](0),
         //     submittedTasks_: new bytes[](0),
         //     proofRequests_: new bytes[](0),
-        //     allocatedEth_: new uint256[](_models[0].ethShares_.length),
+        //     allocatedEth_: new uint256[](_operatorModels[0].ethShares_.length),
         //     allocatedSer_: 0,
         //     proofRequestExponents_: [uint32(1e3),uint32(1e3)],
         //     pausedBlock_: 0
         // });
 
-        // for (uint8 i = 0; i < _models[0].ethShares_.length; i++) {
+        // for (uint8 i = 0; i < _operatorModels[0].ethShares_.length; i++) {
         //     opInfo[operator].allocatedEth_[i] = 0;
         // }
 
@@ -236,7 +249,7 @@ contract SertnServiceManager is
         isOperator[operator] = true;
 
         emit newOperator(operator);
-        emit newModels(_modelIds);
+        emit newModels(_operatorModelIds);
     }
 
     function sendRewards(IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[] calldata operatorDirectedRewardsSubmissions, bytes[][] memory _rewardedTasks) external onlyAggregators() {
@@ -245,8 +258,14 @@ contract SertnServiceManager is
             Operator memory _operator = abi.decode(opInfo[operatorDirectedRewardsSubmissions[0].operatorRewards[i].operator],(Operator));
             for (uint8 j = 0; j < _rewardedTasks[i].length; j ++) {
                 Task memory _task = abi.decode(_rewardedTasks[i][j], (Task));
-                require(_task.startingBlock_ + TASK_EXPIRY_BLOCKS < block.number || sertnTaskManager.taskVerified(_rewardedTasks[i][j]), "Task has not expired");
-                require(_inBytesArray(_operator.submittedTasks_, _rewardedTasks[i][j]), "Not in submitted Tasks");
+                if (!(_task.startingBlock_ + TASK_EXPIRY_BLOCKS < block.number) || sertnTaskManager.taskVerified(_rewardedTasks[i][j])) {
+                    revert TaskNotExpired();
+                }
+                // require(_task.startingBlock_ + TASK_EXPIRY_BLOCKS < block.number || sertnTaskManager.taskVerified(_rewardedTasks[i][j]), "Task has not expired");
+                if (!_inBytesArray(_operator.submittedTasks_, _rewardedTasks[i][j])) {
+                    revert NotInSubmittedTasks();
+                }
+                // require(_inBytesArray(_operator.submittedTasks_, _rewardedTasks[i][j]), "Not in submitted Tasks");
                 _operator.submittedTasks_ = _removeBytesElement(_operator.submittedTasks_, _rewardedTasks[i][j]);
                 opInfo[operatorDirectedRewardsSubmissions[0].operatorRewards[i].operator] = abi.encode(_operator);
                 if (_inBytesArray(_operator.openTasks_, _rewardedTasks[i][j])) {
@@ -278,91 +297,111 @@ contract SertnServiceManager is
         }
         return false;
     }
-    function modifyModelParameters(Model memory _model, uint256 _modelId) external onlyOperators() {
-        Model memory _oldModel = abi.decode(modelInfo[_modelId], (Model));
-        // Model storage _oldModel = modelInfo[_modelId];
-        if (_oldModel.operator_ != msg.sender) {
+
+    function modifyModelParameters(OperatorModel memory _operatorModel, uint256 _operatorModelId) external onlyOperators() {
+        OperatorModel memory _oldOperatorModel = abi.decode(operatorModelInfo[_operatorModelId], (OperatorModel));
+        // OperatorModel storage _oldModel = operatorModelInfo[_operatorModelId];
+        if (_oldOperatorModel.operator_ != msg.sender) {
             revert IncorrectOperator();
         }
-        modelInfo[_modelId] = abi.encode(_model);
-        //Assuming this saves on gas fees?
-        // _oldModel.modelName_ = _model.modelName_;
-        // _oldModel.verifier_ = _model.verifier_;
-        // _oldModel.benchData_ = _model.benchData_;
-        // _oldModel.inputs_ = _model.inputs_;
-        // _oldModel.output_ = _model.output_;
-        // _oldModel.maxBlocks_ = _model.maxBlocks_;
-        // _oldModel.ethStrategies_ = _model.ethStrategies_;
-        // _oldModel.ethShares_ = _model.ethShares_;
-        // _oldModel.baseFee_ = _model.baseFee_;
-        // _oldModel.maxSer_ = _model.maxSer_;
-        // _oldModel.computeType_ = _model.computeType_;
-        // _oldModel.proveOnResponse_ = _model.proveOnResponse_;
-        // _oldModel.available_ = _model.available_;
+        Model memory _model = abi.decode(modelStorage.modelVerifiers(modelStorage.modelAddresses(_operatorModel.modelId_)), (Model));
+        bool _registered;
+        for (uint256 i = 0; i < _model.operators_.length; i ++) {
+            if (_model.operators_[i] == msg.sender) {
+                _registered = true;
+            }
+        }
 
-        emit modelUpdated(_modelId, _model);
+        if (!_registered) {
+            modelStorage.JoinOperatorList(_operatorModel.modelId_, msg.sender);
+        }
+        operatorModelInfo[_operatorModelId] = abi.encode(_operatorModel);
+        //Assuming this saves on gas fees?
+        
+        emit modelUpdated(_operatorModelId, _operatorModel);
     }
 
     function slashOperator(bytes memory _taskId, string memory _whySlashed) external onlyAggregators() {
 
         Task memory _task = abi.decode(_taskId, (Task));
-        uint256 _modelId = _task.modelId_;
-        if (0 > _modelId || numModels < _modelId) {
-            revert NotModelId("Not Model Id");
+        uint256 _operatorModelId = _task.operatorModelId_;
+        if (0 > _operatorModelId || numOperatorModels < _operatorModelId) {
+            revert NotModelId("Not OperatorModel Id");
         }
-        Model memory _model = abi.decode(modelInfo[_modelId], (Model));
-        // Model memory _model = sertnServiceManager.getModelInfo(_modelId);
+
+        OperatorModel memory _operatorModel = abi.decode(operatorModelInfo[_operatorModelId], (OperatorModel));
+        // OperatorModel memory _operatorModel = sertnServiceManager.getModelInfo(_operatorModelId);
         address[] memory _operator = new address[](1);
-        _operator[0] = _model.operator_;
+        _operator[0] = _operatorModel.operator_;
         //Should this be included?
-        require(block.number - _task.startingBlock_ < TASK_EXPIRY_BLOCKS, "Task already expired");
-        IStrategy[] memory _strategies = new IStrategy[](_model.ethStrategies_.length + 1);
-        for (uint8 i = 0; i < _model.ethStrategies_.length; i++) {
-            _strategies[i] = _model.ethStrategies_[i];
+        if (!(block.number - _task.startingBlock_ < TASK_EXPIRY_BLOCKS)) {
+            revert TaskExpired();
         }
-        _strategies[_model.ethStrategies_.length] = tokenToStrategy[address(ser)];
+        // require(block.number - _task.startingBlock_ < TASK_EXPIRY_BLOCKS, "Task already expired");
+        IStrategy[] memory _strategies = new IStrategy[](_operatorModel.ethStrategies_.length + 1);
+        for (uint8 i = 0; i < _operatorModel.ethStrategies_.length; i++) {
+            _strategies[i] = _operatorModel.ethStrategies_[i];
+        }
+        _strategies[_operatorModel.ethStrategies_.length] = tokenToStrategy[address(ser)];
         uint256[] memory _wadsToSlash = new uint256[](_strategies.length);
-        uint256[] memory _operatorShares = delegationManager.getOperatorShares(_model.operator_, _strategies);
-        for (uint8 i = 0; i < _model.ethStrategies_.length; i++) {
-            _wadsToSlash[i] = 1 ether * 1 ether * (_model.ethShares_[i]) / (allocationManager.getAllocation(_model.operator_, opSet, _strategies[i]).currentMagnitude * _operatorShares[i]);
+        uint256[] memory _operatorShares = delegationManager.getOperatorShares(_operatorModel.operator_, _strategies);
+        for (uint8 i = 0; i < _operatorModel.ethStrategies_.length; i++) {
+            _wadsToSlash[i] = 1 ether * 1 ether * (_operatorModel.ethShares_[i]) / (allocationManager.getAllocation(_operatorModel.operator_, opSet, _strategies[i]).currentMagnitude * _operatorShares[i]);
         }
         if (_task.proveOnResponse_) {
-            _wadsToSlash[_model.ethStrategies_.length] = (1 ether * 1 ether * _task.poc_)/(allocationManager.getAllocation(_model.operator_, opSet, _strategies[_model.ethStrategies_.length]).currentMagnitude * _operatorShares[_model.ethStrategies_.length]);
+            _wadsToSlash[_operatorModel.ethStrategies_.length] = (1 ether * 1 ether * _task.poc_)/(allocationManager.getAllocation(_operatorModel.operator_, opSet, _strategies[_operatorModel.ethStrategies_.length]).currentMagnitude * _operatorShares[_operatorModel.ethStrategies_.length]);
         } else {
-            _wadsToSlash[_model.ethStrategies_.length] = (1 ether * 1 ether * 10 * _task.poc_)/(allocationManager.getAllocation(_model.operator_, opSet, _strategies[_model.ethStrategies_.length]).currentMagnitude * _operatorShares[_model.ethStrategies_.length]);
+            _wadsToSlash[_operatorModel.ethStrategies_.length] = (1 ether * 1 ether * 10 * _task.poc_)/(allocationManager.getAllocation(_operatorModel.operator_, opSet, _strategies[_operatorModel.ethStrategies_.length]).currentMagnitude * _operatorShares[_operatorModel.ethStrategies_.length]);
         }
-        IAllocationManagerTypes.SlashingParams memory _slashParams = IAllocationManagerTypes.SlashingParams({operator: _model.operator_, operatorSetId: 0, strategies: _strategies, wadsToSlash: _wadsToSlash, description: _whySlashed});
+        IAllocationManagerTypes.SlashingParams memory _slashParams = IAllocationManagerTypes.SlashingParams({operator: _operatorModel.operator_, operatorSetId: 0, strategies: _strategies, wadsToSlash: _wadsToSlash, description: _whySlashed});
         allocationManager.slashOperator(address(this), _slashParams);
 
-        emit operatorSlashed(_model.operator_, _taskId);
+        emit operatorSlashed(_operatorModel.operator_, _taskId);
         // TODO: Custom logic to change bounty amount
         if (bountyHunter[_taskId] != address(0)) {
-            require(ser.transferFrom(address(this), bountyHunter[_taskId], BOUNTY), "Couldn't pay bounty hunter");
-            Operator memory _operator = abi.decode(opInfo[_model.operator_], (Operator));
-            _operator.proofRequestExponents_[0] -= 500;
-            opInfo[_model.operator_] = abi.encode(_operator);
+            if (!ser.transferFrom(address(this), bountyHunter[_taskId], BOUNTY)) {
+                revert TransferFailed();
+            }
+            // require(ser.transferFrom(address(this), bountyHunter[_taskId], BOUNTY), "Couldn't pay bounty hunter");
+            Operator memory _operator = abi.decode(opInfo[_operatorModel.operator_], (Operator));
+            _operator.proofRequestExponents_[0] = 1e3;
+            opInfo[_operatorModel.operator_] = abi.encode(_operator);
         }
         sertnTaskManager.clearTask(_taskId, true);
     }
 
-    function addModels(Model[] memory _models) external onlyOperators() {
-        uint256[] memory _modelIds = new uint256[](_models.length);
-        for (uint256 i = 0; i < _models.length; i++) {
-            numModels++;
-            uint256 modelNum = numModels;
-            _modelIds[i] = modelNum;
-            _models[i].operator_ = msg.sender;
-            require(_models[i].maxBlocks_ < TASK_EXPIRY_BLOCKS - 1e2, "max blocks too long");
-            modelInfo[modelNum] = abi.encode(_models[i]);
-            // modelInfo[modelNum] = _models[i];
+    function addModels(OperatorModel[] memory _operatorModels) external onlyOperators() {
+        uint256[] memory _operatorModelIds = new uint256[](_operatorModels.length);
+        for (uint256 i = 0; i < _operatorModels.length; i++) {
+            numOperatorModels++;
+            uint256 operatorModelNum = numOperatorModels;
+            _operatorModelIds[i] = operatorModelNum;
+            _operatorModels[i].operator_ = msg.sender;
+            // require(_operatorModels[i].maxBlocks_ < TASK_EXPIRY_BLOCKS - 1e2, "max blocks too long");
+            if (!(_operatorModels[i].maxBlocks_ < TASK_EXPIRY_BLOCKS - 1e2)) {
+                revert MaxBlocksTooLong();
+            }
+
+            Model memory _model = abi.decode(modelStorage.modelVerifiers(modelStorage.modelAddresses(_operatorModels[i].modelId_)), (Model));
+            bool _registered;
+            for (uint256 j = 0; j < _model.operators_.length; j ++) {
+                if (_model.operators_[j] == msg.sender) {
+                    _registered = true;
+                }
+            }
+            if (!_registered) {
+                revert NotRegisteredToModel();
+            }
+            operatorModelInfo[operatorModelNum] = abi.encode(_operatorModels[i]);
+            // operatorModelInfo[modelNum] = _operatorModels[i];
             Operator memory _operator = abi.decode(opInfo[msg.sender], (Operator));
-            tempOpModels = _operator.models_;
-            tempOpModels.push(modelNum);
-            _operator.models_ = tempOpModels;
+            _tempOpModels = _operator.models_;
+            _tempOpModels.push(operatorModelNum);
+            _operator.models_ = _tempOpModels;
             opInfo[msg.sender] = abi.encode(_operator);
             // opInfo[msg.sender].models_.push(uint8(modelNum));
         }
-        emit newModels(_modelIds);
+        emit newModels(_operatorModelIds);
     }
 
     function modifyCompute(bytes32[] memory _computeUnitNames, uint8[] memory _computeUnits) external onlyOperators() {
@@ -374,9 +413,9 @@ contract SertnServiceManager is
         delete _operator.computeUnits_;
         // delete opInfo[msg.sender].computeUnits_;
         for (uint8 i = 0; i < _computeUnitNames.length; i++) {
-            tempComputeUnitNames = _operator.computeUnits_;
-            tempComputeUnitNames.push(_computeUnitNames[i]);
-            _operator.computeUnits_ = tempComputeUnitNames;
+            _tempComputeUnitNames = _operator.computeUnits_;
+            _tempComputeUnitNames.push(_computeUnitNames[i]);
+            _operator.computeUnits_ = _tempComputeUnitNames;
         }
         opInfo[msg.sender] = abi.encode(_operator);
         emit opInfoChanged(msg.sender, opInfo[msg.sender]);
@@ -396,7 +435,7 @@ contract SertnServiceManager is
         emit opInfoChanged(msg.sender, opInfo[msg.sender]);
     }
 
-    function _unpauseOperator() external onlyOperators() {
+    function unpauseOperator() external onlyOperators() {
          Operator memory _operator = abi.decode(opInfo[msg.sender], (Operator));
         _operator.pausedBlock_ = 0;
         opInfo[msg.sender] = abi.encode(_operator);
@@ -438,7 +477,10 @@ contract SertnServiceManager is
         uint32[] calldata operatorSetIds
     ) external {
 
-        require(isAggregator[msg.sender] || msg.sender == operator, "No permission to call");
+        // require(isAggregator[msg.sender] || msg.sender == operator, "No permission to call");
+        if (!(isAggregator[msg.sender] || msg.sender == operator)) {
+            revert NoPermission();
+        }
         if (address(this) != avs) {
             revert IncorrectAVS();
         }
@@ -447,7 +489,9 @@ contract SertnServiceManager is
             revert NotPausedLongEnough();
         }
         for (uint8 i = 0; i < _operator.models_.length; i ++) {
-            delete modelInfo[_operator.models_[i]];
+            modelStorage.RemoveFromOperatorList(abi.decode(operatorModelInfo[_operator.models_[i]],(OperatorModel)).modelId_, operator);
+            delete operatorModelInfo[_operator.models_[i]];
+
         }
         delete opInfo[operator];
         for (uint8 i = 0; i < operators.length; i ++) {
