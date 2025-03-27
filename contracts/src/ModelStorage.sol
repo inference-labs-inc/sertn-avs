@@ -14,7 +14,7 @@ contract ModelStorage is ISertnServiceManagerTypes, ISertnServiceManagerErrors, 
         _;
     }
 
-    uint256 public numModels;
+    uint96 public numModels;
 
     SertnServiceManager public sertnServiceManager;
 
@@ -26,7 +26,7 @@ contract ModelStorage is ISertnServiceManagerTypes, ISertnServiceManagerErrors, 
 
     function createNewModel(
         Model calldata _newModel
-    ) external onlyOperators() returns(uint256) {
+    ) external onlyOperators() returns(uint96) {
         // Model memory newModel = Model({description_: description, title_: title, modelVerifier_: modelVerifierAddress, operators_: operators});
         // newModel.description = description;
         // newModel.title = title;
@@ -41,13 +41,14 @@ contract ModelStorage is ISertnServiceManagerTypes, ISertnServiceManagerErrors, 
         return numModels - 1;
     }
 
-    function JoinOperatorList(uint256 _modelId, address _operator) external onlyOperators() {
+    function JoinOperatorList(uint96 _modelId, address _operator) external onlyOperators() {
         Model memory model = abi.decode(modelVerifiers[modelAddresses[_modelId]],(Model));
 
         address[] memory newOperators = new address[](model.operators_.length + 1);
 
-        for (uint8 i = 0; i < model.operators_.length; i++) {
+        for (uint256 i; i < model.operators_.length;) {
             newOperators[i] = model.operators_[i];
+            unchecked { ++i; }
         }
         if (msg.sender != _operator || msg.sender != address(sertnServiceManager)) {
             revert NoPermission();
@@ -58,17 +59,18 @@ contract ModelStorage is ISertnServiceManagerTypes, ISertnServiceManagerErrors, 
 
     }
 
-    function RemoveFromOperatorList(uint256 _modelId, address _operator) external {
+    function RemoveFromOperatorList(uint96 _modelId, address _operator) external {
         if (msg.sender != address(sertnServiceManager)) {
             revert NoPermission();
         }
 
         Model memory model = abi.decode(modelVerifiers[modelAddresses[_modelId]],(Model));
 
-        for (uint8 i = 0; i < model.operators_.length; i++) {
+        for (uint256 i = 0; i < model.operators_.length;) {
             if (model.operators_[i] == _operator) {
                 delete model.operators_[i];
             }
+            unchecked { ++i; }
         }
         
         modelVerifiers[modelAddresses[_modelId]] = abi.encode(model);

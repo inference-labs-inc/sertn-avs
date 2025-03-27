@@ -246,7 +246,7 @@ contract AVSSetup2 is Test {
         _ethShares[1] = 10;
         _operatorModel[0] = ISertnServiceManagerTypes.OperatorModel({
             operator_: operator.key.addr,
-            modelId_: UINT256_MAX,
+            modelId_: 2**96 - 1,
             maxBlocks_: 1e2,
             ethStrategies_: _ethStrategies,
             ethShares_: _ethShares,
@@ -258,7 +258,7 @@ contract AVSSetup2 is Test {
         });
         bytes32[] memory _computeUnitNames = new bytes32[](1);
         _computeUnitNames[0] = bytes32("model1");
-        uint8[] memory _computeUnits = new uint8[](1);
+        uint256[] memory _computeUnits = new uint256[](1);
         _computeUnits[0] = 10;
         bytes memory _data = abi.encode(_model,
             _operatorModel,
@@ -375,7 +375,7 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
     }
 
     function test_sendTask() public {
-        vm.roll(1e10);
+        vm.roll(1e9);
         user = User({key: vm.createWallet("user_wallet")});
         ISertnServiceManagerTypes.Task memory task = ISertnServiceManagerTypes
             .Task({
@@ -387,8 +387,12 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
                 proveOnResponse_: false,
                 user_: user.key.addr
             });
-
         bytes memory taskId = _sendTask(user.key.addr, task);
+        _respondToTask1(operators[0].key.addr, taskId, false, bytes(""), false);
+        _checkTaskResponse(user.key.addr, taskId);
+        _slashTask(taskId);
+        vm.roll(block.number + 100);
+        taskId = _sendTask(user.key.addr, task);
         _respondToTask1(operators[0].key.addr, taskId, false, bytes(""), false);
         _checkTaskResponse(user.key.addr, taskId);
         _slashTask(taskId);
@@ -396,7 +400,7 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
     }
 
     function test_addModel() public {
-        vm.roll(1e10);
+        vm.roll(1e9);
 
         ISertnServiceManagerTypes.Model[]
             memory _model = new ISertnServiceManagerTypes.Model[](1);
@@ -412,10 +416,10 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
             memory _operatorModel = new ISertnServiceManagerTypes.OperatorModel[](1);
         _operatorModel[0] = ISertnServiceManagerTypes.OperatorModel({
             operator_: operators[0].key.addr,
-            modelId_: UINT256_MAX,
+            modelId_: 2**96 - 1,
             maxBlocks_: 1e2,
             ethStrategies_: _ethStrategies,
-            ethShares_: _ethShares,
+            ethShares_: _ethShares, 
             baseFee_: 1e2,
             maxSer_: 1e4,
             computeType_: bytes32("model2"),
@@ -426,7 +430,7 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         bytes32[] memory _computeUnitNames = new bytes32[](2);
         _computeUnitNames[0] = bytes32("model1");
         _computeUnitNames[1] = bytes32("model2");
-        uint8[] memory _computeUnits = new uint8[](2);
+        uint256[] memory _computeUnits = new uint256[](2);
         _computeUnits[0] = 10;
         _computeUnits[1] = 10;
         _addModel(operators[0].key.addr, _model, _operatorModel);
@@ -558,7 +562,7 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         vm.stopPrank();
     }
 
-    function _addCompute(address _operator, bytes32[] memory _computeUnitNames, uint8[] memory _computeUnits) internal {
+    function _addCompute(address _operator, bytes32[] memory _computeUnitNames, uint256[] memory _computeUnits) internal {
         vm.startPrank(_operator);
         sertnServiceManager.modifyCompute(_computeUnitNames, _computeUnits);
         vm.stopPrank();

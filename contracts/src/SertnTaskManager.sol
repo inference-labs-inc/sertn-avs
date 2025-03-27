@@ -87,9 +87,9 @@ contract SertnTaskManager is
 
     function sendTask(Task memory _task) external {
 
-        uint256 _operatorModelId = _task.operatorModelId_;
+        uint96 _operatorModelId = _task.operatorModelId_;
         _task.startTime_ = block.timestamp;
-        _task.startingBlock_ = block.number;
+        _task.startingBlock_ = uint32(block.number);
 
         if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
             revert NotModelId();
@@ -132,8 +132,9 @@ contract SertnTaskManager is
 
             sertnServiceManager.setComputeUnits(_operatorModel.operator_,_operatorModel.computeType_, false);
 
-            for (uint8 i = 0; i < _operator.allocatedEth_.length; i++) {
+            for (uint256 i; i < _operator.allocatedEth_.length;) {
                 _operator.allocatedEth_[i] += _operatorModel.ethShares_[i];
+                unchecked { ++i; }
             }
             _operator.allocatedSer_ += _task.poc_;
             if (!_task.proveOnResponse_) {
@@ -163,13 +164,14 @@ contract SertnTaskManager is
                 uint32(block.number) + _securityDuration
             )[0];
 
-        for (uint8 i = 0; i < _ethSecurity.length; i++) {
+        for (uint256 i; i < _ethSecurity.length;) {
             if (
                 _ethSecurity[i] <
                 _operatorModel.ethShares_[i] + _operator.allocatedEth_[i]
             ) {
                 revert TaskCouldNotBeSent();
             }
+            unchecked { ++i; }
         }
         IStrategy[] memory _pocStrategy = new IStrategy[](1);
         _pocStrategy[0] = sertnServiceManager.tokenToStrategy(address(ser));
@@ -192,7 +194,7 @@ contract SertnTaskManager is
 
         Task memory _task = abi.decode(_taskResponse.taskId_, (Task));
 
-        uint256 _operatorModelId = _task.operatorModelId_;
+        uint96 _operatorModelId = _task.operatorModelId_;
 
         if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
             revert NotModelId();
@@ -206,14 +208,13 @@ contract SertnTaskManager is
 
         Operator memory _operator = abi.decode(sertnServiceManager.opInfo(_operatorModel.operator_),(Operator));
 
-        if (_operatorModel.maxBlocks_ < uint32(block.number - _task.startingBlock_)) {
+        if (_operatorModel.maxBlocks_ < uint32(block.number) - _task.startingBlock_) {
             revert TaskExpired();
         }
-
         if (_verification) {
             _checkFinancialSecurity(_task.poc_, _operatorModel, _operator, 0);
         } else {
-            _checkFinancialSecurity(10*_task.poc_, _operatorModel, _operator, uint32(TASK_EXPIRY_BLOCKS - (block.number - _task.startingBlock_)));
+            _checkFinancialSecurity(10*_task.poc_, _operatorModel, _operator, TASK_EXPIRY_BLOCKS + _task.startingBlock_ - uint32(block.number));
         }
 
         if (_taskResponse.proven_) {
@@ -245,7 +246,7 @@ contract SertnTaskManager is
             }
         }
         }
-         _operator.submittedTasks_ = _pushToBytesArray(_taskResponse.taskId_, _operator.submittedTasks_);
+        _operator.submittedTasks_ = _pushToBytesArray(_taskResponse.taskId_, _operator.submittedTasks_);
         // _operator.submittedTasks_.push(_taskResponse.taskId_);
 
         sertnServiceManager.updateOperator(_operatorModel.operator_, _operator);
@@ -285,7 +286,7 @@ contract SertnTaskManager is
         //logic to verify task
         Task memory _task = abi.decode(_taskId, (Task));
 
-        uint256 _operatorModelId = _task.operatorModelId_;
+        uint96 _operatorModelId = _task.operatorModelId_;
 
         if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
             revert NotModelId();
@@ -299,7 +300,7 @@ contract SertnTaskManager is
         //logic to verify task
         Task memory _task = abi.decode(_taskId, (Task));
 
-        uint256 _operatorModelId = _task.operatorModelId_;
+        uint96 _operatorModelId = _task.operatorModelId_;
 
         if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
             revert NotModelId();
@@ -320,11 +321,11 @@ contract SertnTaskManager is
 
     function _clearTask(bytes memory _taskId, bool _slashed) internal {
         Task memory _task = abi.decode(_taskId, (Task));
-        if (_task.startingBlock_ + TASK_EXPIRY_BLOCKS > block.number && !taskVerified[_taskId] && !_slashed) {
+        if (_task.startingBlock_ + TASK_EXPIRY_BLOCKS > uint32(block.number) && !taskVerified[_taskId] && !_slashed) {
             revert TaskNotExpired();
         }
 
-        uint256 _operatorModelId = _task.operatorModelId_;
+        uint96 _operatorModelId = _task.operatorModelId_;
 
         if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
             revert NotModelId();
@@ -338,8 +339,9 @@ contract SertnTaskManager is
         }
         operatorSlashingQueue[_operatorModel.operator_] = _removeBytesElement(operatorSlashingQueue[_operatorModel.operator_], _taskId);
         slashingQueue = _removeBytesElement(slashingQueue, _taskId);
-        for (uint8 i = 0; i < _operator.allocatedEth_.length; i++) {
+        for (uint256 i; i < _operator.allocatedEth_.length;) {
             _operator.allocatedEth_[i] -= _operatorModel.ethShares_[i];
+            unchecked { ++i; }
         }
 
         _operator.allocatedSer_ -= _task.poc_;
@@ -358,33 +360,38 @@ contract SertnTaskManager is
 
     function _inBytesArray(bytes[] memory _byteArray, bytes memory _byteElement) internal pure returns(bool) {
         bytes32 elementHash = keccak256(_byteElement);
-        for (uint256 i = 0; i < _byteArray.length; i++) {
+        for (uint256 i; i < _byteArray.length;) {
             if (_byteArray[i].length > 0 && elementHash == keccak256(_byteArray[i])) {
                 return true;
             }
+            unchecked { ++i; }
         }
         return false;
     }
 
     function _removeBytesElement(bytes[] memory _byteArray, bytes memory _byteElement) internal pure returns(bytes[] memory) {
         if (_inBytesArray(_byteArray, _byteElement)) {
-            bytes[] memory newArray = new bytes[](_byteArray.length - 1);
+            bytes[] memory newArray;
+            if (_byteArray.length ==1) {
+                return newArray;
+            }
+            newArray = new bytes[](_byteArray.length - 1);
             bytes32 elementHash = keccak256(_byteElement);
             bool found = false;
             uint256 writeIndex = 0;
 
-            for (uint256 readIndex = 0; readIndex < _byteArray.length; readIndex++) {
+            for (uint256 readIndex; readIndex < _byteArray.length;) {
                 if (!found && elementHash == keccak256(_byteArray[readIndex])) {
                     found = true;
                     continue;
                 }
-
                 if (writeIndex >= newArray.length) {
                     revert("Array length mismatch");
                 }
 
                 newArray[writeIndex] = _byteArray[readIndex];
                 writeIndex++;
+                unchecked { ++readIndex; }
             }
 
 
@@ -396,8 +403,9 @@ contract SertnTaskManager is
     }
     function _pushToBytesArray(bytes memory _element, bytes[] memory _array) internal returns (bytes[] memory) {
         bytes[] memory _newArray = new bytes[](_array.length + 1);
-        for (uint8 i = 0; i < _array.length; i ++ ) {
+        for (uint256 i; i < _array.length;) {
             _newArray[i] = _array[i];
+            unchecked { ++i; }
         }
         _newArray[_array.length] = _element;
         return _newArray;
