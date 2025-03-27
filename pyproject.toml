@@ -5,9 +5,16 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "eigensdk",
+    "fastapi>=0.115.12",
+    "mcl",
+    "pydantic>=2.10.6",
+    "pytest>=8.3.5",
+    "pytest-mock>=3.14.0",
+    "python-dotenv==1.0.1",
+    "pyyaml>=6.0.2",
+    "uvicorn>=0.34.0",
     "web3==7.4.0",
 ]
 
 [tool.uv.sources]
-eigensdk = { git = "https://github.com/zellular-xyz/eigensdk-python" }
+mcl = { git = "https://github.com/sadeghte/mcl-python.git" }

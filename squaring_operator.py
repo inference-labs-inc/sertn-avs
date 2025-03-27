@@ -1,16 +1,19 @@
-import os
-import time
 import json
 import logging
+import os
+import time
 from random import randbytes
+from typing import Optional
+
+import eth_abi
 import requests
 import yaml
-from web3 import Web3
-import eth_abi
 from eth_account import Account
+from web3 import Web3
+
+from eigensdk._types import Operator
 from eigensdk.chainio.clients.builder import BuildAllConfig, build_all
 from eigensdk.crypto.bls.attestation import KeyPair
-from eigensdk._types import Operator
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,12 +26,16 @@ class SquaringOperator:
         self.__load_ecdsa_key()
         self.__load_clients()
         self.__load_task_manager()
-        if config["register_operator_on_startup"] == "true":
-            self.register()
+        # if config["register_operator_on_startup"] == "true":
+        #     self.register()
         # operator id can only be loaded after registration
         self.__load_operator_id()
 
     def register(self):
+        """
+        Register operator with the AVS registry
+        TODO: verify isn't the operator already registered
+        """
         operator = Operator(
             address=self.config["operator_address"],
             earnings_receiver_address=self.config["operator_address"],
@@ -59,26 +66,44 @@ class SquaringOperator:
 
     def process_task_event(self, event):
         task_id = event["args"]["taskIndex"]
-        number_to_be_squared = event["args"]["task"]["numberToBeSquared"]
-        number_squared = number_to_be_squared**2
-        encoded = eth_abi.encode(["uint32", "uint256"], [task_id, number_squared])
+
+        model_id: int = event["args"]["task"]["modelId_"]
+        inputs: bytes = event["args"]["task"]["inputs_"]
+        # XXX: WTF is poc? Proof of computation value? What to do with it?
+        poc: int = event["args"]["task"]["poc_"]
+        proveOnResponse: bool = event["args"]["task"]["proveOnResponse_"]
+
+        ##################################
+        # TODO: Actual work here........
+        output: bytes = "".encode()
+        prove: Optional[bytes] = None
+        if proveOnResponse:
+            prove = "".encode()
+        ##################################
+
+        encoded = eth_abi.encode(
+            ["uint32", "bytes", "uint256"], [task_id, output, model_id]
+        )
         hash_bytes = Web3.keccak(encoded)
         signature = self.bls_key_pair.sign_message(msg_bytes=hash_bytes).to_json()
         logger.info(
-            f"Signature generated, task id: {task_id}, number squared: {number_squared}, signature: {signature}"
+            f"Signature generated, task id: {task_id}, model: {model_id}, "
+            f"output length: {len(output)} signature: {signature}"
         )
-        print("operator data id", self.operator_id.hex())
+        logger.info("operator data id", self.operator_id.hex())
         data = {
             "task_id": task_id,
-            "number_to_be_squared": number_to_be_squared,
-            "number_squared": number_squared,
+            "inputs": inputs,
+            "output": output,
+            "prove": prove,
+            "model_id": model_id,
             "signature": signature,
+            "poc": poc,
+            "proveOnResponse": proveOnResponse,
             "block_number": event["blockNumber"],
             "operator_id": "0x" + self.operator_id.hex(),
         }
         logger.info(f"Submitting result for task to aggregator {data}")
-        # prevent submitting task before initialize_new_task gets completed on aggregator
-        time.sleep(3)
         url = f'http://{self.config["aggregator_server_ip_port_address"]}/signature'
         requests.post(url, json=data)
 
@@ -105,13 +130,13 @@ class SquaringOperator:
     def __load_clients(self):
         cfg = BuildAllConfig(
             eth_http_url=self.config["eth_rpc_url"],
-            eth_ws_url=self.config["eth_ws_url"],
-            avs_name="incredible-squaring",
             registry_coordinator_addr=self.config["avs_registry_coordinator_address"],
             operator_state_retriever_addr=self.config[
                 "operator_state_retriever_address"
             ],
+            avs_name="incredible-squaring",
             prom_metrics_ip_port_address=self.config["eigen_metrics_ip_port_address"],
+            # eth_ws_url=self.config["eth_ws_url"],
         )
         self.clients = build_all(cfg, self.operator_ecdsa_private_key, logger)
 
@@ -141,7 +166,7 @@ class SquaringOperator:
 
 
 if __name__ == "__main__":
-    with open("config-files/operator.anvil.yaml", "r") as f:
+    with open("configs/operator.anvil.yaml", "r") as f:
         config = yaml.load(f, Loader=yaml.BaseLoader)
 
     SquaringOperator(config=config).start()

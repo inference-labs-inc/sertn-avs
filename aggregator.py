@@ -1,36 +1,65 @@
-import os
-import logging
-import json
-import time
-import threading
 import asyncio
+import json
+import logging
+import os
+import threading
+import time
 from dataclasses import dataclass
 from typing import List
-import yaml
-from web3 import Web3
+
 import eth_abi
+import uvicorn
+import yaml
 from eth_account import Account
-from flask import Flask, request
+from eth_account.datastructures import SignedTransaction
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from web3 import Web3
+
+
 from eigensdk.chainio.clients.builder import BuildAllConfig, build_all
-from eigensdk.services.avsregistry import AvsRegistryService
-from eigensdk.services.operatorsinfo.operatorsinfo_inmemory import (
-    OperatorsInfoServiceInMemory,
-)
-from eigensdk.services.bls_aggregation.blsagg import (
-    BlsAggregationService,
-    BlsAggregationServiceResponse,
-)
 from eigensdk.chainio.utils import nums_to_bytes
 from eigensdk.crypto.bls.attestation import (
     Signature,
-    G1Point,
-    G2Point,
     g1_to_tupple,
     g2_to_tupple,
+)
+from eigensdk.services.avsregistry import AvsRegistryService
+from eigensdk.services.bls_aggregation.blsagg import (
+    BlsAggregationService,
+)
+from eigensdk.services.operatorsinfo.operatorsinfo_inmemory import (
+    OperatorsInfoServiceInMemory,
 )
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+# Pydantic model for request validation
+class SignatureRequest(BaseModel):
+    task_id: int
+    block_number: int
+    operator_id: str
+    signature: dict
+    inputs: bytes
+    output: bytes
+    prove: bytes
+    model_id: int
+    poc: int
+    proveOnResponse: bool
+
+
+def hasher(task: SignatureRequest) -> bytes:
+    """
+    Encode the data returned by an operator into a hash for signature verification
+    XXX: maybe makes sense to move this to some `utils` module, so operator would be able to use it too
+    """
+    encoded = eth_abi.encode(
+        ["uint32", "bytes", "uint256"],
+        [task.task_id, task.output, task.model_id],
+    )
+    return Web3.keccak(encoded)
 
 
 class Aggregator:
@@ -43,39 +72,60 @@ class Aggregator:
         self.__load_bls_aggregation_service()
         self.tasks = {}
         self.taskResponses = {}
-        self.app = Flask(__name__)
-        self.app.add_url_rule(
-            "/signature", "signature", self.submit_signature, methods=["POST"]
-        )
 
-    def submit_signature(self):
-        data = request.get_json()
-        signature = Signature(data["signature"]["X"], data["signature"]["Y"])
-        task_index = data["task_id"]
-        task_response = {
-            "task_index": task_index,
-            "number_squared": data["number_squared"],
-            "number_to_be_squared": data["number_to_be_squared"],
-            "block_number": data["block_number"],
-        }
-        print("data", data["operator_id"])
-        try:
-            self.bls_aggregation_service.process_new_signature(
-                task_index, task_response, signature, data["operator_id"]
-            )
-            return "true", 200
-        except Exception as e:
-            logger.error(f"Submitting signature failed: {e}")
-            return "false", 500
+        # Initialize FastAPI app
+        self.server_thread: threading.Thread | None = None
+        self.app = FastAPI()
+
+        # Add FastAPI route
+        @self.app.post("/signature")
+        async def submit_signature(data: SignatureRequest):
+            try:
+                signature = Signature(data.signature["X"], data.signature["Y"])
+                task_index = data.task_id
+                logger.info(f"Received signature for task {task_index}")
+                self.bls_aggregation_service.process_new_signature(
+                    task_index, data, signature, data.operator_id
+                )
+                return "true"
+            except Exception as e:
+                logger.error(f"Submitting signature failed: {e}")
+                raise HTTPException(
+                    status_code=500, detail="Failed to process signature"
+                )
 
     def start_server(self):
         host, port = self.config["aggregator_server_ip_port_address"].split(":")
-        self.app.run(host=host, port=port)
+        # self.app.run(host=host, port=port)
+        self.server_thread = threading.Thread(
+            target=uvicorn.run,
+            args=(self.app,),
+            kwargs={
+                "host": host,
+                "port": int(port),
+                # "ssl_keyfile": ...,
+                # "ssl_certfile": ...,
+            },
+            daemon=True,
+        )
+        self.server_thread.start()
 
     def send_new_task(self, i):
-        tx = self.task_manager.functions.createNewTask(
-            i, 100, nums_to_bytes([0])
-        ).build_transaction(
+        # TODO: here we send input data to the task
+        # Define the _task struct, the dict should correspond to the struct in the contract
+        # here: `contracts/src/ISertnServiceManager.sol` -> `ISertnServiceManagerTypes.Task`
+        task = {
+            "modelId_": 1,  # uint256 - Replace with the actual model ID
+            # TODO: INPUT DATA here:
+            "inputs_": "".encode(),  # bytes - actual input data
+            "poc_": 100,  # uint256 - Proof of computation value (WTF is this?)
+            "startTime_": 0,  # uint256 - Will be set in the contract
+            "startingBlock_": 0,  # uint256 - Will be set in the contract
+            "proveOnResponse_": True,  # bool - Whether the task is a proof of stake task
+            "user_": self.clients.wallet.address,  # address TODO: what address should be here?
+        }
+
+        tx = self.task_manager.functions.sendTask(task).build_transaction(
             {
                 "from": self.aggregator_address,
                 "gas": 2000000,
@@ -84,11 +134,28 @@ class Aggregator:
                 "chainId": self.web3.eth.chain_id,
             }
         )
-        signed_tx = self.web3.eth.account.sign_transaction(
+
+        import pdb
+
+        try:
+            # Simulate the transaction
+            self.web3.eth.call(tx)
+        except Exception as e:
+            pdb.set_trace()
+            print(f"Transaction simulation failed: {e}")
+
+        signed_tx: SignedTransaction = self.web3.eth.account.sign_transaction(
             tx, private_key=self.aggregator_ecdsa_private_key
         )
-        tx_hash = self.web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        tx_hash = self.web3.eth.send_raw_transaction(signed_tx.raw_transaction)
         receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash)
+
+        pdb.set_trace()
+
+        if not receipt["logs"]:
+            logger.error("Failed to send new task")
+            return
+
         event = self.task_manager.events.NewTaskCreated().process_log(
             receipt["logs"][0]
         )
@@ -108,54 +175,56 @@ class Aggregator:
         i = 0
         while True:
             logger.info("Sending new task")
-            task_index = self.send_new_task(i)
+            self.send_new_task(i)
             time.sleep(10)
             i += 1
 
-    def start_submitting_signatures(self):
-        while True:
-            logger.info("Waiting for response")
-            aggregated_response = next(
-                self.bls_aggregation_service.get_aggregated_responses()
-            )
-            logger.info(f"Aggregated response {aggregated_response}")
-            response = aggregated_response.task_response
-            task = [
-                response["number_to_be_squared"],
-                response["block_number"],
-                nums_to_bytes([0]),
-                100,
-            ]
-            task_response = [response["task_index"], response["number_squared"]]
-            non_signers_stakes_and_signature = [
-                aggregated_response.non_signer_quorum_bitmap_indices,
-                [g1_to_tupple(g1) for g1 in aggregated_response.non_signers_pubkeys_g1],
-                [g1_to_tupple(g1) for g1 in aggregated_response.quorum_apks_g1],
-                g2_to_tupple(aggregated_response.signers_apk_g2),
-                g1_to_tupple(aggregated_response.signers_agg_sig_g1),
-                aggregated_response.quorum_apk_indices,
-                aggregated_response.total_stake_indices,
-                aggregated_response.non_signer_stake_indices,
-            ]
+    # NOTE: `RespondToTask` function is not implemented in the contract
+    # def start_submitting_signatures(self):
+    #     while True:
+    #         logger.info("Waiting for response")
+    #         aggregated_response = next(
+    #             self.bls_aggregation_service.get_aggregated_responses()
+    #         )
+    #         logger.info(f"Aggregated response {aggregated_response}")
+    #         response = aggregated_response.task_response
+    #         # TODO: WTF is this?
+    #         task = [
+    #             response["number_to_be_squared"],
+    #             response["block_number"],
+    #             nums_to_bytes([0]),
+    #             100,
+    #         ]
+    #         task_response = [response["task_index"], response["number_squared"]]
+    #         non_signers_stakes_and_signature = [
+    #             aggregated_response.non_signer_quorum_bitmap_indices,
+    #             [g1_to_tupple(g1) for g1 in aggregated_response.non_signers_pubkeys_g1],
+    #             [g1_to_tupple(g1) for g1 in aggregated_response.quorum_apks_g1],
+    #             g2_to_tupple(aggregated_response.signers_apk_g2),
+    #             g1_to_tupple(aggregated_response.signers_agg_sig_g1),
+    #             aggregated_response.quorum_apk_indices,
+    #             aggregated_response.total_stake_indices,
+    #             aggregated_response.non_signer_stake_indices,
+    #         ]
 
-            tx = self.task_manager.functions.respondToTask(
-                task, task_response, non_signers_stakes_and_signature
-            ).build_transaction(
-                {
-                    "from": self.aggregator_address,
-                    "gas": 2000000,
-                    "gasPrice": self.web3.to_wei("20", "gwei"),
-                    "nonce": self.web3.eth.get_transaction_count(
-                        self.aggregator_address
-                    ),
-                    "chainId": self.web3.eth.chain_id,
-                }
-            )
-            signed_tx = self.web3.eth.account.sign_transaction(
-                tx, private_key=self.aggregator_ecdsa_private_key
-            )
-            tx_hash = self.web3.eth.send_raw_transaction(signed_tx.rawTransaction)
-            receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash)
+    #         tx = self.task_manager.functions.respondToTask(
+    #             task, task_response, non_signers_stakes_and_signature
+    #         ).build_transaction(
+    #             {
+    #                 "from": self.aggregator_address,
+    #                 "gas": 2000000,
+    #                 "gasPrice": self.web3.to_wei("20", "gwei"),
+    #                 "nonce": self.web3.eth.get_transaction_count(
+    #                     self.aggregator_address
+    #                 ),
+    #                 "chainId": self.web3.eth.chain_id,
+    #             }
+    #         )
+    #         signed_tx = self.web3.eth.account.sign_transaction(
+    #             tx, private_key=self.aggregator_ecdsa_private_key
+    #         )
+    #         tx_hash = self.web3.eth.send_raw_transaction(signed_tx.raw_transaction)
+    #         receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash)
 
     def __load_ecdsa_key(self):
         ecdsa_key_password = os.environ.get("AGGREGATOR_ECDSA_KEY_PASSWORD", "")
@@ -212,21 +281,17 @@ class Aggregator:
             self.clients.avs_registry_reader, operator_info_service, logger
         )
 
-        def hasher(task):
-            encoded = eth_abi.encode(
-                ["uint32", "uint256"], [task["task_index"], task["number_squared"]]
-            )
-            return Web3.keccak(encoded)
-
         self.bls_aggregation_service = BlsAggregationService(
             avs_registry_service, hasher
         )
 
 
 if __name__ == "__main__":
-    with open("config-files/aggregator.yaml", "r") as f:
+    with open("configs/aggregator.yaml", "r") as f:
         config = yaml.load(f, Loader=yaml.BaseLoader)
     aggregator = Aggregator(config)
-    threading.Thread(target=aggregator.start_submitting_signatures, args=[]).start()
+    # threading.Thread(target=aggregator.start_submitting_signatures, args=[]).start()
     threading.Thread(target=aggregator.start_sending_new_tasks, args=[]).start()
     aggregator.start_server()
+    while True:
+        time.sleep(10)

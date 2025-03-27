@@ -5,17 +5,21 @@
     "dictionaries": [],
     "words": [
         "avsregistry",
+        "blsagg",
         "chainio",
+        "eigenlayer",
         "eigensdk",
+        "holesky",
+        "keccak",
         "operatorsinfo",
         "pycache",
         "pycodestyle",
         "pyproject",
+        "remappings",
         "sdist",
-        "venv",
-        "eigenlayer",
-        "holesky",
-        "remappings"
+        "Sertn",
+        "tupple",
+        "venv"
     ],
     "ignoreWords": [],
     "import": []
