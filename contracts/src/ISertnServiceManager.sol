@@ -9,14 +9,14 @@ interface ISertnServiceManager {
 interface ISertnServiceManagerErrors {
     error IncorrectAVS();
     error IncorrectOperatorSetIds();
-    error NotModelId(string);
+    error NotModelId();
     error NotAggregator();
     error NotOperator();
     error NotTaskManager();
     error InvalidTaskManager();
     error AggregatorAlreadyExists();
-    error NoProofOnResponse(string);
-    error TaskCouldNotBeSent(string);
+    error NoProofOnResponse();
+    error TaskCouldNotBeSent();
     error IncorrectOperator();
     error TaskNotExpired();
     error TaskExpired();
@@ -31,17 +31,17 @@ interface ISertnServiceManagerErrors {
 }
 
 interface ISertnServiceManagerEvents {
-    event newOperator(address opAddr_);
-    event newModels(uint256[] modelId_);
-    event newStrategies(address[] newSupportedTokens_);
-    event newTask(address indexed opAddr_, bytes indexed taskId_);
-    event taskResponded(uint256 indexed model, bytes indexed taskId, ISertnServiceManagerTypes.TaskResponse task);
-    event upForSlashing(address indexed operator, bytes indexed taskId);
-    event proofRequested(address indexed operator, bytes indexed taskId);
-    event operatorSlashed(address indexed operator, bytes indexed taskId);
-    event modelUpdated(uint256 indexed modelId, ISertnServiceManagerTypes.OperatorModel operatorModel);
-    event opInfoChanged(address indexed _operator, bytes _opInfo);
-    event operatorDeleted(address indexed _operator, uint32[] opSetIds);
+    event NewOperator(address opAddr_);
+    event NewModels(uint256[] modelId_);
+    event NewStrategies(address[] newSupportedTokens_);
+    event NewTask(address indexed opAddr_, bytes indexed taskId_);
+    event TaskResponded(uint256 indexed model, bytes indexed taskId, ISertnServiceManagerTypes.TaskResponse task);
+    event UpForSlashing(address indexed operator, bytes indexed taskId);
+    event ProofRequested(address indexed operator, bytes indexed taskId);
+    event OperatorSlashed(address indexed operator, bytes indexed taskId);
+    event ModelUpdated(uint256 indexed modelId, ISertnServiceManagerTypes.OperatorModel operatorModel);
+    event OpInfoChanged(address indexed _operator, bytes _opInfo);
+    event OperatorDeleted(address indexed _operator, uint32[] opSetIds);
 }
 
 interface ISertnServiceManagerTypes {
@@ -67,7 +67,6 @@ interface ISertnServiceManagerTypes {
 
     struct OperatorModel {
         address operator_;
-        address verifier_;
         uint256 modelId_;
         uint32 maxBlocks_;
         IStrategy[] ethStrategies_;

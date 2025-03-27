@@ -20,7 +20,7 @@ import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IE
 
 import {IERC20, StrategyFactory} from "@eigenlayer/contracts/strategies/StrategyFactory.sol";
 import {SertnTaskManager} from "../src/SertnTaskManager.sol";
-
+import {ModelStorage} from "../src/ModelStorage.sol";
 import "forge-std/Test.sol";
 
 contract SertnDeployer is Script, Test {
@@ -51,6 +51,7 @@ contract SertnDeployer is Script, Test {
 
     SertnServiceManager sertnServiceManager;
     SertnTaskManager sertnTaskManager;
+    ModelStorage modelStorage;
 
     function setUp() public virtual {
         deployer = vm.rememberKey(vm.envUint("PRIVATE_KEY"));
@@ -90,13 +91,19 @@ contract SertnDeployer is Script, Test {
             ""
         );
 
+        modelStorage = new ModelStorage(address(sertnServiceManager));
+
         sertnTaskManager = new SertnTaskManager(
             coreDeployment.rewardsCoordinator,
             coreDeployment.delegationManager,
             coreDeployment.allocationManager,
             address(sertnServiceManager),
+            address(modelStorage),
             address(serToken)
         );
+
+
+        sertnServiceManager.setTaskManagerandModelStorage(address(sertnTaskManager), address(modelStorage));
 
         // sertnServiceManager.setTaskManager(address(sertnTaskManager));
 

@@ -92,18 +92,18 @@ contract SertnTaskManager is
         _task.startingBlock_ = block.number;
 
         if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
-            revert NotModelId("Not OperatorModel Id");
+            revert NotModelId();
         }
         OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_operatorModelId), (OperatorModel));
         Operator memory _operator = abi.decode(sertnServiceManager.opInfo(_operatorModel.operator_), (Operator));
         // OperatorModel memory _operatorModel = sertnServiceManager.getModelInfo(_operatorModelId);
         if (_task.proveOnResponse_ && !_operatorModel.proveOnResponse_) {
-            revert NoProofOnResponse("Prove On Response Not Available");
+            revert NoProofOnResponse();
         }
 
         if (_task.proveOnResponse_) {
             _checkFinancialSecurity(_task.poc_, _operatorModel, _operator, _operatorModel.maxBlocks_);
-            
+
         } else {
             _checkFinancialSecurity(
                 _task.poc_ * 10,
@@ -140,9 +140,9 @@ contract SertnTaskManager is
                 _operator.allocatedSer_ += 9 * _task.poc_;
             }
             sertnServiceManager.updateOperator(_operatorModel.operator_, _operator);
-            emit newTask(_operatorModel.operator_, _taskId);
+            emit NewTask(_operatorModel.operator_, _taskId);
         } else {
-            revert TaskCouldNotBeSent("Unknown error sending task");
+            revert TaskCouldNotBeSent();
         }
     }
 
@@ -168,7 +168,7 @@ contract SertnTaskManager is
                 _ethSecurity[i] <
                 _operatorModel.ethShares_[i] + _operator.allocatedEth_[i]
             ) {
-                revert TaskCouldNotBeSent("Not enough eth backed security");
+                revert TaskCouldNotBeSent();
             }
         }
         IStrategy[] memory _pocStrategy = new IStrategy[](1);
@@ -184,7 +184,7 @@ contract SertnTaskManager is
             _operatorModel.maxSer_ < _poc ||
             _serSecurity < _poc + _operator.allocatedSer_
         ) {
-            revert TaskCouldNotBeSent("Insufficient economic security backing");
+            revert TaskCouldNotBeSent();
         }
     }
 
@@ -195,7 +195,7 @@ contract SertnTaskManager is
         uint256 _operatorModelId = _task.operatorModelId_;
 
         if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
-            revert NotModelId("Invalid OperatorModel ID");
+            revert NotModelId();
         }
         OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_operatorModelId), (OperatorModel));
         // OperatorModel memory _operatorModel = operatorModelInfo[_operatorModelId];
@@ -225,7 +225,7 @@ contract SertnTaskManager is
             else {
                 sertnServiceManager.pushToOperatorSlashingQueue(msg.sender, _taskResponse.taskId_);
                 sertnServiceManager.pushToSlashingQueue(_taskResponse.taskId_);
-                emit upForSlashing(_operatorModel.operator_, _taskResponse.taskId_);
+                emit UpForSlashing(_operatorModel.operator_, _taskResponse.taskId_);
                 return;
             }
         } else {
@@ -240,7 +240,7 @@ contract SertnTaskManager is
             else {
                 sertnServiceManager.pushToOperatorSlashingQueue(msg.sender, _taskResponse.taskId_);
                 sertnServiceManager.pushToSlashingQueue(_taskResponse.taskId_);
-                emit upForSlashing(_operatorModel.operator_, _taskResponse.taskId_);
+                emit UpForSlashing(_operatorModel.operator_, _taskResponse.taskId_);
                 return;
             }
         }
@@ -252,7 +252,7 @@ contract SertnTaskManager is
         sertnServiceManager.setTaskResponse(_taskResponse);
         sertnServiceManager.setComputeUnits(_operatorModel.operator_, _operatorModel.computeType_, true);
 
-        emit taskResponded(_operatorModelId, _taskResponse.taskId_, _taskResponse);
+        emit TaskResponded(_operatorModelId, _taskResponse.taskId_, _taskResponse);
     }
 
     function requestProof(bytes memory _taskId) external {
@@ -277,7 +277,7 @@ contract SertnTaskManager is
         sertnServiceManager.updateOperator(_operatorModel.operator_, _operator);
         sertnServiceManager.setBountyHunter(_taskId, msg.sender);
 
-        emit proofRequested(_operatorModel.operator_, _taskId);
+        emit ProofRequested(_operatorModel.operator_, _taskId);
 
     }
 
@@ -288,7 +288,7 @@ contract SertnTaskManager is
         uint256 _operatorModelId = _task.operatorModelId_;
 
         if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
-            revert NotModelId("Not OperatorModel Id");
+            revert NotModelId();
         }
 
         OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_operatorModelId), (OperatorModel));
@@ -302,7 +302,7 @@ contract SertnTaskManager is
         uint256 _operatorModelId = _task.operatorModelId_;
 
         if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
-            revert NotModelId("Not OperatorModel Id");
+            revert NotModelId();
         }
         OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_operatorModelId), (OperatorModel));
         // OperatorModel memory _operatorModel = operatorModelInfo[_operatorModelId];
@@ -327,7 +327,7 @@ contract SertnTaskManager is
         uint256 _operatorModelId = _task.operatorModelId_;
 
         if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
-            revert NotModelId("Not OperatorModel Id");
+            revert NotModelId();
         }
         OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_operatorModelId), (OperatorModel));
         Operator memory _operator = abi.decode(sertnServiceManager.opInfo(_operatorModel.operator_), (Operator));
