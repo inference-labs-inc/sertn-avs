@@ -253,7 +253,7 @@ contract AVSSetup2 is Test {
             baseFee_: 1e2,
             maxSer_: 1e4,
             computeType_: bytes32("model1"),
-            proveOnResponse_: false,
+            proveOnResponse_: true,
             available_: true
         });
         bytes32[] memory _computeUnitNames = new bytes32[](1);
@@ -397,6 +397,26 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         _checkTaskResponse(user.key.addr, taskId);
         _slashTask(taskId);
 
+    }
+
+    function test_baseGas() public {
+         vm.roll(1e9);
+        user = User({key: vm.createWallet("user_wallet")});
+        ISertnServiceManagerTypes.Task memory task = ISertnServiceManagerTypes
+            .Task({
+                operatorModelId_: 0,
+                inputs_: bytes(""),
+                poc_: 1e2,
+                startTime_: 0,
+                startingBlock_: 0,
+                proveOnResponse_: true,
+                user_: user.key.addr
+            });
+        bytes memory taskId = _sendTask(user.key.addr, task);
+        _respondToTask1(operators[0].key.addr, taskId, true, bytes("1"), false);
+        _checkTaskResponse(user.key.addr, taskId);
+        _slashTask(taskId);
+        vm.roll(block.number + 100);
     }
 
     function test_addModel() public {
