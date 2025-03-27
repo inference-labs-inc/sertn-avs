@@ -42,12 +42,10 @@ contract SertnServiceManager is
     OwnableUpgradeable,
     ReentrancyGuard
 {
-    uint96 public numOperatorModels;
+    uint256 public numOperatorModels;
     address[] public aggregators;
     address[] public operators;
     bytes[] public slashingQueue;
-
-    uint96[] _tempOpModels;
 
     IERC20 public ser;
 
@@ -187,7 +185,7 @@ contract SertnServiceManager is
             bytes32[] memory _computeUnitNames,
             uint256[] memory _computeUnits
         ) = abi.decode(data, (Model[], OperatorModel[], bytes32[], uint256[]));
-        uint96[] memory _operatorModelIds = new uint96[](_operatorModels.length);
+        uint256[] memory _operatorModelIds = new uint256[](_operatorModels.length);
         for (uint256 i; i < _operatorModels.length;) {
             _operatorModelIds[i] = numOperatorModels;
             _operatorModels[i].operator_ = operator;
@@ -296,7 +294,7 @@ contract SertnServiceManager is
         return false;
     }
 
-    function modifyModelParameters(OperatorModel calldata _operatorModel, uint96 _operatorModelId) external onlyOperators() {
+    function modifyModelParameters(OperatorModel calldata _operatorModel, uint256 _operatorModelId) external onlyOperators() {
         OperatorModel memory _oldOperatorModel = abi.decode(operatorModelInfo[_operatorModelId], (OperatorModel));
         // OperatorModel storage _oldModel = operatorModelInfo[_operatorModelId];
         if (_oldOperatorModel.operator_ != msg.sender) {
@@ -323,7 +321,7 @@ contract SertnServiceManager is
     function slashOperator(bytes calldata _taskId, string calldata _whySlashed) external onlyAggregators() nonReentrant {
 
         Task memory _task = abi.decode(_taskId, (Task));
-        uint96 _operatorModelId = _task.operatorModelId_;
+        uint256 _operatorModelId = _task.operatorModelId_;
         if (0 > _operatorModelId || numOperatorModels < _operatorModelId) {
             revert NotModelId();
         }
@@ -375,7 +373,7 @@ contract SertnServiceManager is
     }
 
     function addModels(OperatorModel[] memory _operatorModels) external onlyOperators() {
-        uint96[] memory _operatorModelIds = new uint96[](_operatorModels.length);
+        uint256[] memory _operatorModelIds = new uint256[](_operatorModels.length);
         for (uint256 i; i < _operatorModels.length;) {
             _operatorModelIds[i] = numOperatorModels;
             _operatorModels[i].operator_ = msg.sender;
@@ -398,10 +396,9 @@ contract SertnServiceManager is
             operatorModelInfo[numOperatorModels] = abi.encode(_operatorModels[i]);
             // operatorModelInfo[modelNum] = _operatorModels[i];
             Operator memory _operator = abi.decode(opInfo[msg.sender], (Operator));
-            _tempOpModels = _operator.models_;
+            uint256[] memory _tempOpModels = _operator.models_;
             _tempOpModels.push(numOperatorModels);
             _operator.models_ = _tempOpModels;
-            delete _tempOpModels;
             opInfo[msg.sender] = abi.encode(_operator);
             numOperatorModels++;
             unchecked { ++i; }
