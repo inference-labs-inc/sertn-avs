@@ -30,6 +30,7 @@ import {Test, console2 as console} from "forge-std/Test.sol";
 import {ISertnServiceManager} from "../src/ISertnServiceManager.sol";
 import {ECDSAUpgradeable} from "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
 import {MockVerifier} from "./MockVerifier.sol";
+import {MockVerifier2} from "./MockVerifier2.sol";
 import {ModelStorage} from "../src/ModelStorage.sol";
 
 contract AVSSetup2 is Test {
@@ -72,6 +73,7 @@ contract AVSSetup2 is Test {
     SertnServiceManager sertnServiceManager;
     SertnTaskManager sertnTaskManager;
     MockVerifier mockVerifier;
+    MockVerifier2 mockVerifier2;
     ModelStorage modelStorage;
     
 
@@ -137,6 +139,7 @@ contract AVSSetup2 is Test {
         sertnServiceManager.setTaskManagerandModelStorage(address(sertnTaskManager), address(modelStorage));
 
         mockVerifier = new MockVerifier();
+        mockVerifier2 = new MockVerifier2();
 
 
         vm.stopPrank();
@@ -386,71 +389,71 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
             });
 
         bytes memory taskId = _sendTask(user.key.addr, task);
-        _respondToTask(operators[0].key.addr, taskId, false, bytes(""), false);
+        _respondToTask1(operators[0].key.addr, taskId, false, bytes(""), false);
         _checkTaskResponse(user.key.addr, taskId);
         _slashTask(taskId);
 
     }
 
-    // function test_addModel() public {
-    //     vm.roll(1e10);
+    function test_addModel() public {
+        vm.roll(1e10);
 
-    //     ISertnServiceManagerTypes.Model[]
-    //         memory _model = new ISertnServiceManagerTypes.Model[](1);
-    //     uint256[] memory _ethShares = new uint256[](2);
-    //     _ethShares[0] = 10;
-    //     _ethShares[1] = 10;
-    //     _model[0] = ISertnServiceManagerTypes.Model({
-    //         modelName_: bytes32("5"),
-    //         operator_: operators[0].key.addr,
-    //         verifier_: address(mockVerifier),
-    //         benchData_: "",
-    //         inputs_: bytes(""),
-    //         output_: bytes(""),
-    //         maxBlocks_: 1e2,
-    //         ethStrategies_: _ethStrategies,
-    //         ethShares_: _ethShares,
-    //         baseFee_: 1e2,
-    //         maxSer_: 1e4,
-    //         computeType_: bytes32("model5"),
-    //         proveOnResponse_: true,
-    //         available_: true
-    //     });
+        ISertnServiceManagerTypes.Model[]
+            memory _model = new ISertnServiceManagerTypes.Model[](1);
+        uint256[] memory _ethShares = new uint256[](2);
+        _ethShares[0] = 10;
+        _ethShares[1] = 10;
 
-    //     bytes32[] memory _computeUnitNames = new bytes32[](2);
-    //     _computeUnitNames[0] = bytes32("model1");
-    //     _computeUnitNames[1] = bytes32("model5");
-    //     uint8[] memory _computeUnits = new uint8[](2);
-    //     _computeUnits[0] = 10;
-    //     _computeUnits[1] = 10;
+        address[] memory _operators = new address[](1);
+        _operators[0] = operators[0].key.addr;
+        _model[0] = ISertnServiceManagerTypes.Model({title_: "WassupModel", description_: "Returns wassup", modelVerifier_: address(mockVerifier2), operators_: _operators});
 
-    //     _addModel(operators[0].key.addr, _model);
-    //     _addCompute(operators[0].key.addr, _computeUnitNames, _computeUnits);
+        ISertnServiceManagerTypes.OperatorModel[]
+            memory _operatorModel = new ISertnServiceManagerTypes.OperatorModel[](1);
+        _operatorModel[0] = ISertnServiceManagerTypes.OperatorModel({
+            operator_: operators[0].key.addr,
+            modelId_: UINT256_MAX,
+            maxBlocks_: 1e2,
+            ethStrategies_: _ethStrategies,
+            ethShares_: _ethShares,
+            baseFee_: 1e2,
+            maxSer_: 1e4,
+            computeType_: bytes32("model2"),
+            proveOnResponse_: true,
+            available_: true
+        });
 
+        bytes32[] memory _computeUnitNames = new bytes32[](2);
+        _computeUnitNames[0] = bytes32("model1");
+        _computeUnitNames[1] = bytes32("model2");
+        uint8[] memory _computeUnits = new uint8[](2);
+        _computeUnits[0] = 10;
+        _computeUnits[1] = 10;
+        _addModel(operators[0].key.addr, _model, _operatorModel);
+        _addCompute(operators[0].key.addr, _computeUnitNames, _computeUnits);
 
-    //     user = User({key: vm.createWallet("user_wallet")});
-    //     ISertnServiceManagerTypes.Task memory task = ISertnServiceManagerTypes
-    //         .Task({
-    //             modelId_: 5,
-    //             inputs_: bytes(""),
-    //             poc_: 1e2,
-    //             startTime_: 0,
-    //             startingBlock_: 0,
-    //             proveOnResponse_: true,
-    //             user_: user.key.addr
-    //         });
-
-    //     bytes memory taskId = _sendTask(user.key.addr, task);
-    //     vm.roll(block.number + 50);
-    //     _respondToTask(operators[0].key.addr, taskId, true, bytes("0"), false);
-    //     vm.roll(block.number + 10);
-    //     _respondToTask(operators[0].key.addr, taskId, true, bytes("1"), false);
-    //     _checkTaskResponse(user.key.addr, taskId); 
-    //     vm.roll(block.number + 1e2);
-    //     // _clearTask(taskId);
+        user = User({key: vm.createWallet("user_wallet")});
+        ISertnServiceManagerTypes.Task memory task = ISertnServiceManagerTypes
+            .Task({
+                operatorModelId_: 4,
+                inputs_: bytes(""),
+                poc_: 1e2,
+                startTime_: 0,
+                startingBlock_: 0,
+                proveOnResponse_: true,
+                user_: user.key.addr
+            });
+        bytes memory taskId = _sendTask(user.key.addr, task);
+        vm.roll(block.number + 50);
+        _respondToTask2(operators[0].key.addr, taskId, true, bytes("1"), false);
+        vm.roll(block.number + 10);
+        _respondToTask2(operators[0].key.addr, taskId, true, bytes("2"), false);
+        _checkTaskResponse(user.key.addr, taskId); 
+        vm.roll(block.number + 1e2);
+        // _clearTask(taskId);
         
-    //     _slashTask(taskId);
-    // }
+        _slashTask(taskId);
+    }
 
     function _sendTask(address _user, ISertnServiceManagerTypes.Task memory task) internal returns (bytes memory _taskId) {
         vm.startPrank(_user);
@@ -474,7 +477,7 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         return _getLatestTaskId(_operatorModel.operator_);
     }
 
-    function _respondToTask(address operator, bytes memory _taskId, bool _verification, bytes memory _proof, bool _alreadyVerified) internal {
+    function _respondToTask1(address operator, bytes memory _taskId, bool _verification, bytes memory _proof, bool _alreadyVerified) internal {
         vm.startPrank(operator);
         ISertnServiceManagerTypes.Operator
             memory _operator = abi.decode(sertnServiceManager.opInfo(
@@ -485,6 +488,23 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
             memory _taskResponse = ISertnServiceManagerTypes.TaskResponse({
                 taskId_: _taskId,
                 output_: bytes("hello world"),
+                proven_: _alreadyVerified
+            });
+        sertnTaskManager.submitTask(_taskResponse, _verification, _proof);
+        vm.stopPrank();
+    } 
+
+       function _respondToTask2(address operator, bytes memory _taskId, bool _verification, bytes memory _proof, bool _alreadyVerified) internal {
+        vm.startPrank(operator);
+        ISertnServiceManagerTypes.Operator
+            memory _operator = abi.decode(sertnServiceManager.opInfo(
+                operator), (ISertnServiceManagerTypes.Operator)
+            );
+        require(_inBytesArray(_operator.openTasks_, _taskId), "Not open task");
+        ISertnServiceManagerTypes.TaskResponse
+            memory _taskResponse = ISertnServiceManagerTypes.TaskResponse({
+                taskId_: _taskId,
+                output_: bytes("wassup"),
                 proven_: _alreadyVerified
             });
         sertnTaskManager.submitTask(_taskResponse, _verification, _proof);
@@ -529,11 +549,14 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         vm.stopPrank();
     }
 
-    // function _addModel(address _operator, SertnServiceManager.OperatorModel[] memory _operatorModels) internal {
-    //     vm.startPrank(_operator);
-    //     sertnServiceManager.addModels(_operatorModels);
-    //     vm.stopPrank();
-    // }
+    function _addModel(address _operator, ISertnServiceManagerTypes.Model[] memory _models, SertnServiceManager.OperatorModel[] memory _operatorModels) internal {
+        vm.startPrank(_operator);
+        for (uint8 i = 0; i < _models.length; i ++) {
+            _operatorModels[i].modelId_ = modelStorage.createNewModel(_models[i]);
+        }
+        sertnServiceManager.addModels(_operatorModels);
+        vm.stopPrank();
+    }
 
     function _addCompute(address _operator, bytes32[] memory _computeUnitNames, uint8[] memory _computeUnits) internal {
         vm.startPrank(_operator);

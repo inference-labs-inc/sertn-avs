@@ -196,7 +196,8 @@ contract SertnServiceManager is
             }
 
             if (_operatorModels[i].modelId_ > modelStorage.numModels()) {
-                modelStorage.createNewModel(_models[i]);
+                _operatorModels[i].modelId_ = modelStorage.createNewModel(_models[i]);
+
             } else {
                 if (modelStorage.modelAddresses(_operatorModels[i].modelId_) != _models[i].modelVerifier_) {
                     revert NotModelId();
@@ -205,7 +206,7 @@ contract SertnServiceManager is
             }
 
             // require(_operatorModels[i].maxBlocks_ < TASK_EXPIRY_BLOCKS - 1e2, "max blocks too long");
-            _operatorModels[i].modelId_ = modelStorage.numModels() - 1;
+            
             operatorModelInfo[operatorModelNum] = abi.encode(_operatorModels[i]);
             // operatorModelInfo[modelNum] = _operatorModels[i];
 
@@ -377,8 +378,8 @@ contract SertnServiceManager is
     function addModels(OperatorModel[] memory _operatorModels) external onlyOperators() {
         uint256[] memory _operatorModelIds = new uint256[](_operatorModels.length);
         for (uint256 i = 0; i < _operatorModels.length; i++) {
-            numOperatorModels++;
             uint256 operatorModelNum = numOperatorModels;
+            numOperatorModels++;
             _operatorModelIds[i] = operatorModelNum;
             _operatorModels[i].operator_ = msg.sender;
             // require(_operatorModels[i].maxBlocks_ < TASK_EXPIRY_BLOCKS - 1e2, "max blocks too long");

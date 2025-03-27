@@ -26,16 +26,19 @@ contract ModelStorage is ISertnServiceManagerTypes, ISertnServiceManagerErrors, 
 
     function createNewModel(
         Model calldata _newModel
-    ) external onlyOperators() {
+    ) external onlyOperators() returns(uint256) {
         // Model memory newModel = Model({description_: description, title_: title, modelVerifier_: modelVerifierAddress, operators_: operators});
         // newModel.description = description;
         // newModel.title = title;
         // newModel.modelVerifier = modelVerifierAddress;
+        
 
         modelVerifiers[_newModel.modelVerifier_] = abi.encode(_newModel);
         modelAddresses[numModels] = _newModel.modelVerifier_;
 
+
         numModels++;
+        return numModels - 1;
     }
 
     function JoinOperatorList(uint256 _modelId, address _operator) external onlyOperators() {
