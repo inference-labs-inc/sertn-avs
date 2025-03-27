@@ -20,10 +20,14 @@ import "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
 
 import "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
 import "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
+import "@openzeppelin-upgrades/contracts/utils/math/MathUpgradeable.sol";
 
 import {Test, console2 as console} from "forge-std/Test.sol";
 
 import {SertnServiceManager} from "./SertnServiceManager.sol";
+import {ModelStorage} from "./ModelStorage.sol";
+
+
 
 contract SertnTaskManager is
     SertnServiceManagerStorage,
@@ -31,22 +35,30 @@ contract SertnTaskManager is
     ISertnServiceManagerEvents,
     OwnableUpgradeable
 {
-    address[] aggregators;
-    address[] operators;
-    bytes[] slashingQueue;
+    address[] public aggregators;
+    address[] public operators;
+    bytes[] public slashingQueue;
 
-    IERC20 ser;
+    IERC20 public ser;
 
-    IAllocationManager allocationManager;
-    IDelegationManager delegationManager;
-    IRewardsCoordinator rewardsCoordinator;
-    OperatorSet opSet;
+    IAllocationManager public allocationManager;
+    IDelegationManager public delegationManager;
+    IRewardsCoordinator public rewardsCoordinator;
+    OperatorSet public opSet;
 
-    SertnServiceManager sertnServiceManager;
+    SertnServiceManager public sertnServiceManager;
+    ModelStorage public modelStorage;
+
 
     modifier onlyAggregators() {
-        if (!sertnServiceManager.isAggregator(msg.sender)) {
+        if (!sertnServiceManager.isAggregator(msg.sender) && msg.sender != address(sertnServiceManager)) {
             revert NotAggregator();
+        }
+        _;
+    }
+    modifier onlyOperators() {
+        if (!sertnServiceManager.isOperator(msg.sender)) {
+            revert NotOperator();
         }
         _;
     }
@@ -56,99 +68,113 @@ contract SertnTaskManager is
         address _delegationManager,
         address _allocationManager,
         address _sertnServiceManager,
+        address _modelStorage,
         address _ser
     ) OwnableUpgradeable() {
+        _transferOwnership(msg.sender);
         allocationManager = IAllocationManager(_allocationManager);
         delegationManager = IDelegationManager(_delegationManager);
         rewardsCoordinator = IRewardsCoordinator(_rewardsCoordinator);
         sertnServiceManager = SertnServiceManager(_sertnServiceManager);
+        modelStorage = ModelStorage(_modelStorage);
+        
+
+
 
         opSet = OperatorSet({avs: address(sertnServiceManager), id: 0});
         ser = IERC20(_ser);
     }
 
     function sendTask(Task memory _task) external {
-        uint8 _modelId = _task.modelId_;
+
+        uint96 _operatorModelId = _task.operatorModelId_;
         _task.startTime_ = block.timestamp;
-        _task.startingBlock_ = block.number;
+        _task.startingBlock_ = uint32(block.number);
 
-        if (0 > _modelId || sertnServiceManager.getNumModels() < _modelId) {
-            revert NotModelId("Not Model Id");
+        if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
+            revert NotModelId();
         }
-        Model memory _model = sertnServiceManager.getModelInfo(_modelId);
-
-        if (_task.proveOnResponse_ && !_model.proveOnResponse_) {
-            revert NoProofOnResponse("Prove On Response Not Available");
+        OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_operatorModelId), (OperatorModel));
+        Operator memory _operator = abi.decode(sertnServiceManager.opInfo(_operatorModel.operator_), (Operator));
+        // OperatorModel memory _operatorModel = sertnServiceManager.getModelInfo(_operatorModelId);
+        if (_task.proveOnResponse_ && !_operatorModel.proveOnResponse_) {
+            revert NoProofOnResponse();
         }
 
         if (_task.proveOnResponse_) {
-            _checkFinancialSecurity(_task.poc_, _model, _model.maxBlocks_);
+            _checkFinancialSecurity(_task.poc_, _operatorModel, _operator, _operatorModel.maxBlocks_);
+
         } else {
             _checkFinancialSecurity(
                 _task.poc_ * 10,
-                _model,
+                _operatorModel,
+                _operator,
                 uint32(TASK_EXPIRY_BLOCKS)
             );
         }
-
-        Operator memory _operator = sertnServiceManager.getOperatorInfo(_model.operator_);
-
+        
         if (
-            _model.available_ &&
-            sertnServiceManager.getComputeUnits(_model.operator_,_model.computeType_) > 0 &&
+            _operatorModel.available_ &&
+            sertnServiceManager.computeUnits(_operatorModel.operator_,_operatorModel.computeType_) > 0 &&
             _operator.pausedBlock_ == 0
         ) {
-            uint256 transferAmount = (1.5e3 * (_model.baseFee_ + _task.poc_)) / 1e3;
+            uint256 transferAmount = (1.5e3 * (_operatorModel.baseFee_ + _task.poc_)) / 1e3;
             if (!ser.transferFrom(msg.sender, address(sertnServiceManager), transferAmount)) {
                 revert TransferFailed();
             }
 
             bytes memory _taskId = abi.encode(_task);
-            _operator.openTasks_.push(_taskId);
+            _operator.openTasks_ = _pushToBytesArray(_taskId, _operator.openTasks_);
             if (_task.proveOnResponse_) {
-                _operator.proofRequests_.push(_taskId);
+                _operator.proofRequests_ = _pushToBytesArray(_taskId, _operator.proofRequests_);
+                // _operator.proofRequests_.push(_taskId);
             }
-            sertnServiceManager.setComputeUnits(_model.operator_,_model.computeType_, false);
 
-            for (uint8 i = 0; i < _operator.allocatedEth_.length; i++) {
-                _operator.allocatedEth_[i] += _model.ethShares_[i];
+            sertnServiceManager.setComputeUnits(_operatorModel.operator_,_operatorModel.computeType_, false);
+
+            for (uint256 i; i < _operator.allocatedEth_.length;) {
+                _operator.allocatedEth_[i] += _operatorModel.ethShares_[i];
+                unchecked { ++i; }
             }
-            _operator.allocatedSer_ += 10 * _task.poc_;
-            sertnServiceManager.updateOperator(_model.operator_, _operator);
-            emit newTask(_model.operator_, _taskId);
+            _operator.allocatedSer_ += _task.poc_;
+            if (!_task.proveOnResponse_) {
+                _operator.allocatedSer_ += 9 * _task.poc_;
+            }
+            sertnServiceManager.updateOperator(_operatorModel.operator_, _operator);
+            emit NewTask(_operatorModel.operator_, _taskId);
         } else {
-            revert TaskCouldNotBeSent("Unknown error sending task");
+            revert TaskCouldNotBeSent();
         }
     }
 
     function _checkFinancialSecurity(
         uint256 _poc,
-        Model memory _model,
+        OperatorModel memory _operatorModel,
+        Operator memory _operator,
         uint32 _securityDuration
     ) internal view {
         address[] memory _operators = new address[](1);
-        _operators[0] = _model.operator_;
+        _operators[0] = _operatorModel.operator_;
         //check if secure using max blocks as model param
         uint256[] memory _ethSecurity = allocationManager
             .getMinimumSlashableStake(
                 opSet,
                 _operators,
-                _model.ethStrategies_,
+                _operatorModel.ethStrategies_,
                 uint32(block.number) + _securityDuration
             )[0];
 
-        Operator memory _operator = sertnServiceManager.getOperatorInfo(_model.operator_);
-
-        for (uint8 i = 0; i < _ethSecurity.length; i++) {
+        for (uint256 i; i < _ethSecurity.length;) {
             if (
                 _ethSecurity[i] <
-                _model.ethShares_[i] + _operator.allocatedEth_[i]
+                _operatorModel.ethShares_[i] + _operator.allocatedEth_[i]
             ) {
-                revert TaskCouldNotBeSent("Not enough eth backed security");
+                revert TaskCouldNotBeSent();
             }
+            unchecked { ++i; }
         }
         IStrategy[] memory _pocStrategy = new IStrategy[](1);
-        _pocStrategy[0] = tokenToStrategy[address(ser)];
+        _pocStrategy[0] = sertnServiceManager.tokenToStrategy(address(ser));
         uint256 _serSecurity = allocationManager.getMinimumSlashableStake(
             opSet,
             _operators,
@@ -157,10 +183,10 @@ contract SertnTaskManager is
         )[0][0];
 
         if (
-            _model.maxSer_ < _poc ||
+            _operatorModel.maxSer_ < _poc ||
             _serSecurity < _poc + _operator.allocatedSer_
         ) {
-            revert TaskCouldNotBeSent("Insufficient economic security backing");
+            revert TaskCouldNotBeSent();
         }
     }
 
@@ -168,193 +194,222 @@ contract SertnTaskManager is
 
         Task memory _task = abi.decode(_taskResponse.taskId_, (Task));
 
-        uint256 _modelId = _task.modelId_;
+        uint96 _operatorModelId = _task.operatorModelId_;
 
-        if (0 > _modelId || sertnServiceManager.getNumModels() < _modelId) {
-            revert NotModelId("Invalid Model ID");
+        if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
+            revert NotModelId();
         }
+        OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_operatorModelId), (OperatorModel));
+        // OperatorModel memory _operatorModel = operatorModelInfo[_operatorModelId];
 
-        Model memory _model = modelInfo[_modelId];
-
-        if (msg.sender != _model.operator_) {
+        if (msg.sender != _operatorModel.operator_) {
             revert IncorrectOperator();
         }
 
-        Operator memory _operator = opInfo[_model.operator_];
+        Operator memory _operator = abi.decode(sertnServiceManager.opInfo(_operatorModel.operator_),(Operator));
 
-        if (_model.maxBlocks_ > uint32(block.number - _task.startingBlock_)) {
+        if (_operatorModel.maxBlocks_ < uint32(block.number) - _task.startingBlock_) {
             revert TaskExpired();
         }
-
         if (_verification) {
-            _checkFinancialSecurity(_task.poc_, _model, 0);
+            _checkFinancialSecurity(_task.poc_, _operatorModel, _operator, 0);
         } else {
-            _checkFinancialSecurity(10*_task.poc_, _model, uint32(TASK_EXPIRY_BLOCKS - (block.number - _task.startingBlock_)));
+            _checkFinancialSecurity(10*_task.poc_, _operatorModel, _operator, TASK_EXPIRY_BLOCKS + _task.startingBlock_ - uint32(block.number));
         }
 
         if (_taskResponse.proven_) {
-            if (sertnServiceManager.isTaskVerified(_taskResponse.taskId_)) {
+            if (taskVerified[_taskResponse.taskId_]) {
                 _taskResponse.proven_ = true;
-                sertnServiceManager.clearTask(_taskResponse.taskId_);
+                _clearTask(_taskResponse.taskId_, false);
             }
 
             else {
                 sertnServiceManager.pushToOperatorSlashingQueue(msg.sender, _taskResponse.taskId_);
                 sertnServiceManager.pushToSlashingQueue(_taskResponse.taskId_);
-                emit upForSlashing(_model.operator_, _taskResponse.taskId_);
+                emit UpForSlashing(_operatorModel.operator_, _taskResponse.taskId_);
                 return;
             }
         } else {
             if (_verification || _task.proveOnResponse_) {
-            sertnServiceManager._verifyTask(_taskResponse.taskId_, _proof);
+            _verifyTask(_taskResponse.taskId_, _proof);
 
-            if (sertnServiceManager.isTaskVerified(_taskResponse.taskId_)) {
+            if (taskVerified[_taskResponse.taskId_]) {
                 _taskResponse.proven_ = true;
-                sertnServiceManager.clearTask(_taskResponse.taskId_);
+                _clearTask(_taskResponse.taskId_, false);
             }
 
             else {
                 sertnServiceManager.pushToOperatorSlashingQueue(msg.sender, _taskResponse.taskId_);
                 sertnServiceManager.pushToSlashingQueue(_taskResponse.taskId_);
-                emit upForSlashing(_model.operator_, _taskResponse.taskId_);
+                emit UpForSlashing(_operatorModel.operator_, _taskResponse.taskId_);
                 return;
             }
         }
         }
+        _operator.submittedTasks_ = _pushToBytesArray(_taskResponse.taskId_, _operator.submittedTasks_);
+        // _operator.submittedTasks_.push(_taskResponse.taskId_);
 
-        _operator.submittedTasks_.push(_taskResponse.taskId_);
-
-        sertnServiceManager.updateOperator(_model.operator_, _operator);
+        sertnServiceManager.updateOperator(_operatorModel.operator_, _operator);
         sertnServiceManager.setTaskResponse(_taskResponse);
-        sertnServiceManager.setComputeUnits(_model.operator_, _model.computeType_, true);
+        sertnServiceManager.setComputeUnits(_operatorModel.operator_, _operatorModel.computeType_, true);
 
-        emit taskResponded(_modelId, _taskResponse.taskId_, _taskResponse);
+        emit TaskResponded(_operatorModelId, _taskResponse.taskId_, _taskResponse);
     }
 
     function requestProof(bytes memory _taskId) external {
         //add probabilistic case
-        if (sertnServiceManager.getBountyHunter(_taskId) != address(0)) {
+        if (sertnServiceManager.bountyHunter(_taskId) != address(0)) {
             revert BountyAlreadySet();
         }
         Task memory _task = abi.decode(_taskId, (Task));
-        Model memory _model = sertnServiceManager.getModelInfo(_task.modelId_);
-        Operator memory _operator = sertnServiceManager.getOperatorInfo(_model.operator_);
+        OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_task.operatorModelId_), (OperatorModel));
+        // OperatorModel memory _operatorModel = sertnServiceManager.getModelInfo(_task.operatorModelId_);
+        Operator memory _operator = abi.decode(sertnServiceManager.opInfo(_operatorModel.operator_),(Operator));
 
         uint256 _amount = PROOF_REQUEST_COST*(_operator.proofRequestExponents_[0]/_operator.proofRequestExponents_[1]);
-        ser.transferFrom(msg.sender, address(sertnServiceManager), _amount);
+        if (!ser.transferFrom(msg.sender, address(sertnServiceManager), _amount)) {
+            revert TransferFailed();
+        }
 
-        _operator.proofRequests_.push(_taskId);
+        _operator.proofRequests_ = _pushToBytesArray(_taskId, _operator.proofRequests_);
 
         _operator.proofRequestExponents_[0] += 500;
 
-        sertnServiceManager.updateOperator(_model.operator_, _operator);
+        sertnServiceManager.updateOperator(_operatorModel.operator_, _operator);
         sertnServiceManager.setBountyHunter(_taskId, msg.sender);
 
-        emit proofRequested(_model.operator_, _taskId);
+        emit ProofRequested(_operatorModel.operator_, _taskId);
 
     }
 
-    function sendRewards(IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[] calldata operatorDirectedRewardsSubmissions, bytes[][] memory _rewardedTasks) external onlyAggregators() {
-        uint256 _approvalAmount = 0;
-        for (uint8 i = 0; i < operatorDirectedRewardsSubmissions[0].operatorRewards.length; i ++) {
-            Operator memory _operator = sertnServiceManager.getOperatorInfo(operatorDirectedRewardsSubmissions[0].operatorRewards[i].operator);
-            for (uint8 j = 0; j < _rewardedTasks[i].length; j ++) {
-                Task memory _task = abi.decode(_rewardedTasks[i][j], (Task));
-                require(_task.startingBlock_ + TASK_EXPIRY_BLOCKS < block.number || sertnServiceManager.isTaskVerified(_rewardedTasks[i][j]), "Task has not expired");
-                require(_inBytesArray(_operator.submittedTasks_, _rewardedTasks[i][j]), "Not in submitted Tasks");
-                _operator.submittedTasks_ = _removeBytesElement(_operator.submittedTasks_, _rewardedTasks[i][j]);
-                sertnServiceManager.updateOperator(operatorDirectedRewardsSubmissions[0].operatorRewards[i].operator, _operator);
-                if (_inBytesArray(_operator.openTasks_, _rewardedTasks[i][j])) {
-                    sertnServiceManager.clearTask(_rewardedTasks[i][j]);
-                }
-            }
-
-            _approvalAmount += operatorDirectedRewardsSubmissions[0].operatorRewards[i].amount;
-        }
-
-        ser.approve(address(rewardsCoordinator), _approvalAmount);
-        rewardsCoordinator.createOperatorDirectedAVSRewardsSubmission(address(sertnServiceManager), operatorDirectedRewardsSubmissions);
-    }
-
-    function slashOperator(bytes memory _taskId, string memory _whySlashed) external onlyAggregators() {
-
+    function _verifyTask(bytes memory _taskId, bytes memory _proof) internal {
+        //logic to verify task
         Task memory _task = abi.decode(_taskId, (Task));
 
-        uint8 _modelId = _task.modelId_;
+        uint96 _operatorModelId = _task.operatorModelId_;
 
-        if (0 > _modelId || sertnServiceManager.getNumModels() < _modelId) {
-            revert NotModelId("Not Model Id");
-        }
-        Model memory _model = sertnServiceManager.getModelInfo(_modelId);
-
-        address[] memory _operator = new address[](1);
-        _operator[0] = _model.operator_;
-
-        IStrategy[] memory _strategies = new IStrategy[](_model.ethStrategies_.length + 1);
-        for (uint8 i = 0; i < _model.ethStrategies_.length; i++) {
-            _strategies[i] = _model.ethStrategies_[i];
+        if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
+            revert NotModelId();
         }
 
-        _strategies[_model.ethStrategies_.length] = sertnServiceManager.getTokenToStrategy(address(ser));
+        OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_operatorModelId), (OperatorModel));
+        taskVerified[_taskId] = IVerifier(modelStorage.modelAddresses(_operatorModel.modelId_)).verifyProof(_proof);
+    }
 
-        uint256[] memory _wadsToSlash = new uint256[](_strategies.length);
+    function verifyTask(bytes memory _taskId, bytes memory _proof) external onlyOperators() {
+        //logic to verify task
+        Task memory _task = abi.decode(_taskId, (Task));
 
-        uint256[] memory _operatorShares = delegationManager.getOperatorShares(_model.operator_, _strategies);
+        uint96 _operatorModelId = _task.operatorModelId_;
 
-        for (uint8 i = 0; i < _model.ethStrategies_.length; i++) {
-            _wadsToSlash[i] = 1 ether * 1 ether * (_model.ethShares_[i]) / (allocationManager.getAllocation(_model.operator_, opSet, _strategies[i]).currentMagnitude * _operatorShares[i]);
+        if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
+            revert NotModelId();
+        }
+        OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_operatorModelId), (OperatorModel));
+        // OperatorModel memory _operatorModel = operatorModelInfo[_operatorModelId];
+
+        if (_operatorModel.operator_ != msg.sender) {
+            revert IncorrectOperator();
         }
 
-        _wadsToSlash[_model.ethStrategies_.length] = (1 ether * 1 ether * 10 * _task.poc_)/(allocationManager.getAllocation(_model.operator_, opSet, _strategies[_model.ethStrategies_.length]).currentMagnitude * _operatorShares[_model.ethStrategies_.length]);
+        taskVerified[_taskId] = IVerifier(modelStorage.modelAddresses(_operatorModel.modelId_)).verifyProof(_proof);
+    }
 
-        IAllocationManagerTypes.SlashingParams memory _slashParams = IAllocationManagerTypes.SlashingParams({operator: _model.operator_, operatorSetId: 0, strategies: _strategies, wadsToSlash: _wadsToSlash, description: _whySlashed});
+    function verifiedOffChain(bytes memory _taskId, bool _verified) external onlyAggregators() {
+        taskVerified[_taskId] = _verified;
+    }
 
-        allocationManager.slashOperator(address(sertnServiceManager), _slashParams);
-
-        emit operatorSlashed(_model.operator_, _taskId);
-        // TODO: Custom logic to change bounty amount
-        if (sertnServiceManager.getBountyHunter(_taskId) != address(0)) {
-            ser.transferFrom(address(this), sertnServiceManager.getBountyHunter(_taskId), BOUNTY);
-            Operator memory _operator = sertnServiceManager.getOperatorInfo(_model.operator_);
-            _operator.proofRequestExponents_[0] -= 500;
-            sertnServiceManager.updateOperator(_model.operator_, _operator);
+    function _clearTask(bytes memory _taskId, bool _slashed) internal {
+        Task memory _task = abi.decode(_taskId, (Task));
+        if (_task.startingBlock_ + TASK_EXPIRY_BLOCKS > uint32(block.number) && !taskVerified[_taskId] && !_slashed) {
+            revert TaskNotExpired();
         }
 
-        sertnServiceManager.clearTask(_taskId);
+        uint96 _operatorModelId = _task.operatorModelId_;
+
+        if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
+            revert NotModelId();
+        }
+        OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_operatorModelId), (OperatorModel));
+        Operator memory _operator = abi.decode(sertnServiceManager.opInfo(_operatorModel.operator_), (Operator));
+        _operator.openTasks_ = _removeBytesElement(_operator.openTasks_, _taskId);
+        _operator.proofRequests_ = _removeBytesElement(_operator.proofRequests_, _taskId);
+        if(_slashed) {
+            _operator.submittedTasks_ = _removeBytesElement(_operator.submittedTasks_, _taskId);
+        }
+        operatorSlashingQueue[_operatorModel.operator_] = _removeBytesElement(operatorSlashingQueue[_operatorModel.operator_], _taskId);
+        slashingQueue = _removeBytesElement(slashingQueue, _taskId);
+        for (uint256 i; i < _operator.allocatedEth_.length;) {
+            _operator.allocatedEth_[i] -= _operatorModel.ethShares_[i];
+            unchecked { ++i; }
+        }
+
+        _operator.allocatedSer_ -= _task.poc_;
+        if (!_task.proveOnResponse_) {
+            _operator.allocatedSer_ -= 9*_task.poc_;
+        }
+        
+
+        sertnServiceManager.updateOperator(_operatorModel.operator_, _operator);
+
+    }
+
+    function clearTask(bytes memory _taskId, bool _slashed) external onlyAggregators() {
+        _clearTask(_taskId, _slashed);
     }
 
     function _inBytesArray(bytes[] memory _byteArray, bytes memory _byteElement) internal pure returns(bool) {
         bytes32 elementHash = keccak256(_byteElement);
-        for (uint256 i = 0; i < _byteArray.length; i++) {
+        for (uint256 i; i < _byteArray.length;) {
             if (_byteArray[i].length > 0 && elementHash == keccak256(_byteArray[i])) {
                 return true;
             }
+            unchecked { ++i; }
         }
         return false;
     }
 
     function _removeBytesElement(bytes[] memory _byteArray, bytes memory _byteElement) internal pure returns(bytes[] memory) {
+        if (_inBytesArray(_byteArray, _byteElement)) {
+            bytes[] memory newArray;
+            if (_byteArray.length ==1) {
+                return newArray;
+            }
+            newArray = new bytes[](_byteArray.length - 1);
+            bytes32 elementHash = keccak256(_byteElement);
+            bool found = false;
+            uint256 writeIndex = 0;
 
-        bytes[] memory newArray = new bytes[](_byteArray.length - 1);
-        bytes32 elementHash = keccak256(_byteElement);
-        bool found = false;
-        uint256 writeIndex = 0;
+            for (uint256 readIndex; readIndex < _byteArray.length;) {
+                if (!found && elementHash == keccak256(_byteArray[readIndex])) {
+                    found = true;
+                    continue;
+                }
+                if (writeIndex >= newArray.length) {
+                    revert("Array length mismatch");
+                }
 
-        for (uint256 readIndex = 0; readIndex < _byteArray.length; readIndex++) {
-            if (!found && elementHash == keccak256(_byteArray[readIndex])) {
-                found = true;
-                continue;
+                newArray[writeIndex] = _byteArray[readIndex];
+                writeIndex++;
+                unchecked { ++readIndex; }
             }
 
-            if (writeIndex >= newArray.length) {
-                revert("Array length mismatch");
-            }
 
-            newArray[writeIndex] = _byteArray[readIndex];
-            writeIndex++;
+            return newArray;
+        } else {
+            return _byteArray;
         }
-
-
-        return newArray;
+        
     }
+    function _pushToBytesArray(bytes memory _element, bytes[] memory _array) internal returns (bytes[] memory) {
+        bytes[] memory _newArray = new bytes[](_array.length + 1);
+        for (uint256 i; i < _array.length;) {
+            _newArray[i] = _array[i];
+            unchecked { ++i; }
+        }
+        _newArray[_array.length] = _element;
+        return _newArray;
+    }
+
+    
 }

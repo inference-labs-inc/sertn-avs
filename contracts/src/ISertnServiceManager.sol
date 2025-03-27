@@ -9,56 +9,65 @@ interface ISertnServiceManager {
 interface ISertnServiceManagerErrors {
     error IncorrectAVS();
     error IncorrectOperatorSetIds();
-    error NotModelId(string);
+    error NotModelId();
     error NotAggregator();
     error NotOperator();
     error NotTaskManager();
     error InvalidTaskManager();
     error AggregatorAlreadyExists();
-    error NoProofOnResponse(string);
-    error TaskCouldNotBeSent(string);
+    error NoProofOnResponse();
+    error TaskCouldNotBeSent();
     error IncorrectOperator();
     error TaskNotExpired();
     error TaskExpired();
     error NotPausedLongEnough();
     error NotRegisteredAggregatorOrOperator();
+    error TransferFailed();
+    error BountyAlreadySet();
+    error NotInSubmittedTasks();
+    error MaxBlocksTooLong();
+    error NoPermission();
+    error NotRegisteredToModel();
 }
 
 interface ISertnServiceManagerEvents {
-    event newOperator(address opAddr_);
-    event newModels(uint256[] modelId_);
-    event newStrategies(address[] newSupportedTokens_);
-    event newTask(address indexed opAddr_, bytes indexed taskId_);
-    event taskResponded(uint256 indexed model, bytes indexed taskId, ISertnServiceManagerTypes.TaskResponse task);
-    event upForSlashing(address indexed operator, bytes indexed taskId);
-    event proofRequested(address indexed operator, bytes indexed taskId);
-    event operatorSlashed(address indexed operator, bytes indexed taskId);
-    event modelUpdated(uint256 indexed modelId, ISertnServiceManagerTypes.Model model);
-    event opInfoChanged(address indexed _operator, ISertnServiceManagerTypes.Operator _opInfo);
-    event operatorDeleted(address indexed _operator, uint32[] opSetIds);
+    event NewOperator(address opAddr_);
+    event NewModels(uint96[] modelId_);
+    event NewStrategies(address[] newSupportedTokens_);
+    event NewTask(address indexed opAddr_, bytes indexed taskId_);
+    event TaskResponded(uint96 indexed model, bytes indexed taskId, ISertnServiceManagerTypes.TaskResponse task);
+    event UpForSlashing(address indexed operator, bytes indexed taskId);
+    event ProofRequested(address indexed operator, bytes indexed taskId);
+    event OperatorSlashed(address indexed operator, bytes indexed taskId);
+    event ModelUpdated(uint96 indexed modelId, ISertnServiceManagerTypes.OperatorModel operatorModel);
+    event OpInfoChanged(address indexed _operator, bytes _opInfo);
+    event OperatorDeleted(address indexed _operator, uint32[] opSetIds);
 }
 
 interface ISertnServiceManagerTypes {
 
+    struct Model {
+        string title_;
+        string description_;
+        address modelVerifier_;
+        address[] operators_;
+    }
+
     struct Operator {
-        uint256[] models_;
+        uint96[] models_;
         bytes32[] computeUnits_;
         bytes[] openTasks_;
         bytes[] submittedTasks_;
         bytes[] proofRequests_;
         uint256[] allocatedEth_;
         uint256 allocatedSer_;
-        uint32[2] proofRequestExponents_;
+        uint256[2] proofRequestExponents_;
         uint32 pausedBlock_;
     }
 
-    struct Model {
-        bytes32 modelName_;
+    struct OperatorModel {
         address operator_;
-        address verifier_;
-        string benchData_;
-        bytes inputs_;
-        bytes output_;
+        uint96 modelId_;
         uint32 maxBlocks_;
         IStrategy[] ethStrategies_;
         uint256[] ethShares_;
@@ -71,11 +80,11 @@ interface ISertnServiceManagerTypes {
     }
 
     struct Task {
-        uint256 modelId_;
+        uint96 operatorModelId_;
         bytes inputs_;
         uint256 poc_;
         uint256 startTime_;
-        uint256 startingBlock_;
+        uint32 startingBlock_;
         bool proveOnResponse_;
         address user_;
     }
