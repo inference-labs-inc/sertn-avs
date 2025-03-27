@@ -399,8 +399,8 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
 
     }
 
-    function test_baseGas() public {
-         vm.roll(1e9);
+    function test_base() public {
+        vm.roll(1e9);
         user = User({key: vm.createWallet("user_wallet")});
         ISertnServiceManagerTypes.Task memory task = ISertnServiceManagerTypes
             .Task({

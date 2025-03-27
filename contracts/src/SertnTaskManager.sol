@@ -118,7 +118,8 @@ contract SertnTaskManager is
             sertnServiceManager.computeUnits(_operatorModel.operator_,_operatorModel.computeType_) > 0 &&
             _operator.pausedBlock_ == 0
         ) {
-            uint256 transferAmount = (1.5e3 * (_operatorModel.baseFee_ + _task.poc_)) / 1e3;
+            // uint256 transferAmount = (1.5e3 * (_operatorModel.baseFee_ + _task.poc_)) / 1e3;
+            uint256 transferAmount = MathUpgradeable.mulDiv(1.5e9, _operatorModel.baseFee_ + _task.poc_, 1e9);
             if (!ser.transferFrom(msg.sender, address(sertnServiceManager), transferAmount)) {
                 revert TransferFailed();
             }

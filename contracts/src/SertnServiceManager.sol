@@ -344,13 +344,16 @@ contract SertnServiceManager is
         uint256[] memory _wadsToSlash = new uint256[](_strategies.length);
         uint256[] memory _operatorShares = delegationManager.getOperatorShares(_operatorModel.operator_, _strategies);
         for (uint256 i = 0; i < _operatorModel.ethStrategies_.length;) {
-            _wadsToSlash[i] = 1 ether * 1 ether * (_operatorModel.ethShares_[i]) / (allocationManager.getAllocation(_operatorModel.operator_, opSet, _strategies[i]).currentMagnitude * _operatorShares[i]);
+            // _wadsToSlash[i] = 1 ether * 1 ether * (_operatorModel.ethShares_[i]) / (allocationManager.getAllocation(_operatorModel.operator_, opSet, _strategies[i]).currentMagnitude * _operatorShares[i]);
+            _wadsToSlash[i] = MathUpgradeable.mulDiv(1 ether * 1 ether , _operatorModel.ethShares_[i],(allocationManager.getAllocation(_operatorModel.operator_, opSet, _strategies[i]).currentMagnitude * _operatorShares[i]));
             unchecked { ++i; }
         }
         if (_task.proveOnResponse_) {
-            _wadsToSlash[_operatorModel.ethStrategies_.length] = (1 ether * 1 ether * _task.poc_)/(allocationManager.getAllocation(_operatorModel.operator_, opSet, _strategies[_operatorModel.ethStrategies_.length]).currentMagnitude * _operatorShares[_operatorModel.ethStrategies_.length]);
+            // _wadsToSlash[_operatorModel.ethStrategies_.length] = (1 ether * 1 ether * _task.poc_)/(allocationManager.getAllocation(_operatorModel.operator_, opSet, _strategies[_operatorModel.ethStrategies_.length]).currentMagnitude * _operatorShares[_operatorModel.ethStrategies_.length]);
+            _wadsToSlash[_operatorModel.ethStrategies_.length] = MathUpgradeable.mulDiv(1 ether * 1 ether, _task.poc_, allocationManager.getAllocation(_operatorModel.operator_, opSet, _strategies[_operatorModel.ethStrategies_.length]).currentMagnitude * _operatorShares[_operatorModel.ethStrategies_.length]);
         } else {
-            _wadsToSlash[_operatorModel.ethStrategies_.length] = (1 ether * 1 ether * 10 * _task.poc_)/(allocationManager.getAllocation(_operatorModel.operator_, opSet, _strategies[_operatorModel.ethStrategies_.length]).currentMagnitude * _operatorShares[_operatorModel.ethStrategies_.length]);
+            // _wadsToSlash[_operatorModel.ethStrategies_.length] = (1 ether * 1 ether * 10 * _task.poc_)/(allocationManager.getAllocation(_operatorModel.operator_, opSet, _strategies[_operatorModel.ethStrategies_.length]).currentMagnitude * _operatorShares[_operatorModel.ethStrategies_.length]);
+            _wadsToSlash[_operatorModel.ethStrategies_.length] = MathUpgradeable.mulDiv(1 ether * 1 ether, 10*_task.poc_, allocationManager.getAllocation(_operatorModel.operator_, opSet, _strategies[_operatorModel.ethStrategies_.length]).currentMagnitude * _operatorShares[_operatorModel.ethStrategies_.length]);
         }
         IAllocationManagerTypes.SlashingParams memory _slashParams = IAllocationManagerTypes.SlashingParams({operator: _operatorModel.operator_, operatorSetId: 0, strategies: _strategies, wadsToSlash: _wadsToSlash, description: _whySlashed});
         allocationManager.slashOperator(address(this), _slashParams);
