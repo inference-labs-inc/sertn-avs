@@ -152,6 +152,9 @@ contract SertnServiceManager is
     }
 
     function addAggregator(address _aggregator) external onlyOwner {
+        if (_aggregator == address(0)) {
+            revert InvalidAggregator();
+        }
         if (isAggregator[_aggregator]) {
             revert AggregatorAlreadyExists();
         }
