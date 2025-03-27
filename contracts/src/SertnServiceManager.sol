@@ -13,6 +13,7 @@ import {IAVSRegistrar} from "@eigenlayer/contracts/interfaces/IAVSRegistrar.sol"
 import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import {IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {IVerifier} from "./IVerifier.sol";
@@ -38,7 +39,8 @@ contract SertnServiceManager is
     IAVSRegistrar,
     ISertnServiceManagerErrors,
     ISertnServiceManagerEvents,
-    OwnableUpgradeable
+    OwnableUpgradeable,
+    ReentrancyGuard
 {
     uint96 public numOperatorModels;
     address[] public aggregators;
@@ -199,7 +201,7 @@ contract SertnServiceManager is
             } else {
                 if (modelStorage.modelAddresses(_operatorModels[i].modelId_) != _models[i].modelVerifier_) {
                     revert NotModelId();
-                }   
+                }
                 modelStorage.JoinOperatorList(_operatorModels[i].modelId_, msg.sender);
             }
 
@@ -314,11 +316,11 @@ contract SertnServiceManager is
         }
         operatorModelInfo[_operatorModelId] = abi.encode(_operatorModel);
         //Assuming this saves on gas fees?
-        
+
         emit ModelUpdated(_operatorModelId, _operatorModel);
     }
 
-    function slashOperator(bytes calldata _taskId, string calldata _whySlashed) external onlyAggregators() {
+    function slashOperator(bytes calldata _taskId, string calldata _whySlashed) external onlyAggregators() nonReentrant {
 
         Task memory _task = abi.decode(_taskId, (Task));
         uint96 _operatorModelId = _task.operatorModelId_;
