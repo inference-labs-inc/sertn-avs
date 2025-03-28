@@ -9,3 +9,6 @@
 	path = contracts/lib/eigenlayer-contracts
 	url = https://github.com/Layr-Labs/eigenlayer-contracts
   tag = v1.1.1
+[submodule "contracts/lib/openzeppelin-contracts-current"]
+	path = contracts/lib/openzeppelin-contracts-current
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts.git

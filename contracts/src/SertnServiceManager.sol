@@ -317,7 +317,7 @@ contract SertnServiceManager is
 
         Task memory _task = abi.decode(_taskId, (Task));
         uint256 _operatorModelId = _task.operatorModelId_;
-        if (0 > _operatorModelId || numOperatorModels < _operatorModelId) {
+        if (numOperatorModels < _operatorModelId) {
             revert NotModelId();
         }
 
@@ -392,9 +392,15 @@ contract SertnServiceManager is
             // operatorModelInfo[modelNum] = _operatorModels[i];
             Operator memory _operator = abi.decode(opInfo[msg.sender], (Operator));
             uint256[] memory _tempOpModels = new uint256[](_operator.models_.length + 1);
+<<<<<<< HEAD
             for (uint256 j; j < _operator.models_.length;) {
                 _tempOpModels[j] = _operator.models_[j];
                 unchecked { ++j; }
+=======
+            for (uint256 i; i < _operator.models_.length;) {
+                _tempOpModels[i] = _operator.models_[i];
+                unchecked { i++; }
+>>>>>>> a098869ee0335f382b4cde88e88c901bb5b5383f
             }
             _tempOpModels[_operator.models_.length] = numOperatorModels;
             _operator.models_ = _tempOpModels;
@@ -474,7 +480,7 @@ contract SertnServiceManager is
             revert NoPermission();
         }
         Operator memory _operator = abi.decode(opInfo[operator], (Operator));
-        if (isAggregator[msg.sender] || _operator.pausedBlock_ + 2*TASK_EXPIRY_BLOCKS < uint32(block.number) || _operator.pausedBlock_ > 0) {
+        if (isAggregator[msg.sender] || _operator.pausedBlock_ + 2*TASK_EXPIRY_BLOCKS < uint32(block.number)) {
             revert NotPausedLongEnough();
         }
         for (uint256 i; i < _operator.models_.length;) {
