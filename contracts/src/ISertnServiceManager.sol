@@ -28,18 +28,19 @@ interface ISertnServiceManagerErrors {
     error MaxBlocksTooLong();
     error NoPermission();
     error NotRegisteredToModel();
+    error InvalidAggregator();
 }
 
 interface ISertnServiceManagerEvents {
     event NewOperator(address opAddr_);
-    event NewModels(uint96[] modelId_);
+    event NewModels(uint256[] modelId_);
     event NewStrategies(address[] newSupportedTokens_);
     event NewTask(address indexed opAddr_, bytes indexed taskId_);
-    event TaskResponded(uint96 indexed model, bytes indexed taskId, ISertnServiceManagerTypes.TaskResponse task);
+    event TaskResponded(uint256 indexed model, bytes indexed taskId, ISertnServiceManagerTypes.TaskResponse task);
     event UpForSlashing(address indexed operator, bytes indexed taskId);
     event ProofRequested(address indexed operator, bytes indexed taskId);
     event OperatorSlashed(address indexed operator, bytes indexed taskId);
-    event ModelUpdated(uint96 indexed modelId, ISertnServiceManagerTypes.OperatorModel operatorModel);
+    event ModelUpdated(uint256 indexed modelId, ISertnServiceManagerTypes.OperatorModel operatorModel);
     event OpInfoChanged(address indexed _operator, bytes _opInfo);
     event OperatorDeleted(address indexed _operator, uint32[] opSetIds);
 }
@@ -54,7 +55,7 @@ interface ISertnServiceManagerTypes {
     }
 
     struct Operator {
-        uint96[] models_;
+        uint256[] models_;
         bytes32[] computeUnits_;
         bytes[] openTasks_;
         bytes[] submittedTasks_;
@@ -67,7 +68,7 @@ interface ISertnServiceManagerTypes {
 
     struct OperatorModel {
         address operator_;
-        uint96 modelId_;
+        uint256 modelId_;
         uint32 maxBlocks_;
         IStrategy[] ethStrategies_;
         uint256[] ethShares_;
@@ -80,7 +81,7 @@ interface ISertnServiceManagerTypes {
     }
 
     struct Task {
-        uint96 operatorModelId_;
+        uint256 operatorModelId_;
         bytes inputs_;
         uint256 poc_;
         uint256 startTime_;
