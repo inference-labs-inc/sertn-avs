@@ -14,7 +14,7 @@ contract ModelStorage is ISertnServiceManagerTypes, ISertnServiceManagerErrors, 
         _;
     }
 
-    uint96 public numModels;
+    uint256 public numModels;
 
     SertnServiceManager public sertnServiceManager;
 
@@ -26,12 +26,12 @@ contract ModelStorage is ISertnServiceManagerTypes, ISertnServiceManagerErrors, 
 
     function createNewModel(
         Model calldata _newModel
-    ) external onlyOperators() returns(uint96) {
+    ) external onlyOperators() returns(uint256) {
         // Model memory newModel = Model({description_: description, title_: title, modelVerifier_: modelVerifierAddress, operators_: operators});
         // newModel.description = description;
         // newModel.title = title;
         // newModel.modelVerifier = modelVerifierAddress;
-        
+
 
         modelVerifiers[_newModel.modelVerifier_] = abi.encode(_newModel);
         modelAddresses[numModels] = _newModel.modelVerifier_;
@@ -41,7 +41,7 @@ contract ModelStorage is ISertnServiceManagerTypes, ISertnServiceManagerErrors, 
         return numModels - 1;
     }
 
-    function JoinOperatorList(uint96 _modelId, address _operator) external onlyOperators() {
+    function JoinOperatorList(uint256 _modelId, address _operator) external onlyOperators() {
         Model memory model = abi.decode(modelVerifiers[modelAddresses[_modelId]],(Model));
 
         address[] memory newOperators = new address[](model.operators_.length + 1);
@@ -59,7 +59,7 @@ contract ModelStorage is ISertnServiceManagerTypes, ISertnServiceManagerErrors, 
 
     }
 
-    function RemoveFromOperatorList(uint96 _modelId, address _operator) external {
+    function RemoveFromOperatorList(uint256 _modelId, address _operator) external {
         if (msg.sender != address(sertnServiceManager)) {
             revert NoPermission();
         }
@@ -72,7 +72,7 @@ contract ModelStorage is ISertnServiceManagerTypes, ISertnServiceManagerErrors, 
             }
             unchecked { ++i; }
         }
-        
+
         modelVerifiers[modelAddresses[_modelId]] = abi.encode(model);
 
 

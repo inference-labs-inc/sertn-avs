@@ -13,7 +13,7 @@ import {IAVSRegistrar} from "@eigenlayer/contracts/interfaces/IAVSRegistrar.sol"
 import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import {IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {IVerifier} from "./IVerifier.sol";
@@ -48,6 +48,7 @@ contract SertnServiceManager is
     bytes[] public slashingQueue;
 
     IERC20 public ser;
+    uint256 public BASE_APPROVAL;
 
     IAllocationManager public allocationManager;
     IDelegationManager public delegationManager;
@@ -86,6 +87,7 @@ contract SertnServiceManager is
     ) OwnableUpgradeable() {
         // Set the deployer as an aggregator
         isAggregator[msg.sender] = true;
+        BASE_APPROVAL = 100 ether;
         _transferOwnership(msg.sender);
 
         allocationManager = IAllocationManager(_allocationManager);
@@ -108,7 +110,7 @@ contract SertnServiceManager is
         }
         sertnTaskManager = SertnTaskManager(_sertnTaskManager);
         isAggregator[_sertnTaskManager] = true;
-        ser.approve(address(sertnTaskManager), 100 ether);
+        ser.approve(address(sertnTaskManager), BASE_APPROVAL);
 
         modelStorage = ModelStorage(_modelStorage);
     }
@@ -162,9 +164,7 @@ contract SertnServiceManager is
         isAggregator[_aggregator] = true;
     }
 
-    function supportsAVS(address avs) external view override returns (bool) {
-        // TODO: Is this needed:?
-        // Yes, part of format for AVS Registrar
+    function supportsAVS(address avs) external view returns (bool) {
         if (avs != address(this)) {
             revert IncorrectAVS();
         }
@@ -173,13 +173,9 @@ contract SertnServiceManager is
 
     function registerOperator(
         address operator,
-        address avs,
         uint32[] calldata operatorSetIds,
         bytes calldata data
-    ) external {
-        if (avs != address(this)) {
-            revert IncorrectAVS();
-        }
+    ) external override {
         if (operatorSetIds.length != 1 || operatorSetIds[0] != 0) {
             revert IncorrectOperatorSetIds();
         }
@@ -206,13 +202,10 @@ contract SertnServiceManager is
                 modelStorage.JoinOperatorList(_operatorModels[i].modelId_, msg.sender);
             }
 
-            // require(_operatorModels[i].maxBlocks_ < TASK_EXPIRY_BLOCKS - 1e2, "max blocks too long");
             modelsByName[_operatorModels[i].modelId_].push(numOperatorModels);
             operatorModelInfo[numOperatorModels] = abi.encode(_operatorModels[i]);
             numOperatorModels++;
-            // operatorModelInfo[modelNum] = _operatorModels[i];
             unchecked { ++i; }
-
         }
 
         for (uint256 i; i < _computeUnitNames.length;) {
@@ -238,7 +231,6 @@ contract SertnServiceManager is
         }
 
         opInfo[operator] = abi.encode(_operator);
-        //was this for lower gas costs?
 
         operators.push(operator);
         isOperator[operator] = true;
@@ -399,8 +391,12 @@ contract SertnServiceManager is
             operatorModelInfo[numOperatorModels] = abi.encode(_operatorModels[i]);
             // operatorModelInfo[modelNum] = _operatorModels[i];
             Operator memory _operator = abi.decode(opInfo[msg.sender], (Operator));
-            uint256[] memory _tempOpModels = _operator.models_;
-            _tempOpModels.push(numOperatorModels);
+            uint256[] memory _tempOpModels = new uint256[](_operator.models_.length + 1);
+            for (uint256 j; j < _operator.models_.length;) {
+                _tempOpModels[j] = _operator.models_[j];
+                unchecked { ++j; }
+            }
+            _tempOpModels[_operator.models_.length] = numOperatorModels;
             _operator.models_ = _tempOpModels;
             opInfo[msg.sender] = abi.encode(_operator);
             numOperatorModels++;
@@ -472,16 +468,10 @@ contract SertnServiceManager is
 
     function deregisterOperator(
         address operator,
-        address avs,
         uint32[] calldata operatorSetIds
-    ) external {
-
-        // require(isAggregator[msg.sender] || msg.sender == operator, "No permission to call");
+    ) external override {
         if (!(isAggregator[msg.sender] || msg.sender == operator)) {
             revert NoPermission();
-        }
-        if (address(this) != avs) {
-            revert IncorrectAVS();
         }
         Operator memory _operator = abi.decode(opInfo[operator], (Operator));
         if (isAggregator[msg.sender] || _operator.pausedBlock_ + 2*TASK_EXPIRY_BLOCKS < uint32(block.number) || _operator.pausedBlock_ > 0) {
