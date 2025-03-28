@@ -87,7 +87,7 @@ contract SertnTaskManager is
 
     function sendTask(Task memory _task) external {
 
-        uint96 _operatorModelId = _task.operatorModelId_;
+        uint256 _operatorModelId = _task.operatorModelId_;
         _task.startTime_ = block.timestamp;
         _task.startingBlock_ = uint32(block.number);
 
@@ -195,7 +195,7 @@ contract SertnTaskManager is
 
         Task memory _task = abi.decode(_taskResponse.taskId_, (Task));
 
-        uint96 _operatorModelId = _task.operatorModelId_;
+        uint256 _operatorModelId = _task.operatorModelId_;
 
         if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
             revert NotModelId();
@@ -287,7 +287,7 @@ contract SertnTaskManager is
         //logic to verify task
         Task memory _task = abi.decode(_taskId, (Task));
 
-        uint96 _operatorModelId = _task.operatorModelId_;
+        uint256 _operatorModelId = _task.operatorModelId_;
 
         if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
             revert NotModelId();
@@ -301,7 +301,7 @@ contract SertnTaskManager is
         //logic to verify task
         Task memory _task = abi.decode(_taskId, (Task));
 
-        uint96 _operatorModelId = _task.operatorModelId_;
+        uint256 _operatorModelId = _task.operatorModelId_;
 
         if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
             revert NotModelId();
@@ -326,7 +326,7 @@ contract SertnTaskManager is
             revert TaskNotExpired();
         }
 
-        uint96 _operatorModelId = _task.operatorModelId_;
+        uint256 _operatorModelId = _task.operatorModelId_;
 
         if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
             revert NotModelId();

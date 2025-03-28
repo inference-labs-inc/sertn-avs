@@ -15,14 +15,14 @@ abstract contract SertnServiceManagerStorage is ISertnServiceManager, ISertnServ
     mapping(address => bytes) public opInfo;
     mapping(address => bool) public isAggregator;
     mapping(address => bool) public isOperator;
-    mapping(uint96 => bytes) public operatorModelInfo;
+    mapping(uint256 => bytes) public operatorModelInfo;
     // mapping(uint256 => Model) public modelInfo;
     mapping(address => mapping(bytes32 => uint256)) public computeUnits;
-    mapping(uint96 => uint96[]) public modelsByName;
+    mapping(uint256 => uint256[]) public modelsByName;
     mapping(bytes => bool) public taskVerified;
     mapping(bytes  => bytes) public taskResponse;
     mapping(address => bytes[]) public operatorSlashingQueue;
     mapping(bytes => address) public bountyHunter;
-    mapping(uint96 => address) public modelAddresses;
+    mapping(uint256 => address) public modelAddresses;
     mapping(address => bytes) public modelVerifiers;
 }
