@@ -57,7 +57,7 @@ contract Groth16Verifier is IVerifier {
 
     uint16 constant pLastMem = 896;
 
-    function verifyProof(bytes memory data) public view returns (bool) {
+    function verifyProof(bytes memory data, bytes32 modelKey) public view returns (bool) {
         uint[2] memory _pA;
         uint[2][2] memory _pB;
         uint[2] memory _pC;

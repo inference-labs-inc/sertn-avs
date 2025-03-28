@@ -86,36 +86,33 @@ contract SertnTaskManager is
     }
 
     function sendTask(Task memory _task) external {
-
-        uint256 _operatorModelId = _task.operatorModelId_;
         _task.startTime_ = block.timestamp;
         _task.startingBlock_ = uint32(block.number);
 
-        if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
-            revert NotModelId();
-        }
-        OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_operatorModelId), (OperatorModel));
-        Operator memory _operator = abi.decode(sertnServiceManager.opInfo(_operatorModel.operator_), (Operator));
+        
+        OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_task.modelId_, _task.operator_), (OperatorModel));
+        Operator memory _operator = abi.decode(sertnServiceManager.opInfo(_task.operator_), (Operator));
         // OperatorModel memory _operatorModel = sertnServiceManager.getModelInfo(_operatorModelId);
         if (_task.proveOnResponse_ && !_operatorModel.proveOnResponse_) {
             revert NoProofOnResponse();
         }
 
         if (_task.proveOnResponse_) {
-            _checkFinancialSecurity(_task.poc_, _operatorModel, _operator, _operatorModel.maxBlocks_);
+            _checkFinancialSecurity(_task.poc_, _task.operator_, _operatorModel, _operator, _operatorModel.maxBlocks_);
 
         } else {
             _checkFinancialSecurity(
                 _task.poc_ * 10,
+                _task.operator_,
                 _operatorModel,
                 _operator,
-                uint32(TASK_EXPIRY_BLOCKS)
+                uint32(taskExpiryBlocks)
             );
         }
 
         if (
             _operatorModel.available_ &&
-            sertnServiceManager.computeUnits(_operatorModel.operator_,_operatorModel.computeType_) > 0 &&
+            sertnServiceManager.computeUnits(_task.operator_,_operatorModel.computeType_) > 0 &&
             _operator.pausedBlock_ == 0
         ) {
             // uint256 transferAmount = (1.5e3 * (_operatorModel.baseFee_ + _task.poc_)) / 1e3;
@@ -128,10 +125,9 @@ contract SertnTaskManager is
             _operator.openTasks_ = _pushToBytesArray(_taskId, _operator.openTasks_);
             if (_task.proveOnResponse_) {
                 _operator.proofRequests_ = _pushToBytesArray(_taskId, _operator.proofRequests_);
-                // _operator.proofRequests_.push(_taskId);
             }
 
-            sertnServiceManager.setComputeUnits(_operatorModel.operator_,_operatorModel.computeType_, false);
+            sertnServiceManager.setComputeUnits(_task.operator_,_operatorModel.computeType_, false);
 
             for (uint256 i; i < _operator.allocatedEth_.length;) {
                 _operator.allocatedEth_[i] += _operatorModel.ethShares_[i];
@@ -141,8 +137,8 @@ contract SertnTaskManager is
             if (!_task.proveOnResponse_) {
                 _operator.allocatedSer_ += 9 * _task.poc_;
             }
-            sertnServiceManager.updateOperator(_operatorModel.operator_, _operator);
-            emit NewTask(_operatorModel.operator_, _taskId);
+            sertnServiceManager.updateOperator(_task.operator_, _operator);
+            emit NewTask(_task.operator_, _taskId);
         } else {
             revert TaskCouldNotBeSent();
         }
@@ -150,12 +146,13 @@ contract SertnTaskManager is
 
     function _checkFinancialSecurity(
         uint256 _poc,
+        address _operatorAddr,
         OperatorModel memory _operatorModel,
         Operator memory _operator,
         uint32 _securityDuration
     ) internal view {
         address[] memory _operators = new address[](1);
-        _operators[0] = _operatorModel.operator_;
+        _operators[0] = _operatorAddr;
         //check if secure using max blocks as model param
         uint256[] memory _ethSecurity = allocationManager
             .getMinimumSlashableStake(
@@ -195,27 +192,21 @@ contract SertnTaskManager is
 
         Task memory _task = abi.decode(_taskResponse.taskId_, (Task));
 
-        uint256 _operatorModelId = _task.operatorModelId_;
+        OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_task.modelId_,_task.operator_), (OperatorModel));
 
-        if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
-            revert NotModelId();
-        }
-        OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_operatorModelId), (OperatorModel));
-        // OperatorModel memory _operatorModel = operatorModelInfo[_operatorModelId];
-
-        if (msg.sender != _operatorModel.operator_) {
+        if (msg.sender != _task.operator_) {
             revert IncorrectOperator();
         }
 
-        Operator memory _operator = abi.decode(sertnServiceManager.opInfo(_operatorModel.operator_),(Operator));
+        Operator memory _operator = abi.decode(sertnServiceManager.opInfo(_task.operator_),(Operator));
 
         if (_operatorModel.maxBlocks_ < uint32(block.number) - _task.startingBlock_) {
             revert TaskExpired();
         }
         if (_verification) {
-            _checkFinancialSecurity(_task.poc_, _operatorModel, _operator, 0);
+            _checkFinancialSecurity(_task.poc_, _task.operator_, _operatorModel, _operator, 0);
         } else {
-            _checkFinancialSecurity(10*_task.poc_, _operatorModel, _operator, TASK_EXPIRY_BLOCKS + _task.startingBlock_ - uint32(block.number));
+            _checkFinancialSecurity(10*_task.poc_, _task.operator_, _operatorModel, _operator, taskExpiryBlocks + _task.startingBlock_ - uint32(block.number));
         }
 
         if (_taskResponse.proven_) {
@@ -227,12 +218,12 @@ contract SertnTaskManager is
             else {
                 sertnServiceManager.pushToOperatorSlashingQueue(msg.sender, _taskResponse.taskId_);
                 sertnServiceManager.pushToSlashingQueue(_taskResponse.taskId_);
-                emit UpForSlashing(_operatorModel.operator_, _taskResponse.taskId_);
+                emit UpForSlashing(_task.operator_, _taskResponse.taskId_);
                 return;
             }
         } else {
             if (_verification || _task.proveOnResponse_) {
-            _verifyTask(_taskResponse.taskId_, _proof);
+            _verifyTask(_taskResponse.taskId_, _task.modelId_, _proof);
 
             if (taskVerified[_taskResponse.taskId_]) {
                 _taskResponse.proven_ = true;
@@ -242,19 +233,18 @@ contract SertnTaskManager is
             else {
                 sertnServiceManager.pushToOperatorSlashingQueue(msg.sender, _taskResponse.taskId_);
                 sertnServiceManager.pushToSlashingQueue(_taskResponse.taskId_);
-                emit UpForSlashing(_operatorModel.operator_, _taskResponse.taskId_);
+                emit UpForSlashing(_task.operator_, _taskResponse.taskId_);
                 return;
             }
         }
         }
         _operator.submittedTasks_ = _pushToBytesArray(_taskResponse.taskId_, _operator.submittedTasks_);
-        // _operator.submittedTasks_.push(_taskResponse.taskId_);
 
-        sertnServiceManager.updateOperator(_operatorModel.operator_, _operator);
+        sertnServiceManager.updateOperator(_task.operator_, _operator);
         sertnServiceManager.setTaskResponse(_taskResponse);
-        sertnServiceManager.setComputeUnits(_operatorModel.operator_, _operatorModel.computeType_, true);
+        sertnServiceManager.setComputeUnits(_task.operator_, _operatorModel.computeType_, true);
 
-        emit TaskResponded(_operatorModelId, _taskResponse.taskId_, _taskResponse);
+        emit TaskResponded(_task.modelId_, _taskResponse.taskId_, _taskResponse);
     }
 
     function requestProof(bytes memory _taskId) external {
@@ -263,9 +253,8 @@ contract SertnTaskManager is
             revert BountyAlreadySet();
         }
         Task memory _task = abi.decode(_taskId, (Task));
-        OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_task.operatorModelId_), (OperatorModel));
-        // OperatorModel memory _operatorModel = sertnServiceManager.getModelInfo(_task.operatorModelId_);
-        Operator memory _operator = abi.decode(sertnServiceManager.opInfo(_operatorModel.operator_),(Operator));
+        OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_task.modelId_,_task.operator_), (OperatorModel));
+        Operator memory _operator = abi.decode(sertnServiceManager.opInfo(_task.operator_),(Operator));
 
         uint256 _amount = PROOF_REQUEST_COST*(_operator.proofRequestExponents_[0]/_operator.proofRequestExponents_[1]);
         if (!ser.transferFrom(msg.sender, address(sertnServiceManager), _amount)) {
@@ -276,44 +265,28 @@ contract SertnTaskManager is
 
         _operator.proofRequestExponents_[0] += 500;
 
-        sertnServiceManager.updateOperator(_operatorModel.operator_, _operator);
+        sertnServiceManager.updateOperator(_task.operator_, _operator);
         sertnServiceManager.setBountyHunter(_taskId, msg.sender);
 
-        emit ProofRequested(_operatorModel.operator_, _taskId);
+        emit ProofRequested(_task.operator_, _taskId);
 
     }
 
-    function _verifyTask(bytes memory _taskId, bytes memory _proof) internal {
+    function _verifyTask(bytes memory _taskId, uint256 _modelId, bytes memory _proof) internal {
         //logic to verify task
-        Task memory _task = abi.decode(_taskId, (Task));
-
-        uint256 _operatorModelId = _task.operatorModelId_;
-
-        if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
-            revert NotModelId();
-        }
-
-        OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_operatorModelId), (OperatorModel));
-        taskVerified[_taskId] = IVerifier(modelStorage.modelAddresses(_operatorModel.modelId_)).verifyProof(_proof);
+        Model memory _model = abi.decode(modelStorage.modelInfo(_modelId), (Model));
+        taskVerified[_taskId] = IVerifier(_model.modelVerifier_).verifyProof(_proof, _model.modelKey_);
     }
 
     function verifyTask(bytes memory _taskId, bytes memory _proof) external onlyOperators() {
         //logic to verify task
         Task memory _task = abi.decode(_taskId, (Task));
 
-        uint256 _operatorModelId = _task.operatorModelId_;
-
-        if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
-            revert NotModelId();
-        }
-        OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_operatorModelId), (OperatorModel));
-        // OperatorModel memory _operatorModel = operatorModelInfo[_operatorModelId];
-
-        if (_operatorModel.operator_ != msg.sender) {
+        if (_task.operator_ != msg.sender) {
             revert IncorrectOperator();
         }
 
-        taskVerified[_taskId] = IVerifier(modelStorage.modelAddresses(_operatorModel.modelId_)).verifyProof(_proof);
+        _verifyTask(_taskId, _task.modelId_, _proof);
     }
 
     function verifiedOffChain(bytes memory _taskId, bool _verified) external onlyAggregators() {
@@ -322,23 +295,18 @@ contract SertnTaskManager is
 
     function _clearTask(bytes memory _taskId, bool _slashed) internal {
         Task memory _task = abi.decode(_taskId, (Task));
-        if (_task.startingBlock_ + TASK_EXPIRY_BLOCKS > uint32(block.number) && !taskVerified[_taskId] && !_slashed) {
+        if (_task.startingBlock_ + taskExpiryBlocks > uint32(block.number) && !taskVerified[_taskId] && !_slashed) {
             revert TaskNotExpired();
         }
 
-        uint256 _operatorModelId = _task.operatorModelId_;
-
-        if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
-            revert NotModelId();
-        }
-        OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_operatorModelId), (OperatorModel));
-        Operator memory _operator = abi.decode(sertnServiceManager.opInfo(_operatorModel.operator_), (Operator));
+        OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_task.modelId_, _task.operator_), (OperatorModel));
+        Operator memory _operator = abi.decode(sertnServiceManager.opInfo(_task.operator_), (Operator));
         _operator.openTasks_ = _removeBytesElement(_operator.openTasks_, _taskId);
         _operator.proofRequests_ = _removeBytesElement(_operator.proofRequests_, _taskId);
         if(_slashed) {
             _operator.submittedTasks_ = _removeBytesElement(_operator.submittedTasks_, _taskId);
         }
-        operatorSlashingQueue[_operatorModel.operator_] = _removeBytesElement(operatorSlashingQueue[_operatorModel.operator_], _taskId);
+        operatorSlashingQueue[_task.operator_] = _removeBytesElement(operatorSlashingQueue[_task.operator_], _taskId);
         slashingQueue = _removeBytesElement(slashingQueue, _taskId);
         for (uint256 i; i < _operator.allocatedEth_.length;) {
             _operator.allocatedEth_[i] -= _operatorModel.ethShares_[i];
@@ -351,7 +319,7 @@ contract SertnTaskManager is
         }
 
 
-        sertnServiceManager.updateOperator(_operatorModel.operator_, _operator);
+        sertnServiceManager.updateOperator(_task.operator_, _operator);
 
     }
 
