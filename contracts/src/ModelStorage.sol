@@ -66,7 +66,7 @@ contract ModelStorage is ISertnServiceManagerTypes, ISertnServiceManagerErrors, 
 
         Model memory model = abi.decode(modelVerifiers[modelAddresses[_modelId]],(Model));
 
-        for (uint256 i = 0; i < model.operators_.length;) {
+        for (uint256 i; i < model.operators_.length;) {
             if (model.operators_[i] == _operator) {
                 delete model.operators_[i];
             }

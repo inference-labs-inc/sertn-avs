@@ -303,19 +303,32 @@ contract SertnServiceManager is
         if (_oldOperatorModel.operator_ != msg.sender) {
             revert IncorrectOperator();
         }
-        Model memory _model = abi.decode(modelStorage.modelVerifiers(modelStorage.modelAddresses(_operatorModel.modelId_)), (Model));
-        bool _registered;
-        for (uint256 i; i < _model.operators_.length;) {
-            if (_model.operators_[i] == msg.sender) {
-                _registered = true;
+        if (_operatorModel.modelId_ != _oldOperatorModel.modelId_) {
+            Model memory _model = abi.decode(modelStorage.modelVerifiers(modelStorage.modelAddresses(_operatorModel.modelId_)), (Model));
+            bool _registered;
+            for (uint256 i; i < _model.operators_.length;) {
+                if (_model.operators_[i] == msg.sender) {
+                    _registered = true;
+                }
+                unchecked { ++i; }
             }
-            unchecked { ++i; }
-        }
 
-        if (!_registered) {
-            modelStorage.JoinOperatorList(_operatorModel.modelId_, msg.sender);
+            if (!_registered) {
+                modelStorage.JoinOperatorList(_operatorModel.modelId_, msg.sender);
+            }
+
+            for (uint256 i; i < modelsByName[_oldOperatorModel.modelId_].length;) {
+                if (modelsByName[_oldOperatorModel.modelId_][i] == _operatorModelId) {
+                    delete modelsByName[_oldOperatorModel.modelId_][i];
+                }
+                unchecked { ++i; }
+            }
+            modelsByName[_operatorModel.modelId_].push(_operatorModelId);
+            
         }
+        
         operatorModelInfo[_operatorModelId] = abi.encode(_operatorModel);
+        
         //Assuming this saves on gas fees?
 
         emit ModelUpdated(_operatorModelId, _operatorModel);
@@ -402,11 +415,12 @@ contract SertnServiceManager is
             uint256[] memory _tempOpModels = new uint256[](_operator.models_.length + 1);
             for (uint256 i; i < _operator.models_.length;) {
                 _tempOpModels[i] = _operator.models_[i];
-                unchecked { i++; }
+                unchecked { ++i; }
             }
             _tempOpModels[_operator.models_.length] = numOperatorModels;
             _operator.models_ = _tempOpModels;
             opInfo[msg.sender] = abi.encode(_operator);
+            modelsByName[_operatorModels[i].modelId_].push(numOperatorModels);
             numOperatorModels++;
             unchecked { ++i; }
         }
@@ -488,10 +502,23 @@ contract SertnServiceManager is
             revert IncorrectAVS();
         }
         Operator memory _operator = abi.decode(opInfo[operator], (Operator));
-        if (isAggregator[msg.sender] || _operator.pausedBlock_ + 2*TASK_EXPIRY_BLOCKS < uint32(block.number)) {
+        if (!isAggregator[msg.sender] || _operator.pausedBlock_ + 2*TASK_EXPIRY_BLOCKS > uint32(block.number)) {
             revert NotPausedLongEnough();
         }
         for (uint256 i; i < _operator.models_.length;) {
+            uint256 modelId_ = abi.decode(operatorModelInfo[_operator.models_[i]],(OperatorModel)).modelId_;
+            if (modelsByName[modelId_].length == 1) {
+                delete modelsByName[modelId_];
+            } else {
+                for (uint256 j; j < modelsByName[modelId_].length;) {
+                    if (modelsByName[modelId_][j] == _operator.models_[i]) {
+                        delete modelsByName[modelId_][j];
+                    }
+                    unchecked { ++j; }
+                }
+            }
+
+
             modelStorage.RemoveFromOperatorList(abi.decode(operatorModelInfo[_operator.models_[i]],(OperatorModel)).modelId_, operator);
             delete operatorModelInfo[_operator.models_[i]];
             unchecked { ++i; }
