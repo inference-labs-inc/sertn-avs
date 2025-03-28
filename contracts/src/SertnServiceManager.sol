@@ -173,6 +173,7 @@ contract SertnServiceManager is
 
     function registerOperator(
         address operator,
+        address avs,
         uint32[] calldata operatorSetIds,
         bytes calldata data
     ) external override {
@@ -467,6 +468,7 @@ contract SertnServiceManager is
 
     function deregisterOperator(
         address operator,
+        address avs,
         uint32[] calldata operatorSetIds
     ) external override {
         if (!(isAggregator[msg.sender] || msg.sender == operator)) {
