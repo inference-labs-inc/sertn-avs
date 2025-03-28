@@ -27,22 +27,13 @@ contract ModelStorage is ISertnServiceManagerTypes, ISertnServiceManagerErrors, 
     function createNewModel(
         Model calldata _newModel
     ) external onlyOperators() returns(uint256) {
-        // Model memory newModel = Model({description_: description, title_: title, modelVerifier_: modelVerifierAddress, operators_: operators});
-        // newModel.description = description;
-        // newModel.title = title;
-        // newModel.modelVerifier = modelVerifierAddress;
-
-
-        modelVerifiers[_newModel.modelVerifier_] = abi.encode(_newModel);
-        modelAddresses[numModels] = _newModel.modelVerifier_;
-
-
+        modelInfo[numModels] = abi.encode(_newModel);
         numModels++;
-        return numModels - 1;
+        return numModels-1;
     }
 
     function JoinOperatorList(uint256 _modelId, address _operator) external onlyOperators() {
-        Model memory model = abi.decode(modelVerifiers[modelAddresses[_modelId]],(Model));
+        Model memory model = abi.decode(modelInfo[_modelId],(Model));
 
         address[] memory newOperators = new address[](model.operators_.length + 1);
 
@@ -55,7 +46,7 @@ contract ModelStorage is ISertnServiceManagerTypes, ISertnServiceManagerErrors, 
         }
         newOperators[model.operators_.length] = _operator;
         model.operators_ = newOperators;
-        modelVerifiers[modelAddresses[_modelId]] = abi.encode(model);
+        modelInfo[_modelId] = abi.encode(model);
 
     }
 
@@ -64,7 +55,7 @@ contract ModelStorage is ISertnServiceManagerTypes, ISertnServiceManagerErrors, 
             revert NoPermission();
         }
 
-        Model memory model = abi.decode(modelVerifiers[modelAddresses[_modelId]],(Model));
+        Model memory model = abi.decode(modelInfo[_modelId],(Model));
 
         for (uint256 i = 0; i < model.operators_.length;) {
             if (model.operators_[i] == _operator) {
@@ -73,7 +64,7 @@ contract ModelStorage is ISertnServiceManagerTypes, ISertnServiceManagerErrors, 
             unchecked { ++i; }
         }
 
-        modelVerifiers[modelAddresses[_modelId]] = abi.encode(model);
+        modelInfo[_modelId] = abi.encode(model);
 
 
     }

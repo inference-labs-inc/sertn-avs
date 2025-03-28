@@ -39,10 +39,11 @@ interface ISertnServiceManagerEvents {
     event TaskResponded(uint256 indexed model, bytes indexed taskId, ISertnServiceManagerTypes.TaskResponse task);
     event UpForSlashing(address indexed operator, bytes indexed taskId);
     event ProofRequested(address indexed operator, bytes indexed taskId);
-    event OperatorSlashed(address indexed operator, bytes indexed taskId);
+    event OperatorSlashed(bytes indexed taskId);
     event ModelUpdated(uint256 indexed modelId, ISertnServiceManagerTypes.OperatorModel operatorModel);
     event OpInfoChanged(address indexed _operator, bytes _opInfo);
     event OperatorDeleted(address indexed _operator, uint32[] opSetIds);
+    event TaskExpiryChanged(uint256 _taskExpiryBlocks);
 }
 
 interface ISertnServiceManagerTypes {
@@ -51,6 +52,7 @@ interface ISertnServiceManagerTypes {
         string title_;
         string description_;
         address modelVerifier_;
+        bytes32 modelKey_;
         address[] operators_;
     }
 
@@ -67,8 +69,6 @@ interface ISertnServiceManagerTypes {
     }
 
     struct OperatorModel {
-        address operator_;
-        uint256 modelId_;
         uint32 maxBlocks_;
         IStrategy[] ethStrategies_;
         uint256[] ethShares_;
@@ -81,7 +81,8 @@ interface ISertnServiceManagerTypes {
     }
 
     struct Task {
-        uint256 operatorModelId_;
+        uint256 modelId_;
+        address operator_;
         bytes inputs_;
         uint256 poc_;
         uint256 startTime_;
