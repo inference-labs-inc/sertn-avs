@@ -422,6 +422,27 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         vm.roll(block.number + 100);
     }
 
+    function test_deregister() public {
+        vm.roll(1e9);
+        user = User({key: vm.createWallet("user_wallet")});
+        ISertnServiceManagerTypes.Task memory task = ISertnServiceManagerTypes
+            .Task({
+                modelId_ : 0,
+                operator_ : operators[0].key.addr,
+                inputs_: bytes(""),
+                poc_: 1e2,
+                startTime_: 0,
+                startingBlock_: 0,
+                proveOnResponse_: true,
+                user_: user.key.addr
+            });
+        bytes memory taskId = _sendTask(user.key.addr, task);
+        _respondToTask1(operators[0].key.addr, taskId, true, bytes("1"), false);
+        _checkTaskResponse(user.key.addr, taskId);
+        _slashTask(taskId);
+        _deregisterOperator(operators[0].key.addr);
+    }
+
     // function test_addModel() public {
     //     vm.roll(1e9);
 
@@ -593,6 +614,17 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
     function _clearTask(bytes memory _taskId) internal {
         vm.startPrank(owner.key.addr);
         sertnTaskManager.clearTask(_taskId, false);
+        vm.stopPrank();
+    }
+
+    function _deregisterOperator(address _operator) internal {
+        vm.startPrank(owner.key.addr);
+        console.log(sertnServiceManager.operators(0) == _operator);
+        uint32[] memory _opsetIds = new uint32[](1);
+        _opsetIds[0] = 0;
+        sertnServiceManager.deregisterOperator(_operator, address(sertnServiceManager), _opsetIds);
+        console.log(sertnServiceManager.operators(0) == _operator);
+        // console.log(abi.decode(sertnServiceManager.opInfo(_operator),(string)));
         vm.stopPrank();
     }
 
