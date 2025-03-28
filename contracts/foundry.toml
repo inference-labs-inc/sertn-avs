@@ -16,6 +16,7 @@ remappings = [
   "forge-std/=lib/forge-std/src/",
   "@eigenlayer/contracts/=lib/eigenlayer-contracts/src/contracts/",
   "@eigenlayer-contracts/=lib/eigenlayer-contracts/src/",
+  "@openzeppelin-current/=lib/openzeppelin-contracts/"
 ]
 
 
