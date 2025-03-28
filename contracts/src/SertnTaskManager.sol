@@ -91,7 +91,7 @@ contract SertnTaskManager is
         _task.startTime_ = block.timestamp;
         _task.startingBlock_ = uint32(block.number);
 
-        if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
+        if (sertnServiceManager.numOperatorModels() < _operatorModelId) {
             revert NotModelId();
         }
         OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_operatorModelId), (OperatorModel));
@@ -197,7 +197,7 @@ contract SertnTaskManager is
 
         uint256 _operatorModelId = _task.operatorModelId_;
 
-        if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
+        if (sertnServiceManager.numOperatorModels() < _operatorModelId) {
             revert NotModelId();
         }
         OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_operatorModelId), (OperatorModel));
@@ -289,7 +289,7 @@ contract SertnTaskManager is
 
         uint256 _operatorModelId = _task.operatorModelId_;
 
-        if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
+        if (sertnServiceManager.numOperatorModels() < _operatorModelId) {
             revert NotModelId();
         }
 
@@ -303,7 +303,7 @@ contract SertnTaskManager is
 
         uint256 _operatorModelId = _task.operatorModelId_;
 
-        if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
+        if (sertnServiceManager.numOperatorModels() < _operatorModelId) {
             revert NotModelId();
         }
         OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_operatorModelId), (OperatorModel));
@@ -328,7 +328,7 @@ contract SertnTaskManager is
 
         uint256 _operatorModelId = _task.operatorModelId_;
 
-        if (0 > _operatorModelId || sertnServiceManager.numOperatorModels() < _operatorModelId) {
+        if (sertnServiceManager.numOperatorModels() < _operatorModelId) {
             revert NotModelId();
         }
         OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_operatorModelId), (OperatorModel));

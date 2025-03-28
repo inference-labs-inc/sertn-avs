@@ -416,7 +416,6 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         _respondToTask1(operators[0].key.addr, taskId, true, bytes("1"), false);
         _checkTaskResponse(user.key.addr, taskId);
         _slashTask(taskId);
-        vm.roll(block.number + 100);
     }
 
     function test_addModel() public {
