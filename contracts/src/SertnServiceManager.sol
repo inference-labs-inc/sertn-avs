@@ -389,18 +389,11 @@ contract SertnServiceManager is
                 revert NotRegisteredToModel();
             }
             operatorModelInfo[numOperatorModels] = abi.encode(_operatorModels[i]);
-            // operatorModelInfo[modelNum] = _operatorModels[i];
             Operator memory _operator = abi.decode(opInfo[msg.sender], (Operator));
             uint256[] memory _tempOpModels = new uint256[](_operator.models_.length + 1);
-<<<<<<< HEAD
             for (uint256 j; j < _operator.models_.length;) {
                 _tempOpModels[j] = _operator.models_[j];
                 unchecked { ++j; }
-=======
-            for (uint256 i; i < _operator.models_.length;) {
-                _tempOpModels[i] = _operator.models_[i];
-                unchecked { i++; }
->>>>>>> a098869ee0335f382b4cde88e88c901bb5b5383f
             }
             _tempOpModels[_operator.models_.length] = numOperatorModels;
             _operator.models_ = _tempOpModels;
