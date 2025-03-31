@@ -47,6 +47,8 @@ contract SertnServiceManager is
     address[] public operators;
     bytes[] public slashingQueue;
 
+    IStrategy[] public ethStrategies;
+
     IERC20 public ser;
     uint256 public BASE_APPROVAL;
 
@@ -95,6 +97,13 @@ contract SertnServiceManager is
         rewardsCoordinator = IRewardsCoordinator(_rewardsCoordinator);
 
         _registerToEigen(_strategies, _avsMetadata);
+
+        for (uint256 i =1; i < _strategies.length; ) {
+            ethStrategies.push(_strategies[i]);
+            unchecked {
+                ++i;
+            }
+        }
 
         opSet = OperatorSet({avs: address(this), id: 0});
         ser = _strategies[0].underlyingToken();
@@ -178,59 +187,24 @@ contract SertnServiceManager is
         bytes calldata data
     ) external override {
         if (avs != address(this)) {
-            revert NoPermission();
+            revert IncorrectAVS();
         }
         if (operatorSetIds.length != 1 || operatorSetIds[0] != 0) {
             revert IncorrectOperatorSetIds();
         }
-        (   Model[] memory _models,
-            OperatorModel[] memory _operatorModels,
-            uint256[] memory _modelIds,
-            bytes32[] memory _computeUnitNames,
-            uint256[] memory _computeUnits
-        ) = abi.decode(data, (Model[], OperatorModel[], uint256[], bytes32[], uint256[]));
-        for (uint256 i; i < _operatorModels.length;) {
-
-            if (!(_operatorModels[i].maxBlocks_ < taskExpiryBlocks - 1e2)) {
-                revert MaxBlocksTooLong();
-            }
-
-            if (_modelIds[i] > modelStorage.numModels()) {
-                _modelIds[i] = modelStorage.createNewModel(_models[i]);
-
-            } else {
-                Model memory _model = abi.decode(modelStorage.modelInfo(_modelIds[i]),(Model));
-                if (_model.modelVerifier_ != _models[i].modelVerifier_ || _model.modelKey_ != _models[i].modelKey_) {
-                    revert NotModelId();
-                }
-                modelStorage.JoinOperatorList(_modelIds[i], operator);
-            }
-
-            operatorModelInfo[_modelIds[i]][operator] = abi.encode(_operatorModels[i]);
-            unchecked { ++i; }
-        }
-
-        for (uint256 i; i < _computeUnitNames.length;) {
-            computeUnits[operator][_computeUnitNames[i]] = _computeUnits[i];
-            unchecked { ++i; }
-        }
-
+        
+        
         Operator memory _operator = Operator({
-            models_: _modelIds,
-            computeUnits_: _computeUnitNames,
+            models_: new uint256[](0),
+            computeUnits_: new bytes32[](0), 
             openTasks_: new bytes[](0),
             submittedTasks_: new bytes[](0),
             proofRequests_: new bytes[](0),
-            allocatedEth_: new uint256[](_operatorModels[0].ethShares_.length),
+            allocatedEth_: new uint256[](ethStrategies.length),
             allocatedSer_: 0,
             proofRequestExponents_: [uint256(1e3),uint256(1e3)],
             pausedBlock_: 0
         });
-
-        for (uint256 i; i < _operatorModels[0].ethShares_.length;) {
-            _operator.allocatedEth_[i] = 0;
-            unchecked { ++i; }
-        }
 
         opInfo[operator] = abi.encode(_operator);
 
@@ -238,7 +212,6 @@ contract SertnServiceManager is
         isOperator[operator] = true;
 
         emit NewOperator(operator);
-        emit NewModels(_modelIds);
     }
 
     function sendRewards(IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[] calldata operatorDirectedRewardsSubmissions, bytes[][] calldata _rewardedTasks) external onlyAggregators() {
@@ -318,25 +291,25 @@ contract SertnServiceManager is
         if (!(uint32(block.number) - _task.startingBlock_ < taskExpiryBlocks)) {
             revert TaskExpired();
         }
-        IStrategy[] memory _strategies = new IStrategy[](_operatorModel.ethStrategies_.length + 1);
-        for (uint256 i; i < _operatorModel.ethStrategies_.length;) {
-            _strategies[i] = _operatorModel.ethStrategies_[i];
+        IStrategy[] memory _strategies = new IStrategy[](ethStrategies.length + 1);
+        for (uint256 i; i < ethStrategies.length;) {
+            _strategies[i] = ethStrategies[i];
             unchecked { ++i; }
         }
-        _strategies[_operatorModel.ethStrategies_.length] = tokenToStrategy[address(ser)];
+        _strategies[ethStrategies.length] = tokenToStrategy[address(ser)];
         uint256[] memory _wadsToSlash = new uint256[](_strategies.length);
         uint256[] memory _operatorShares = delegationManager.getOperatorShares(_task.operator_, _strategies);
-        for (uint256 i = 0; i < _operatorModel.ethStrategies_.length;) {
+        for (uint256 i = 0; i < ethStrategies.length;) {
         
             _wadsToSlash[i] = MathUpgradeable.mulDiv(1 ether * 1 ether , _operatorModel.ethShares_[i],(allocationManager.getAllocation(_task.operator_, opSet, _strategies[i]).currentMagnitude * _operatorShares[i]));
             unchecked { ++i; }
         }
         if (_task.proveOnResponse_) {
             
-            _wadsToSlash[_operatorModel.ethStrategies_.length] = MathUpgradeable.mulDiv(1 ether * 1 ether, _task.poc_, allocationManager.getAllocation(_task.operator_, opSet, _strategies[_operatorModel.ethStrategies_.length]).currentMagnitude * _operatorShares[_operatorModel.ethStrategies_.length]);
+            _wadsToSlash[ethStrategies.length] = MathUpgradeable.mulDiv(1 ether * 1 ether, _task.poc_, allocationManager.getAllocation(_task.operator_, opSet, _strategies[ethStrategies.length]).currentMagnitude * _operatorShares[ethStrategies.length]);
         } else {
             
-            _wadsToSlash[_operatorModel.ethStrategies_.length] = MathUpgradeable.mulDiv(1 ether * 1 ether, 10*_task.poc_, allocationManager.getAllocation(_task.operator_, opSet, _strategies[_operatorModel.ethStrategies_.length]).currentMagnitude * _operatorShares[_operatorModel.ethStrategies_.length]);
+            _wadsToSlash[ethStrategies.length] = MathUpgradeable.mulDiv(1 ether * 1 ether, 10*_task.poc_, allocationManager.getAllocation(_task.operator_, opSet, _strategies[ethStrategies.length]).currentMagnitude * _operatorShares[ethStrategies.length]);
         }
         IAllocationManagerTypes.SlashingParams memory _slashParams = IAllocationManagerTypes.SlashingParams({operator: _task.operator_, operatorSetId: 0, strategies: _strategies, wadsToSlash: _wadsToSlash, description: _whySlashed});
         allocationManager.slashOperator(address(this), _slashParams);
@@ -460,7 +433,7 @@ contract SertnServiceManager is
         address avs,
         uint32[] calldata operatorSetIds
     ) external override {
-        if (!(isAggregator[msg.sender] || msg.sender == operator)) {
+        if (!(isAggregator[msg.sender] || msg.sender == operator) || !isOperator[msg.sender]) {
             revert NoPermission();
         }
         Operator memory _operator = abi.decode(opInfo[operator], (Operator));
@@ -473,12 +446,17 @@ contract SertnServiceManager is
             unchecked { ++i; }
         }
         delete opInfo[operator];
-        for (uint256 i; i < operators.length;) {
+        bool pastOpIndex;
+        for (uint256 i; i < operators.length -1;) {
             if (operators[i] == operator) {
-                delete operators[i];
+                pastOpIndex = true;
+            }
+            if (pastOpIndex) {
+                operators[i] = operators[i+1];
             }
             unchecked { ++i; }
         }
+        operators.pop();
         isOperator[operator] = false;
         emit OperatorDeleted(operator, operatorSetIds);
     }

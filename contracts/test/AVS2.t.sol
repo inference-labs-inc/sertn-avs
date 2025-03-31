@@ -491,60 +491,16 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
                 user_: user.key.addr
             });
         bytes memory taskId = _sendTask(user.key.addr, task);
-        _respondToTask2(operators[0].key.addr, taskId, true, bytes("2"), false);
         _respondToTask2(operators[0].key.addr, taskId, true, bytes("1"), false);
+        _respondToTask2(operators[0].key.addr, taskId, true, bytes("2"), false);
         _checkTaskResponse(user.key.addr, taskId);
         _slashTask(taskId);
         vm.roll(block.number + 100);
 
     }
 
-    //     ISertnServiceManagerTypes.OperatorModel[]
-    //         memory _operatorModel = new ISertnServiceManagerTypes.OperatorModel[](1);
-    //     _operatorModel[0] = ISertnServiceManagerTypes.OperatorModel({
-    //         operator_: operators[0].key.addr,
-    //         modelId_: 2**96 - 1,
-    //         maxBlocks_: 1e2,
-    //         ethStrategies_: _ethStrategies,
-    //         ethShares_: _ethShares, 
-    //         baseFee_: 1e2,
-    //         maxSer_: 1e4,
-    //         computeType_: bytes32("model2"),
-    //         proveOnResponse_: true,
-    //         available_: true
-    //     });
 
-    //     bytes32[] memory _computeUnitNames = new bytes32[](2);
-    //     _computeUnitNames[0] = bytes32("model1");
-    //     _computeUnitNames[1] = bytes32("model2");
-    //     uint256[] memory _computeUnits = new uint256[](2);
-    //     _computeUnits[0] = 10;
-    //     _computeUnits[1] = 10;
-    //     _addModel(operators[0].key.addr, _model, _operatorModel);
-    //     _addCompute(operators[0].key.addr, _computeUnitNames, _computeUnits);
 
-    //     user = User({key: vm.createWallet("user_wallet")});
-    //     ISertnServiceManagerTypes.Task memory task = ISertnServiceManagerTypes
-    //         .Task({
-    //             operatorModelId_: 4,
-    //             inputs_: bytes(""),
-    //             poc_: 1e2,
-    //             startTime_: 0,
-    //             startingBlock_: 0,
-    //             proveOnResponse_: true,
-    //             user_: user.key.addr
-    //         });
-    //     bytes memory taskId = _sendTask(user.key.addr, task);
-    //     vm.roll(block.number + 50);
-    //     _respondToTask2(operators[0].key.addr, taskId, true, bytes("1"), false);
-    //     vm.roll(block.number + 10);
-    //     _respondToTask2(operators[0].key.addr, taskId, true, bytes("2"), false);
-    //     _checkTaskResponse(user.key.addr, taskId); 
-    //     vm.roll(block.number + 1e2);
-    //     // _clearTask(taskId);
-        
-    //     _slashTask(taskId);
-    // }
 
     function _sendTask(address _user, ISertnServiceManagerTypes.Task memory task) internal returns (bytes memory _taskId) {
         vm.startPrank(_user);
@@ -594,7 +550,7 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         ISertnServiceManagerTypes.TaskResponse
             memory _taskResponse = ISertnServiceManagerTypes.TaskResponse({
                 taskId_: _taskId,
-                output_: bytes("wassup"),
+                output_: bytes("how are you?"),
                 proven_: _alreadyVerified
             });
         sertnTaskManager.submitTask(_taskResponse, _verification, _proof);
@@ -638,15 +594,6 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         );
         vm.stopPrank();
     }
-
-    // function _addModel(address _operator, ISertnServiceManagerTypes.Model[] memory _models, SertnServiceManager.OperatorModel[] memory _operatorModels) internal {
-    //     vm.startPrank(_operator);
-    //     for (uint8 i = 0; i < _models.length; i ++) {
-    //         _operatorModels[i].modelId_ = modelStorage.createNewModel(_models[i]);
-    //     }
-    //     sertnServiceManager.addModels(_operatorModels);
-    //     vm.stopPrank();
-    // }
 
     function _addCompute(address _operator, bytes32[] memory _computeUnitNames, uint256[] memory _computeUnits) internal {
         vm.startPrank(_operator);

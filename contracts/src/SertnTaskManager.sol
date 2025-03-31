@@ -38,6 +38,7 @@ contract SertnTaskManager is
     address[] public aggregators;
     address[] public operators;
     bytes[] public slashingQueue;
+    IStrategy[] public ethStrategies;
 
     IERC20 public ser;
 
@@ -69,7 +70,8 @@ contract SertnTaskManager is
         address _allocationManager,
         address _sertnServiceManager,
         address _modelStorage,
-        address _ser
+        address _ser,
+        IStrategy[] memory _ethStrategies
     ) OwnableUpgradeable() {
         _transferOwnership(msg.sender);
         allocationManager = IAllocationManager(_allocationManager);
@@ -83,6 +85,8 @@ contract SertnTaskManager is
 
         opSet = OperatorSet({avs: address(sertnServiceManager), id: 0});
         ser = IERC20(_ser);
+        ethStrategies = _ethStrategies;
+
     }
 
     function sendTask(Task memory _task) external {
@@ -158,7 +162,7 @@ contract SertnTaskManager is
             .getMinimumSlashableStake(
                 opSet,
                 _operators,
-                _operatorModel.ethStrategies_,
+                ethStrategies,
                 uint32(block.number) + _securityDuration
             )[0];
 
