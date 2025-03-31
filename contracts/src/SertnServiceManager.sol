@@ -250,11 +250,9 @@ contract SertnServiceManager is
                 if (!(_task.startingBlock_ + taskExpiryBlocks < uint32(block.number)) || sertnTaskManager.taskVerified(_rewardedTasks[i][j])) {
                     revert TaskNotExpired();
                 }
-                // require(_task.startingBlock_ + taskExpiryBlocks < uint32(block.number) || sertnTaskManager.taskVerified(_rewardedTasks[i][j]), "Task has not expired");
                 if (!_inBytesArray(_operator.submittedTasks_, _rewardedTasks[i][j])) {
                     revert NotInSubmittedTasks();
                 }
-                // require(_inBytesArray(_operator.submittedTasks_, _rewardedTasks[i][j]), "Not in submitted Tasks");
                 _operator.submittedTasks_ = _removeBytesElement(_operator.submittedTasks_, _rewardedTasks[i][j]);
                 opInfo[operatorDirectedRewardsSubmissions[0].operatorRewards[i].operator] = abi.encode(_operator);
                 if (_inBytesArray(_operator.openTasks_, _rewardedTasks[i][j])) {
@@ -426,10 +424,6 @@ contract SertnServiceManager is
         opInfo[msg.sender] = abi.encode(_operator);
         emit OpInfoChanged(msg.sender, opInfo[msg.sender]);
     }
-
-    // function getComputeUnits(address _operator, bytes32 _computeType) external view returns (uint) {
-    //     return computeUnits[_operator][_computeType];
-    // }
 
     function setComputeUnits(address _operator, bytes32 _computeType, bool increment) external onlyTaskManager() {
         if (increment) {
