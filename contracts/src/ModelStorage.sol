@@ -31,6 +31,11 @@ contract ModelStorage is ISertnServiceManagerTypes, ISertnServiceManagerErrors, 
         for (uint256 i; i <_newModels.length;) {
             modelInfo[numModels] = abi.encode(_newModels[i]);
             _modelIds[i] = numModels;
+            
+            for (uint256 j; j < _newModels[i].operators_.length; ) {
+                operatorRegistered[keccak256(abi.encodePacked(_newModels[i].operators_[j], numModels))] = true;
+                unchecked {++j;}
+            }
             numModels++;
             unchecked {
                 ++i;
@@ -55,6 +60,7 @@ contract ModelStorage is ISertnServiceManagerTypes, ISertnServiceManagerErrors, 
         newOperators[model.operators_.length] = _operator;
         model.operators_ = newOperators;
         modelInfo[_modelId] = abi.encode(model);
+        operatorRegistered[keccak256(abi.encodePacked(_operator, _modelId))] = true;
 
     }
 
@@ -73,7 +79,6 @@ contract ModelStorage is ISertnServiceManagerTypes, ISertnServiceManagerErrors, 
         }
 
         modelInfo[_modelId] = abi.encode(model);
-
-
+        operatorRegistered[keccak256(abi.encodePacked(_operator, _modelId))] = false;
     }
 }
