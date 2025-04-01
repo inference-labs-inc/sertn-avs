@@ -26,10 +26,6 @@ holesky = "${HOLESKY_RPC_URL}"
 sepolia = "${SEPOLIA_RPC_URL}"
 anvil = "${ANVIL_RPC_URL}"
 
-[etherscan]
-mainnet = { key = "${ETHERSCAN_API_KEY}" }
-sepolia = { key = "${ETHERSCAN_API_KEY}" }
-
 [fmt]
 bracket_spacing = false
 int_types = "long"
