@@ -33,4 +33,4 @@ jobs:
           PROXY_ADMIN: ${{ vars.HOLESKY_PROXY_ADMIN }}
         run: |
           cd contracts
-          forge script script/UpgradeHolesky.s.sol:UpgradeHolesky --rpc-url https://holesky.infura.io/v3/${{ secrets.INFURA_API_KEY }} --broadcast --verify
+          forge script script/UpgradeHolesky.s.sol:UpgradeHolesky --rpc-url https://holesky.infura.io/v3/${{ secrets.INFURA_API_KEY }} --broadcast
