@@ -1,0 +1,36 @@
+name: Upgrade Holesky Contracts
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: |
+          cd contracts
+          forge install
+
+      - name: Build contracts
+        run: |
+          cd contracts
+          forge build
+
+      - name: Deploy to Holesky
+        env:
+          PRIVATE_KEY: ${{ secrets.HOLESKY_DEPLOYER_KEY }}
+          PROXY_ADMIN: ${{ vars.HOLESKY_PROXY_ADMIN }}
+        run: |
+          cd contracts
+          forge script script/UpgradeHolesky.s.sol:UpgradeHolesky --rpc-url https://holesky.infura.io/v3/${{ secrets.INFURA_API_KEY }} --broadcast --verify
