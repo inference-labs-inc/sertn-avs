@@ -38,7 +38,7 @@ jobs:
           FOUNDRY_DISABLE_NIGHTLY_WARNING: 1
         run: |
           cd contracts
-          FORGE_OUTPUT=$(forge script script/UpgradeHolesky.s.sol:UpgradeHolesky --rpc-url https://holesky.infura.io/v3/${{ secrets.INFURA_API_KEY }} --broadcast -vvv --skip-verification)
+          FORGE_OUTPUT=$(forge script script/UpgradeHolesky.s.sol:UpgradeHolesky --rpc-url https://holesky.infura.io/v3/${{ secrets.INFURA_API_KEY }} --broadcast -vvv)
           FORGE_EXIT_CODE=$?
           echo "$FORGE_OUTPUT"
           if [ $FORGE_EXIT_CODE -ne 0 ]; then
