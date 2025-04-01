@@ -25,6 +25,7 @@ contract UpgradeHolesky is Script {
         vm.label(deployer, "Deployer");
 
         coreDeployment = CoreDeploymentLib.readDeploymentJson("deployments/core/", block.chainid);
+        proxyAdmin = vm.envAddress("PROXY_ADMIN");
     }
 
     function run() external {
@@ -67,5 +68,7 @@ contract UpgradeHolesky is Script {
         );
 
         vm.stopBroadcast();
+
+        console2.log("Service Manager Address:", address(newServiceManager));
     }
 }

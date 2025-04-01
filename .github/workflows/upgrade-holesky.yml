@@ -2,7 +2,10 @@ name: Upgrade Holesky Contracts
 
 on:
   workflow_dispatch:
-  push:
+  workflow_run:
+    workflows: ["Tests"]
+    types:
+      - completed
     branches:
       - main
 
@@ -28,9 +31,15 @@ jobs:
           forge build
 
       - name: Deploy to Holesky
+        id: deploy
         env:
           PRIVATE_KEY: ${{ secrets.HOLESKY_DEPLOYER_KEY }}
           PROXY_ADMIN: ${{ vars.HOLESKY_PROXY_ADMIN }}
         run: |
           cd contracts
-          forge script script/UpgradeHolesky.s.sol:UpgradeHolesky --rpc-url https://holesky.infura.io/v3/${{ secrets.INFURA_API_KEY }} --broadcast
+          SERVICE_MANAGER=$(forge script script/UpgradeHolesky.s.sol:UpgradeHolesky --rpc-url https://holesky.infura.io/v3/${{ secrets.INFURA_API_KEY }} --broadcast | grep "Service Manager Address:" | cut -d ":" -f 2 | tr -d " ")
+          echo "serviceManager=$SERVICE_MANAGER" >> $GITHUB_OUTPUT
+
+      - name: Output URLs
+        run: |
+          echo "Sertn AVS URL: https://holesky.eigenlayer.xyz/avs/${{ steps.deploy.outputs.serviceManager }}"
