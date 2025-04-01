@@ -38,7 +38,14 @@ jobs:
           FOUNDRY_DISABLE_NIGHTLY_WARNING: 1
         run: |
           cd contracts
-          SERVICE_MANAGER=$(forge script script/UpgradeHolesky.s.sol:UpgradeHolesky --rpc-url https://holesky.infura.io/v3/${{ secrets.INFURA_API_KEY }} --broadcast -vvv | grep "Service Manager Address:" | awk '{print $3}')
+          FORGE_OUTPUT=$(forge script script/UpgradeHolesky.s.sol:UpgradeHolesky --rpc-url https://holesky.infura.io/v3/${{ secrets.INFURA_API_KEY }} --broadcast -vvv --skip-verification)
+          FORGE_EXIT_CODE=$?
+          echo "$FORGE_OUTPUT"
+          if [ $FORGE_EXIT_CODE -ne 0 ]; then
+            echo "Forge script failed with exit code $FORGE_EXIT_CODE"
+            exit $FORGE_EXIT_CODE
+          fi
+          SERVICE_MANAGER=$(echo "$FORGE_OUTPUT" | grep "Service Manager Address:" | awk '{print $3}')
           echo "serviceManager=$SERVICE_MANAGER" >> $GITHUB_OUTPUT
           echo "Captured Service Manager Address: $SERVICE_MANAGER"
 
@@ -51,3 +58,4 @@ jobs:
         if: steps.deploy.outputs.serviceManager == ''
         run: |
           echo "Failed to capture service manager address"
+          exit 1
