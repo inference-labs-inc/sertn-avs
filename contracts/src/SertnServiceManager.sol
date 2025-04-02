@@ -234,18 +234,32 @@ contract SertnServiceManager is
     }
 
     function _removeBytesElement(bytes[] memory _byteArray, bytes calldata _byteElement) internal pure returns(bytes[] memory) {
-        for (uint256 i; i < _byteArray.length;) {
-            if (keccak256(_byteElement) == keccak256(_byteArray[i])) {
-                delete _byteArray[i];
-                return _byteArray;
-            }
-            unchecked { ++i; }
-        }
-    }
 
+        if (_inBytesArray(_byteArray, _byteElement)) {
+            bool pastElementIndex;
+            bytes[] memory _newArray = new bytes[](_byteArray.length - 1);
+
+            for (uint256 i; i < _byteArray.length -1;) {
+                if (keccak256(_byteArray[i]) == keccak256(_byteElement)) {
+                    pastElementIndex = true;
+                }
+                if (pastElementIndex) {
+                    _newArray[i] = _byteArray[i+1];
+                } else {
+                    _newArray[i] = _byteArray[i];
+                }
+                unchecked { ++i; }
+            }
+            return _newArray;
+        } else {
+            return _byteArray;
+        }
+
+    }
     function _inBytesArray(bytes[] memory _byteArray, bytes calldata _byteElement) internal pure returns(bool) {
-        for (uint256 i; i < _byteArray.length; ) {
-            if (keccak256(_byteElement) == keccak256(_byteArray[i])) {
+        bytes32 elementHash = keccak256(_byteElement);
+        for (uint256 i; i < _byteArray.length;) {
+            if (elementHash == keccak256(_byteArray[i])) {
                 return true;
             }
             unchecked { ++i; }
@@ -264,7 +278,7 @@ contract SertnServiceManager is
         emit ModelUpdated(_nodeModelId, _nodeModel);
     }
 
-    function slashOperator(Task calldata _task, string calldata _whySlashed) external onlyAggregators() nonReentrant {
+    function slashOperator(Task calldata _task, string calldata _whySlashed, OperatorSet memory _opSet) external onlyAggregators() nonReentrant {
 
         NodeModel memory _nodeModel = abi.decode(nodeModelInfo[keccak256(abi.encodePacked(_task.operator_,_task.node_,_task.modelId_))], (NodeModel));
         //Should this be included?
@@ -274,17 +288,31 @@ contract SertnServiceManager is
        
         uint256[] memory _wadsToSlash = new uint256[](strategies.length);
         uint256[] memory _operatorShares = delegationManager.getOperatorShares(_task.operator_, strategies);
+        uint256 normalizingConstant = 1e36;
+        uint256 amountToSlash;
+        uint256 slashableShares;
+
+        // Wads to slash = normalizingConstant*amountToSlash/slashableShares
         if (_task.proveOnResponse_) {
-            _wadsToSlash[0] = MathUpgradeable.mulDiv(1 ether * 1 ether, _task.poc_, allocationManager.getAllocation(_task.operator_, opSet, strategies[0]).currentMagnitude * _operatorShares[0]);
+            // _wadsToSlash[0] = MathUpgradeable.mulDiv(1 ether * 1 ether, _task.poc_, allocationManager.getAllocation(_task.operator_, _opSet, strategies[0]).currentMagnitude * _operatorShares[0]);
+            amountToSlash = _task.poc_;
+            slashableShares = allocationManager.getAllocation(_task.operator_, _opSet, strategies[0]).currentMagnitude * _operatorShares[0];
+            _wadsToSlash[0] = MathUpgradeable.mulDiv(normalizingConstant, amountToSlash, slashableShares);
         } else {
-            _wadsToSlash[0] = MathUpgradeable.mulDiv(1 ether * 1 ether, 10*_task.poc_, allocationManager.getAllocation(_task.operator_, opSet, strategies[0]).currentMagnitude * _operatorShares[0]);
+            // _wadsToSlash[0] = MathUpgradeable.mulDiv(1 ether * 1 ether, 10*_task.poc_, allocationManager.getAllocation(_task.operator_, _opSet, strategies[0]).currentMagnitude * _operatorShares[0]);
+            amountToSlash = 10*_task.poc_;
+            slashableShares = allocationManager.getAllocation(_task.operator_, _opSet, strategies[0]).currentMagnitude * _operatorShares[0];
+            _wadsToSlash[0] = MathUpgradeable.mulDiv(normalizingConstant, amountToSlash, slashableShares);
         }
         for (uint256 i = 1; i < strategies.length;) {
-            _wadsToSlash[i] = MathUpgradeable.mulDiv(1 ether * 1 ether , _nodeModel.ethShares_[i],(allocationManager.getAllocation(_task.operator_, opSet, strategies[i]).currentMagnitude * _operatorShares[i]));
+            // _wadsToSlash[i] = MathUpgradeable.mulDiv(1 ether * 1 ether , _nodeModel.ethShares_[i],(allocationManager.getAllocation(_task.operator_, _opSet, strategies[i]).currentMagnitude * _operatorShares[i]));
+            amountToSlash = _nodeModel.ethShares_[i];
+            slashableShares = allocationManager.getAllocation(_task.operator_, _opSet, strategies[i]).currentMagnitude * _operatorShares[i];
+            _wadsToSlash[i] = MathUpgradeable.mulDiv(normalizingConstant, amountToSlash, slashableShares);
             unchecked { ++i; }
         }
         
-        IAllocationManagerTypes.SlashingParams memory _slashParams = IAllocationManagerTypes.SlashingParams({operator: _task.operator_, operatorSetId: 0, strategies: strategies, wadsToSlash: _wadsToSlash, description: _whySlashed});
+        IAllocationManagerTypes.SlashingParams memory _slashParams = IAllocationManagerTypes.SlashingParams({operator: _task.operator_, operatorSetId: _opSet.id, strategies: strategies, wadsToSlash: _wadsToSlash, description: _whySlashed});
         allocationManager.slashOperator(address(this), _slashParams);
 
         bytes32 _taskId = keccak256(abi.encode(_task));
@@ -295,7 +323,7 @@ contract SertnServiceManager is
                 revert TransferFailed();
             }
             Operator memory _operator = abi.decode(opInfo[_task.operator_], (Operator));
-            _operator.proofRequestCoefficients_[_task.node_] = 1e3;
+            _operator.proofRequestCoefficients_[_task.node_] = startingCoefficients;
             opInfo[_task.operator_] = abi.encode(_operator);
         }
         sertnTaskManager.clearTask(abi.encode(_task), true);
@@ -323,7 +351,7 @@ contract SertnServiceManager is
             unchecked {++i;}
         }
         for (uint256 i; i < 2*_numNewNodes; ) {
-            _tempProofRequestCoefficients[i] = 1e3;
+            _tempProofRequestCoefficients[i] = startingCoefficients;
             unchecked {++i;}
         }
             
@@ -343,7 +371,7 @@ contract SertnServiceManager is
                 if (!modelStorage.operatorRegistered(keccak256(abi.encodePacked(msg.sender, _nodeAndModelIds[i][j])))) {
                     revert NotRegisteredToModel();
                 }
-                if (_nodeModels[i][j].maxBlocks_ + 1e2 > taskExpiryBlocks) {
+                if (_nodeModels[i][j].maxBlocks_ + taskExpiryBuffer > taskExpiryBlocks) {
                     revert MaxBlocksTooLong();
                 }
                 _tempNodesAndModels[_nodeIds[i]][j + _operator.nodesAndModels_[_nodeIds[i]].length] = _nodeAndModelIds[i][j];

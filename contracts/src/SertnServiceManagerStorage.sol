@@ -10,6 +10,9 @@ abstract contract SertnServiceManagerStorage is ISertnServiceManager, ISertnServ
     uint256 public PROOF_REQUEST_COST = 100;
     uint32 public taskExpiryBlocks = 1e3;
     uint256 public BOUNTY = 500;
+    uint32 public taskExpiryBuffer = 1e2;
+    uint256 public proofRequestIncrement = 500;
+    uint256 public startingCoefficients = 1e3;
 
     mapping(address => IStrategy) public tokenToStrategy;
     mapping(address => bytes) public opInfo;
@@ -22,4 +25,5 @@ abstract contract SertnServiceManagerStorage is ISertnServiceManager, ISertnServ
     mapping(address => bytes32[]) public operatorSlashingQueue;
     mapping(bytes32 => address) public bountyHunter;
     mapping(uint256 => bytes) public modelInfo;
+    mapping(bytes32 => bool) public operatorRegistered;
 }

@@ -41,7 +41,7 @@ interface ISertnServiceManagerEvents {
     event TaskResponded(uint256 indexed model, bytes32 indexed taskId, ISertnServiceManagerTypes.TaskResponse taskResponse);
     event UpForSlashing(address indexed operator, bytes32 indexed taskId);
     event ProofRequested(address indexed operator, bytes indexed taskId);
-    event OperatorSlashed(bytes indexed taskId);
+    event OperatorSlashed(bytes32 indexed taskId);
     event ModelUpdated(bytes32 indexed nodeModelId, ISertnServiceManagerTypes.NodeModel nodeModel);
     event OpInfoChanged(address indexed _operator, bytes _opInfo);
     event OperatorDeleted(address indexed _operator, uint32[] opSetIds);
