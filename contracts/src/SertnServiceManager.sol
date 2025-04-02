@@ -213,7 +213,7 @@ contract SertnServiceManager is
             Operator memory _operator = abi.decode(opInfo[operatorDirectedRewardsSubmissions[0].operatorRewards[i].operator],(Operator));
             for (uint256 j; j < _rewardedTasks[i].length;) {
                 Task memory _task = abi.decode(_rewardedTasks[i][j], (Task));
-                if (!(_task.startingBlock_ + taskExpiryBlocks < uint32(block.number)) || sertnTaskManager.taskVerified(keccak256(_rewardedTasks[i][j]))) {
+                if (!(_task.startingBlock_ + taskExpiryBlocks < uint32(block.number)) || !sertnTaskManager.taskVerified(keccak256(_rewardedTasks[i][j]))) {
                     revert TaskNotExpired();
                 }
                 if (!_inBytes32Array(_operator.submittedTasks_, keccak256(_rewardedTasks[i][j]))) {
@@ -231,6 +231,24 @@ contract SertnServiceManager is
 
         ser.approve(address(rewardsCoordinator), _approvalAmount);
         rewardsCoordinator.createOperatorDirectedAVSRewardsSubmission(address(this), operatorDirectedRewardsSubmissions);
+    }
+
+    function recieveRewards() external onlyOperators() {
+        IRewardsCoordinatorTypes.OperatorReward[] memory _reward = new IRewardsCoordinatorTypes.OperatorReward[](1);
+        _reward[0] = IRewardsCoordinatorTypes.OperatorReward({operator: msg.sender, amount: rewardsAmount[msg.sender]});
+        IRewardsCoordinatorTypes.StrategyAndMultiplier[] memory _strategyAndMultiplier = new IRewardsCoordinatorTypes.StrategyAndMultiplier[](1);
+        _strategyAndMultiplier[0] = IRewardsCoordinatorTypes.StrategyAndMultiplier({strategy: strategies[0], multiplier: 1 ether});
+        IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[] memory _rewardSubmission = new IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[](1);
+        _rewardSubmission[0] = IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission({
+            strategiesAndMultipliers: _strategyAndMultiplier,
+            token: ser,
+            operatorRewards: _reward,
+            startTimestamp: uint32(block.timestamp),
+            duration: 0,
+            description: ""
+        });
+        ser.approve(address(rewardsCoordinator), rewardsAmount[msg.sender]);
+        rewardsCoordinator.createOperatorDirectedAVSRewardsSubmission(address(this), _rewardSubmission);
     }
 
     function _removeBytesElement(bytes[] memory _byteArray, bytes calldata _byteElement) internal pure returns(bytes[] memory) {

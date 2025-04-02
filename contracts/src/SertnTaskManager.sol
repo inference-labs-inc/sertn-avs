@@ -42,6 +42,7 @@ contract SertnTaskManager is
     IAllocationManager public allocationManager;
     IDelegationManager public delegationManager;
     IRewardsCoordinator public rewardsCoordinator;
+
     OperatorSet public opSet;
 
     SertnServiceManager public sertnServiceManager;
@@ -89,68 +90,72 @@ contract SertnTaskManager is
     function sendTask(Task memory _task) external {
         _task.startTime_ = block.timestamp;
         _task.startingBlock_ = uint32(block.number);
-
-        bytes32 _nodeModelId = keccak256(abi.encodePacked(_task.operator_,_task.node_,_task.modelId_));
-        bytes memory _emptyBytes;
-        if (keccak256(sertnServiceManager.nodeModelInfo(_nodeModelId)) == keccak256(_emptyBytes)) {
+        bytes32 _nodeOperatorId = keccak256(abi.encode(_task.operator_,_task.node_));
+        bytes32 _nodeModelId = keccak256(abi.encode(_task.operator_,_task.node_,_task.modelId_));
+        if (maxBlocks[_nodeModelId] == 0) {
             revert NotNodeModel();
         }
-        NodeModel memory _nodeModel = abi.decode(sertnServiceManager.nodeModelInfo(_nodeModelId), (NodeModel));
-        Operator memory _operator = abi.decode(sertnServiceManager.opInfo(_task.operator_), (Operator));
         // NodeModel memory _nodeModel = sertnServiceManager.getModelInfo(_operatorModelId);
-        if (_task.proveOnResponse_ && !_nodeModel.proveOnResponse_) {
+        if (_task.proveOnResponse_ && !proveOnResponse[_nodeModelId]) {
             revert NoProofOnResponse();
         }
 
         if (_task.proveOnResponse_) {
-            _checkFinancialSecurity(_task.poc_, _task.operator_, _nodeModel, _operator, _nodeModel.maxBlocks_);
+            _checkFinancialSecurity(_task.poc_, _task.operator_, _nodeModelId, maxBlocks[_nodeModelId]);
 
         } else {
             _checkFinancialSecurity(
                 _task.poc_ * 10,
                 _task.operator_,
-                _nodeModel,
-                _operator,
+                _nodeModelId,
                 uint32(taskExpiryBlocks)
             );
         }
 
         if (
-            _nodeModel.available_ &&
-            _operator.nodeComputeUnits_[_task.node_] > _nodeModel.compute_ &&
-            _operator.pausedBlock_ == 0
+            nodeModelAvailable[_nodeModelId] &&
+            nodeComputeUnits[_nodeOperatorId] > compute[_nodeModelId] &&
+            operatorPausedBlock[_task.operator_] == 0
         ) {
-            // uint256 transferAmount = (1.5e3 * (_nodeModel.baseFee_ + _task.poc_)) / 1e3;
-            uint256 transferAmount = MathUpgradeable.mulDiv(1.5e9, _nodeModel.baseFee_ + _task.poc_, 1e9);
+            // uint256 transferAmount = (1.5e3 * (sertnServiceManager.baseFee_ + _task.poc_)) / 1e3;
+            uint256 transferAmount = MathUpgradeable.mulDiv(1.5e9, baseFee[_nodeModelId] + _task.poc_, 1e9);
             if (!ser.transferFrom(msg.sender, address(sertnServiceManager), transferAmount)) {
                 revert TransferFailed();
             }
+
+
             
-            bytes memory _taskId = abi.encode(_task);
+            bytes32 _taskId = keccak256(abi.encode(_task));
+            openTasks[_nodeOperatorId] = _pushToBytes32Array(_taskId, openTasks[_nodeOperatorId]);
+            isOpenTask[_nodeOperatorId] = true;
 
-            NodeTasks memory _nodeTasks;
-            if (keccak256(_emptyBytes) == keccak256(nodeTasks[_nodeModelId])) {
-                _nodeTasks.openTasks_ = _pushToBytesArray(_taskId, _nodeTasks.openTasks_);
-                _nodeTasks.proofRequests_ = _pushToBytes32Array(keccak256(_taskId), _nodeTasks.proofRequests_);
-            } else {
-                _nodeTasks = abi.decode(nodeTasks[_nodeModelId],(NodeTasks));
-                _nodeTasks.openTasks_ = _pushToBytesArray(_taskId, _nodeTasks.openTasks_);
-                _nodeTasks.proofRequests_ = _pushToBytes32Array(keccak256(_taskId), _nodeTasks.proofRequests_);
-
+            if (_task.proveOnResponse_) {
+                proofRequests[_nodeOperatorId] = _pushToBytes32Array(_taskId, proofRequests[_nodeOperatorId]);
+                proofRequested[_nodeOperatorId] = true;
             }
 
-            _operator.nodeComputeUnits_[_task.node_] -= _nodeModel.compute_;
+            nodeComputeUnits[_nodeOperatorId] -= compute[_nodeModelId];
 
-            for (uint256 i; i < _operator.allocatedEth_.length;) {
-                _operator.allocatedEth_[i] += _nodeModel.ethShares_[i];
+            for (uint256 i = 1; i < allocatedStake[_task.operator_].length;) {
+                allocatedStake[_task.operator_][i] += ethShares[_nodeModelId][i];
+                slashableAmount[_taskId][i] += ethShares[_nodeModelId][i];
                 unchecked { ++i; }
             }
-            _operator.allocatedSer_ += _task.poc_;
+            allocatedStake[_task.operator_][0] += _task.poc_;
+            slashableAmount[_taskId] += _task.poc_;
+            taskPoc[_taskId] = _task.poc_;
             if (!_task.proveOnResponse_) {
-                _operator.allocatedSer_ += 9 * _task.poc_;
+                allocatedStake[_task.operator_][0] += 9*_task.poc_;
+                slashableAmount[_taskId] += 9*_task.poc_;
+                taskPoc[_taskId] = 10*_task.poc_;
             }
-            sertnServiceManager.updateOperator(_task.operator_, _operator);
-            emit NewTask(_task.operator_, _taskId);
+            taskOperator[_taskId] = _task.operator_;
+            taskNodeOperatorId[_taskId] = _nodeOperatorId;
+            taskNodeModelId[_taskId] = _nodeModelId;
+            startingBlock[_taskId] = _task.startingBlock_;
+            
+
+            emit NewTask(_nodeModelId, _task);
         } else {
             revert TaskCouldNotBeSent();
         }
@@ -158,31 +163,14 @@ contract SertnTaskManager is
 
     function _checkFinancialSecurity(
         uint256 _poc,
-        address _operatorAddr,
-        NodeModel memory _nodeModel,
-        Operator memory _operator,
+        address _operator,
+        bytes32 _nodeModelId,
         uint32 _securityDuration
     ) internal view {
         address[] memory _operators = new address[](1);
-        _operators[0] = _operatorAddr;
+        _operators[0] = _operator;
         //check if secure using max blocks as model param
-        uint256[] memory _ethSecurity = allocationManager
-            .getMinimumSlashableStake(
-                opSet,
-                _operators,
-                ethStrategies,
-                uint32(block.number) + _securityDuration
-            )[0];
 
-        for (uint256 i; i < _ethSecurity.length;) {
-            if (
-                _ethSecurity[i] <
-                _nodeModel.ethShares_[i] + _operator.allocatedEth_[i]
-            ) {
-                revert TaskCouldNotBeSent();
-            }
-            unchecked { ++i; }
-        }
         IStrategy[] memory _pocStrategy = new IStrategy[](1);
         _pocStrategy[0] = sertnServiceManager.tokenToStrategy(address(ser));
         uint256 _serSecurity = allocationManager.getMinimumSlashableStake(
@@ -193,98 +181,111 @@ contract SertnTaskManager is
         )[0][0];
 
         if (
-            _nodeModel.maxSer_ < _poc ||
-            _serSecurity < _poc + _operator.allocatedSer_
+            maxSer[_nodeModelId] < _poc ||
+            _serSecurity < _poc + allocatedStake[_operator][0]
         ) {
             revert TaskCouldNotBeSent();
+        }
+
+        uint256[] memory _ethSecurity = allocationManager
+            .getMinimumSlashableStake(
+                opSet,
+                _operators,
+                ethStrategies,
+                uint32(block.number) + _securityDuration
+            )[0];
+
+        for (uint256 i = 1; i < _ethSecurity.length + 1;) {
+            if (
+                _ethSecurity[i] <
+                ethShares[_nodeModelId][i] + allocatedStake[_operator][i]
+            ) {
+                revert TaskCouldNotBeSent();
+            }
+            unchecked { ++i; }
         }
     }
 
     function submitTask(TaskResponse memory _taskResponse, bool _verification, bytes memory _proof) external {
 
-        Task memory _task = abi.decode(_taskResponse.taskId_, (Task));
-        bytes32 _taskHash = keccak256(_taskResponse.taskId_);
+        bytes32 _taskId = keccak256(abi.encode(_taskResponse.task_));
 
-        bytes32 _nodeModelId = keccak256(abi.encodePacked(_task.operator_,_task.node_,_task.modelId_));
+        if (!isOpenTask[_taskId]) {
+            revert NotOpenTask();
+        }
 
-        NodeModel memory _nodeModel = abi.decode(sertnServiceManager.nodeModelInfo(_nodeModelId), (NodeModel));
+        bytes32 _nodeModelId = keccak256(abi.encodePacked(_taskResponse.task_.operator_,_taskResponse.task_.node_,_taskResponse.task_.modelId_));
 
-        if (msg.sender != _task.operator_) {
+        if (msg.sender != _taskResponse.task_.operator_) {
             revert IncorrectOperator();
         }
 
-        Operator memory _operator = abi.decode(sertnServiceManager.opInfo(_task.operator_),(Operator));
-
-        if (_nodeModel.maxBlocks_ < uint32(block.number) - _task.startingBlock_) {
+        if (maxBlocks[_nodeModelId] < uint32(block.number) - _taskResponse.task_.startingBlock_) {
             revert TaskExpired();
         }
         if (_verification) {
-            _checkFinancialSecurity(_task.poc_, _task.operator_, _nodeModel, _operator, 0);
+            _checkFinancialSecurity(_taskResponse.task_.poc_, _taskResponse.task_.operator_, _nodeModelId, 0);
         } else {
-            _checkFinancialSecurity(10*_task.poc_, _task.operator_, _nodeModel, _operator, taskExpiryBlocks + _task.startingBlock_ - uint32(block.number));
+            _checkFinancialSecurity(10*_taskResponse.task_.poc_, _taskResponse.task_.operator_, _nodeModelId, taskExpiryBlocks + _taskResponse.task_.startingBlock_ - uint32(block.number));
         }
 
         if (_taskResponse.proven_) {
-            if (taskVerified[_taskHash]) {
+            if (taskVerified[_taskId]) {
                 _taskResponse.proven_ = true;
                 _clearTask(_taskResponse.taskId_, false);
             }
 
             else {
-                sertnServiceManager.pushToOperatorSlashingQueue(msg.sender, _taskHash);
-                sertnServiceManager.pushToSlashingQueue(_taskHash);
-                emit UpForSlashing(_task.operator_, _taskHash);
+                sertnServiceManager.pushToOperatorSlashingQueue(msg.sender, _taskId);
+                sertnServiceManager.pushToSlashingQueue(_taskId);
+                emit UpForSlashing(_taskResponse.task_.operator_, _taskId);
                 return;
             }
         } else {
-            if (_verification || _task.proveOnResponse_) {
-            _verifyTask(_taskResponse.taskId_, _task.modelId_, _proof);
+            if (_verification || _taskResponse.task_.proveOnResponse_) {
+            _verifyTask(_taskResponse.taskId_, _taskResponse.task_.modelId_, _proof);
 
-            if (taskVerified[_taskHash]) {
+            if (taskVerified[_taskId]) {
                 _taskResponse.proven_ = true;
                 _clearTask(_taskResponse.taskId_, false);
             }
 
             else {
-                sertnServiceManager.pushToOperatorSlashingQueue(msg.sender, _taskHash);
-                sertnServiceManager.pushToSlashingQueue(_taskHash);
-                emit UpForSlashing(_task.operator_, _taskHash);
+                sertnServiceManager.pushToOperatorSlashingQueue(msg.sender, _taskId);
+                sertnServiceManager.pushToSlashingQueue(_taskId);
+                emit UpForSlashing(_taskResponse.task_.operator_, _taskId);
                 return;
             }
         }
         }
-        _operator.submittedTasks_ = _pushToBytes32Array(_taskHash, _operator.submittedTasks_);
+        taskSubmitted[_taskId] = true;
 
-        _operator.nodeComputeUnits_[_task.node_] += _nodeModel.compute_;
-        sertnServiceManager.updateOperator(_task.operator_, _operator);
-        sertnServiceManager.setTaskResponse(_taskResponse);
+        nodeComputeUnits[_nodeModelId] += compute[_nodeModelId];
+        rewardsAmount[_taskResponse.task_.operator_] += MathUpgradeable.mulDiv(_taskResponse.task_.poc_ + baseFee[_nodeModelId], 7e9, 1e10);
+        slashableAmount[_taskId][0] += MathUpgradeable.mulDiv(_taskResponse.task_.poc_ + baseFee[_nodeModelId], 7e9, 1e10);
 
-        emit TaskResponded(_task.modelId_, _taskHash, _taskResponse);
+        emit TaskResponded(_taskId, _taskResponse);
     }
 
-    function requestProof(bytes memory _taskId) external {
+    function requestProof(bytes32 memory _taskId) external {
         //add probabilistic case
-        if (sertnServiceManager.bountyHunter(keccak256(_taskId)) != address(0)) {
+        if (bountyHunter[_taskId] != address(0)) {
             revert BountyAlreadySet();
         }
-        Task memory _task = abi.decode(_taskId, (Task));
-        bytes32 _nodeModelId = keccak256(abi.encodePacked(_task.operator_,_task.node_,_task.modelId_));
-        Operator memory _operator = abi.decode(sertnServiceManager.opInfo(_task.operator_),(Operator));
 
-        uint256 _amount = PROOF_REQUEST_COST*(_operator.proofRequestCoefficients_[_task.node_]/_operator.proofRequestCoefficients_[_task.node_ + 1]);
+        uint256 _amount = MathUpgradeable.mulDiv(PROOF_REQUEST_COST, proofRequestCoefficients[taskOperator[_taskId]][0], proofRequestCoefficients[taskOperator[_taskId]][1]);
         if (!ser.transferFrom(msg.sender, address(sertnServiceManager), _amount)) {
             revert TransferFailed();
         }
-        NodeTasks memory _nodeTasks = abi.decode(nodeTasks[_nodeModelId],(NodeTasks));
-        _nodeTasks.proofRequests_ = _pushToBytes32Array(keccak256(_taskId), _nodeTasks.proofRequests_);
-        nodeTasks[_nodeModelId] = abi.encode(_nodeTasks);
 
-        _operator.proofRequestCoefficients_[_task.node_] += 500;
+        proofRequests[taskNodeOperatorId[_taskId]] = _pushToBytes32Array(_taskId, proofRequests[taskNodeOperatorId[_taskId]]);
+        proofRequested[taskNodeOperatorId[_taskId]] = true;
 
-        sertnServiceManager.updateOperator(_task.operator_, _operator);
-        sertnServiceManager.setBountyHunter(keccak256(_taskId), msg.sender);
+        proofRequestCoefficients[taskOperator[_taskId]][0] += proofRequestIncrement;
 
-        emit ProofRequested(_task.operator_, _taskId);
+        bountyHunter[_taskId] = msg.sender;
+
+        emit ProofRequested(_taskId);
 
     }
 
@@ -309,39 +310,28 @@ contract SertnTaskManager is
         taskVerified[keccak256(_taskId)] = _verified;
     }
 
-    function _clearTask(bytes memory _taskId, bool _slashed) internal {
-        Task memory _task = abi.decode(_taskId, (Task));
-        bytes32 _taskHash = keccak256(_taskId);
+    function _clearTask(bytes32 memory _taskId, bool _slashed) internal {
 
-        if (_task.startingBlock_ + taskExpiryBlocks > uint32(block.number) && !taskVerified[_taskHash] && !_slashed) {
+        if (startingBlock[_taskId] + taskExpiryBlocks > uint32(block.number) && !taskVerified[_taskId] && !_slashed) {
             revert TaskNotExpired();
         }
 
-        bytes32 _nodeModelId = keccak256(abi.encodePacked(_task.operator_,_task.node_,_task.modelId_));
-        NodeModel memory _nodeModel = abi.decode(sertnServiceManager.nodeModelInfo(_nodeModelId), (NodeModel));
-        Operator memory _operator = abi.decode(sertnServiceManager.opInfo(_task.operator_), (Operator));
-        NodeTasks memory _nodeTasks = abi.decode(nodeTasks[_nodeModelId],(NodeTasks));
-
-        _nodeTasks.openTasks_ = _removeBytesElement(_nodeTasks.openTasks_, _taskId);
-        _nodeTasks.proofRequests_ = _removeBytes32Element( _nodeTasks.proofRequests_, _taskHash);
+        openTasks[taskNodeOperatorId[_taskId]] = _removeBytes32Element(openTasks[taskNodeOperatorId[_taskId]], _taskId);
+        delete isOpenTask[_taskId];
+        proofRequests[taskNodeOperatorId[_taskId]] = _removeBytes32Element(proofRequests[taskNodeOperatorId[_taskId]], _taskId);
+        delete proofRequested[_taskId];
         if(_slashed) {
-            _operator.submittedTasks_ = _removeBytes32Element(_operator.submittedTasks_, _taskHash);
+            delete taskSubmitted[_taskId];
         }
         
-        sertnServiceManager.removeFromOperatorSlashingQueue(_task.operator_, _taskHash);
-        sertnServiceManager.removeFromSlashingQueue(_taskHash);
-        for (uint256 i; i < _operator.allocatedEth_.length;) {
-            _operator.allocatedEth_[i] -= _nodeModel.ethShares_[i];
+        sertnServiceManager.removeFromOperatorSlashingQueue(taskOperator[_taskId], _taskId);
+        sertnServiceManager.removeFromSlashingQueue(_taskId);
+        for (uint256 i = 1; i < allocatedStake[taskOperator[_taskId]].length+1;) {
+            allocatedStake[taskOperator[_taskId]][i] -= slashableAmount[_taskId][i];
             unchecked { ++i; }
         }
 
-        _operator.allocatedSer_ -= _task.poc_;
-        if (!_task.proveOnResponse_) {
-            _operator.allocatedSer_ -= 9*_task.poc_;
-        }
-
-
-        sertnServiceManager.updateOperator(_task.operator_, _operator);
+        allocatedStake[taskOperator[_taskId]][0] -= taskPoc[_taskId];
 
     }
 

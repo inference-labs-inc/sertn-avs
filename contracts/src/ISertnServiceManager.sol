@@ -31,6 +31,7 @@ interface ISertnServiceManagerErrors {
     error InvalidAggregator();
     error NodeModelExists();
     error NotNodeModel();
+    error NotOpenTask();
 }
 
 interface ISertnServiceManagerEvents {
@@ -58,21 +59,22 @@ interface ISertnServiceManagerTypes {
         address[] operators_;
     }
 
-    struct Operator {
-        uint256[][] nodesAndModels_;
-        uint256[] nodeComputeUnits_;
-        bytes32[] submittedTasks_;
-        uint256[] allocatedEth_;
-        uint256 allocatedSer_;
-        //will get deeper into proof request function in future, right now for node 0 cost of proof request = pRC[0]/pRC[1] * PROOF_REQUEST_COST
-        uint256[] proofRequestCoefficients_;
-        uint32 pausedBlock_;
-    }
 
-    struct NodeTasks {
-        bytes[] openTasks_;
-        bytes32[] proofRequests_;
-    }
+    // struct Operator {
+    //     uint256[][] nodesAndModels_;
+    //     uint256[] nodeComputeUnits_;
+    //     bytes32[] submittedTasks_;
+    //     uint256[] allocatedEth_;
+    //     uint256 allocatedSer_;
+    //     //will get deeper into proof request function in future, right now for node 0 cost of proof request = pRC[0]/pRC[1] * PROOF_REQUEST_COST
+    //     uint256[] proofRequestCoefficients_;
+    //     uint32 pausedBlock_;
+    // }
+
+    // struct NodeTasks {
+    //     bytes[] openTasks_;
+    //     bytes32[] proofRequests_;
+    // }
 
     struct NodeModel {
         uint32 maxBlocks_;
@@ -98,7 +100,7 @@ interface ISertnServiceManagerTypes {
     }
 
     struct TaskResponse {
-        bytes taskId_;
+        Task task;
         bytes output_;
         bool proven_;
     }
