@@ -3,6 +3,6 @@ pragma solidity ^0.8.9;
 
 interface IVerifier {
 
-    function verifyProof(bytes memory _proof) external view returns (bool);
+    function verifyProof(bytes memory _proof, bytes32 _modelKey) external view returns (bool);
 
 }
