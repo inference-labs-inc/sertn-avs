@@ -22,8 +22,10 @@ start-anvil:
 
 ___CONTRACTS___: ##
 
-build-contracts: ## builds all contracts
+build-contracts: ## builds all contracts and generates ABIs
 	cd contracts && forge build
+	cd contracts && forge inspect SertnTaskManager abi --json > ../abis/SertnTaskManager.abi.json
+	cd contracts && forge inspect SertnServiceManager abi --json > ../abis/SertnServiceManager.abi.json
 
 deploy-eigenlayer-contracts:
 	@chmod +x ./contracts/anvil/deploy-el.sh
@@ -32,10 +34,6 @@ deploy-eigenlayer-contracts:
 deploy-sertn-contracts:
 	@chmod +x ./contracts/anvil/deploy-sertn.sh
 	./contracts/anvil/deploy-sertn.sh
-
-export-abis:
-	cd contracts && forge inspect SertnTaskManager abi --json > ../abis/SertnTaskManager.abi.json
-	cd contracts && forge inspect SertnServiceManager abi --json > ../abis/SertnServiceManager.abi.json
 
 add-operator-model:
 	pwd # TODO: ...
