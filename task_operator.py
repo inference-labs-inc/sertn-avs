@@ -63,13 +63,9 @@ class TaskOperator:
         # and is encoded as a tuple of the following types:
         data_schema = [
             # Model[] memory _models
-            "tuple(string title_, string description_, address modelVerifier_, address[] operators_)[]",
+            "(string,string,address,address[])[]",
             # OperatorModel[] memory _operatorModels
-            (
-                "tuple(address operator_, uint256 modelId_, uint256 maxBlocks_, "
-                "address[] ethStrategies_, uint256[] ethShares_, uint256 baseFee_, uint256 maxSer_, "
-                "bytes32 computeType_, bool proveOnResponse_, bool available_)[]"
-            ),
+            "(address,uint256,uint256,address[],uint256[],uint256,uint256,bytes32,bool,bool)[]",
             # bytes32[] memory _computeUnitNames
             "bytes32[]",
             # uint256[] memory _computeUnits
@@ -79,37 +75,35 @@ class TaskOperator:
         # Define the structs
         # `Model[] memory _models`:
         models = [
-            {
-                "title_": "Example Model Title",
-                "description_": "Example Model Description",
-                "modelVerifier_": "0x0000000000000000000000000000000000000000",  # Example address
-                "operators_": [
+            (
+                "Example Model Title",  # title_
+                "Example Model Description",  # description_
+                "0x0000000000000000000000000000000000000000",  # modelVerifier_ - Example address
+                [
                     "0x0000000000000000000000000000000000000000"
-                ],  # Example addresses
-            }
+                ],  # operators_ - Example addresses
+            )
         ]
 
         # OperatorModel[] memory _operatorModels:
         operator_models = [
-            {
-                "operator_": "0xabcdef1234567890abcdef1234567890abcdef12",  # Example operator address
-                "modelId_": 1,
-                "maxBlocks_": 1000,
-                "ethShares_": [100, 200],
-                "ethStrategies_": [
-                    ETH_STRATEGY_ADDRESSES[0],
-                ],  # IStrategy[]
-                "baseFee_": 0,
-                "maxSer_": 1000,
-                "computeType_": "0xabcdefabcdefabcdefabcdefabcdefabcdef",  # dummy bytes32 value
-                "proveOnResponse_": True,
-                "available_": True,
-            }
+            (
+                operator_address,  # operator_ - Example operator address
+                1,  # modelId_
+                1000,  # maxBlocks_
+                [ETH_STRATEGY_ADDRESSES[0]],  # ethStrategies_ - IStrategy[]
+                [100, 200],  # ethShares_
+                0,  # baseFee_
+                1000,  # maxSer_
+                "0".encode(),  # computeType_ - dummy bytes32 value
+                True,  # proveOnResponse_
+                True,  # available_
+            )
         ]
 
         # bytes32[] memory _computeUnitNames
         compute_unit_names = [
-            Web3.toBytes(hexstr="0x636f6d707574655f756e6974")  # Example bytes32 value
+            Web3.to_bytes(hexstr="0x636f6d707574655f756e6974")  # Example bytes32 value
         ]
 
         # uint256[] memory _computeUnits
@@ -118,12 +112,17 @@ class TaskOperator:
         # so we need to encode the data as a tuple of the above types:
         data = encode(
             data_schema,
-            [models, operator_models, compute_unit_names, compute_units],
+            [
+                models,
+                operator_models,
+                compute_unit_names,
+                compute_units,
+            ],
         )
 
         # Define other the function arguments:
         # required, but not used by the contract
-        avs = "0x000000000"
+        avs = "0x0000000000000000000000000000000000000000"  # Example AVS address
         # Example operator set IDs, according to the contract, must be `[0]`
         operator_set_ids = [0]
 
@@ -132,9 +131,10 @@ class TaskOperator:
         ).build_transaction(
             {
                 "from": operator_address,
-                "gas": 3000000,
-                "gasPrice": self.web3.toWei("20", "gwei"),
-                "nonce": self.web3.eth.get_transaction_count("0xYourAccountAddress"),
+                "gas": 2000000,
+                "gasPrice": self.web3.to_wei("20", "gwei"),
+                "nonce": self.web3.eth.get_transaction_count(operator_address),
+                "chainId": self.web3.eth.chain_id,
             }
         )
 
