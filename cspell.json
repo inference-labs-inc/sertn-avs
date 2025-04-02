@@ -1,0 +1,28 @@
+{
+    "version": "0.2",
+    "ignorePaths": [],
+    "dictionaryDefinitions": [],
+    "dictionaries": [],
+    "words": [
+        "avsregistry",
+        "blsagg",
+        "CHAINID",
+        "chainio",
+        "dotenv",
+        "eigenlayer",
+        "eigensdk",
+        "holesky",
+        "keccak",
+        "operatorsinfo",
+        "pycache",
+        "pycodestyle",
+        "pyproject",
+        "remappings",
+        "sdist",
+        "Sertn",
+        "tupple",
+        "venv"
+    ],
+    "ignoreWords": [],
+    "import": []
+}
