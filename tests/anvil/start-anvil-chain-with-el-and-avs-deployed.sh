@@ -1,7 +1,7 @@
 #!/bin/bash
 
-RPC_URL=http://localhost:8545
-PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+# Load environment variables
+source contracts/anvil/load-env.sh
 
 # cd to the directory of this script so that this can be run from anywhere
 parent_path=$(
@@ -37,7 +37,7 @@ cd ../../contracts
 # so calling getOperatorListAtBlockNumber reverts because it thinks there are no quorums registered at block 0
 # advancing chain manually like this is a current hack until https://github.com/foundry-rs/foundry/issues/6679 is merged
 # also not that it doesn't really advance by the correct number of blocks.. not sure why, so we just forward by a bunch of blocks that should be enough
-forge script script/utils/Utils.sol --sig "advanceChainByNBlocks(uint256)" 100 --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+forge script script/utils/Utils.sol --sig "advanceChainByNBlocks(uint256)" 100 --rpc-url $RPC_HOST:$RPC_PORT --private-key $PRIVATE_KEY --broadcast
 echo "current block-number:" $(cast block-number)
 
 # Bring Anvil back to the foreground

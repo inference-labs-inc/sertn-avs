@@ -846,6 +846,7 @@ name = "sertn-avs"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "eth-abi" },
     { name = "fastapi" },
     { name = "mcl" },
     { name = "pydantic" },
@@ -859,6 +860,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "eth-abi", specifier = ">=5.2.0" },
     { name = "fastapi", specifier = ">=0.115.12" },
     { name = "mcl", git = "https://github.com/sadeghte/mcl-python.git" },
     { name = "pydantic", specifier = ">=2.10.6" },

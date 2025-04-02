@@ -6,7 +6,9 @@
     "words": [
         "avsregistry",
         "blsagg",
+        "CHAINID",
         "chainio",
+        "dotenv",
         "eigenlayer",
         "eigensdk",
         "holesky",

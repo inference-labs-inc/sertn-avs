@@ -1,7 +1,7 @@
 #!/bin/bash
 
-RPC_URL=http://localhost:8545
-PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+# Load environment variables
+source contracts/anvil/load-env.sh
 
 # cd to the directory of this script so that this can be run from anywhere
 parent_path=$(
@@ -29,7 +29,7 @@ trap 'cleanup $LINENO "$BASH_COMMAND"' EXIT
 start_anvil_docker $parent_path/eigenlayer-deployed-anvil-state.json $parent_path/avs-and-eigenlayer-deployed-anvil-state.json
 
 cd ../../contracts
-forge script script/IncredibleSquaringDeployer.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast -v
+forge script script/IncredibleSquaringDeployer.s.sol --rpc-url $RPC_HOST:$RPC_PORT --private-key $PRIVATE_KEY --broadcast -v
 # save the block-number in the genesis file which we also need to restart the anvil chain at the correct block
 # otherwise the indexRegistry has a quorumUpdate at a high block number, and when we restart a clean anvil (without genesis.json) file
 # it starts at block 0, and so calling getOperatorListAtBlockNumber reverts because it thinks there are no quorums registered at block 0

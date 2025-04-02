@@ -12,10 +12,10 @@ import uvicorn
 import yaml
 from eth_account import Account
 from eth_account.datastructures import SignedTransaction
+from eth_account.signers.local import LocalAccount
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from web3 import Web3
-
 
 from eigensdk.chainio.clients.builder import BuildAllConfig, build_all
 from eigensdk.chainio.utils import nums_to_bytes
@@ -31,6 +31,13 @@ from eigensdk.services.bls_aggregation.blsagg import (
 from eigensdk.services.operatorsinfo.operatorsinfo_inmemory import (
     OperatorsInfoServiceInMemory,
 )
+from constants import (
+    TASK_MANAGER_ADDRESS,
+    TASK_MANAGER_ABI,
+    AGGREGATOR_KEY,
+    AGGREGATOR_SERVER_HOST,
+    RPC_SERVER_URL,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -40,7 +47,7 @@ logger = logging.getLogger(__name__)
 class SignatureRequest(BaseModel):
     task_id: int
     block_number: int
-    operator_id: str
+    # operator_id: str
     signature: dict
     inputs: bytes
     output: bytes
@@ -63,13 +70,18 @@ def hasher(task: SignatureRequest) -> bytes:
 
 
 class Aggregator:
-    def __init__(self, config):
-        self.config = config
-        self.web3 = Web3(Web3.HTTPProvider(self.config["eth_rpc_url"]))
-        self.__load_ecdsa_key()
-        self.__load_clients()
-        self.__load_task_manager()
-        self.__load_bls_aggregation_service()
+    def __init__(self):
+        # self.config = config
+        self.web3 = Web3(Web3.HTTPProvider(RPC_SERVER_URL))
+        self.aggregator_address = Account.from_key(AGGREGATOR_KEY).address
+        # self.__load_clients()
+        self.pk_wallet: LocalAccount = (
+            Account.from_key(AGGREGATOR_KEY) if AGGREGATOR_KEY else None
+        )
+        self.task_manager = self.web3.eth.contract(
+            address=TASK_MANAGER_ADDRESS, abi=TASK_MANAGER_ABI
+        )
+        # self.__load_bls_aggregation_service()
         self.tasks = {}
         self.taskResponses = {}
 
@@ -84,9 +96,10 @@ class Aggregator:
                 signature = Signature(data.signature["X"], data.signature["Y"])
                 task_index = data.task_id
                 logger.info(f"Received signature for task {task_index}")
-                self.bls_aggregation_service.process_new_signature(
-                    task_index, data, signature, data.operator_id
-                )
+                # TODO: check if the signature is valid somehow
+                # self.bls_aggregation_service.process_new_signature(
+                #     task_index, data, signature, data.operator_id
+                # )
                 return "true"
             except Exception as e:
                 logger.error(f"Submitting signature failed: {e}")
@@ -95,8 +108,7 @@ class Aggregator:
                 )
 
     def start_server(self):
-        host, port = self.config["aggregator_server_ip_port_address"].split(":")
-        # self.app.run(host=host, port=port)
+        host, port = AGGREGATOR_SERVER_HOST.split(":")
         self.server_thread = threading.Thread(
             target=uvicorn.run,
             args=(self.app,),
@@ -115,14 +127,14 @@ class Aggregator:
         # Define the _task struct, the dict should correspond to the struct in the contract
         # here: `contracts/src/ISertnServiceManager.sol` -> `ISertnServiceManagerTypes.Task`
         task = {
-            "modelId_": 1,  # uint256 - Replace with the actual model ID
+            "operatorModelId_": 1,  # uint256 - Replace with the actual model ID
             # TODO: INPUT DATA here:
             "inputs_": "".encode(),  # bytes - actual input data
             "poc_": 100,  # uint256 - Proof of computation value (WTF is this?)
             "startTime_": 0,  # uint256 - Will be set in the contract
             "startingBlock_": 0,  # uint256 - Will be set in the contract
             "proveOnResponse_": True,  # bool - Whether the task is a proof of stake task
-            "user_": self.clients.wallet.address,  # address TODO: what address should be here?
+            "user_": self.pk_wallet.address,  # address TODO: what address should be here?
         }
 
         tx = self.task_manager.functions.sendTask(task).build_transaction(
@@ -135,22 +147,17 @@ class Aggregator:
             }
         )
 
-        import pdb
-
         try:
             # Simulate the transaction
             self.web3.eth.call(tx)
         except Exception as e:
-            pdb.set_trace()
             print(f"Transaction simulation failed: {e}")
 
         signed_tx: SignedTransaction = self.web3.eth.account.sign_transaction(
-            tx, private_key=self.aggregator_ecdsa_private_key
+            tx, private_key=AGGREGATOR_KEY
         )
         tx_hash = self.web3.eth.send_raw_transaction(signed_tx.raw_transaction)
         receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash)
-
-        pdb.set_trace()
 
         if not receipt["logs"]:
             logger.error("Failed to send new task")
@@ -162,13 +169,14 @@ class Aggregator:
 
         task_index = event["args"]["taskIndex"]
         logger.info(f"Successfully sent the new task {task_index}")
-        self.bls_aggregation_service.initialize_new_task(
-            task_index=task_index,
-            task_created_block=receipt["blockNumber"],
-            quorum_numbers=nums_to_bytes([0]),
-            quorum_threshold_percentages=[100],
-            time_to_expiry=60000,
-        )
+        # TODO: ???
+        # self.bls_aggregation_service.initialize_new_task(
+        #     task_index=task_index,
+        #     task_created_block=receipt["blockNumber"],
+        #     quorum_numbers=nums_to_bytes([0]),
+        #     quorum_threshold_percentages=[100],
+        #     time_to_expiry=60000,
+        # )
         return event["args"]["taskIndex"]
 
     def start_sending_new_tasks(self):
@@ -221,75 +229,46 @@ class Aggregator:
     #             }
     #         )
     #         signed_tx = self.web3.eth.account.sign_transaction(
-    #             tx, private_key=self.aggregator_ecdsa_private_key
+    #             tx, private_key=AGGREGATOR_KEY
     #         )
     #         tx_hash = self.web3.eth.send_raw_transaction(signed_tx.raw_transaction)
     #         receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash)
 
-    def __load_ecdsa_key(self):
-        ecdsa_key_password = os.environ.get("AGGREGATOR_ECDSA_KEY_PASSWORD", "")
-        if not ecdsa_key_password:
-            logger.warning("AGGREGATOR_ECDSA_KEY_PASSWORD not set. using empty string.")
-
-        with open(self.config["ecdsa_private_key_store_path"], "r") as f:
-            keystore = json.load(f)
-        self.aggregator_ecdsa_private_key = Account.decrypt(
-            keystore, ecdsa_key_password
-        ).hex()
-        self.aggregator_address = Account.from_key(
-            self.aggregator_ecdsa_private_key
-        ).address
-
     def __load_clients(self):
-        cfg = BuildAllConfig(
-            eth_http_url=self.config["eth_rpc_url"],
-            avs_name="incredible-squaring",
-            registry_coordinator_addr=self.config["avs_registry_coordinator_address"],
-            operator_state_retriever_addr=self.config[
-                "operator_state_retriever_address"
-            ],
-            prom_metrics_ip_port_address="",
-        )
-        self.clients = build_all(cfg, self.aggregator_ecdsa_private_key, logger)
+        pass
+        # cfg = BuildAllConfig(
+        #     eth_http_url=self.config["eth_rpc_url"],
+        #     avs_name="incredible-squaring",
+        #     registry_coordinator_addr=self.config["avs_registry_coordinator_address"],
+        #     operator_state_retriever_addr=self.config[
+        #         "operator_state_retriever_address"
+        #     ],
+        #     prom_metrics_ip_port_address="",
+        # )
+        # self.clients = build_all(cfg, AGGREGATOR_KEY, logger)
 
-    def __load_task_manager(self):
-        service_manager_address = self.clients.avs_registry_writer.service_manager_addr
-        with open("abis/IncredibleSquaringServiceManager.json") as f:
-            service_manager_abi = f.read()
-        service_manager = self.web3.eth.contract(
-            address=service_manager_address, abi=service_manager_abi
-        )
+        # self.eth_http_client = Web3(Web3.HTTPProvider(self.config["eth_rpc_url"]))
 
-        task_manager_address = (
-            service_manager.functions.incredibleSquaringTaskManager().call()
-        )
-        with open("abis/IncredibleSquaringTaskManager.json") as f:
-            task_manager_abi = f.read()
-        self.task_manager = self.web3.eth.contract(
-            address=task_manager_address, abi=task_manager_abi
-        )
+    # def __load_bls_aggregation_service(self):
+    #     operator_info_service = OperatorsInfoServiceInMemory(
+    #         avs_registry_reader=self.clients.avs_registry_reader,
+    #         start_block_pub=0,
+    #         start_block_socket=0,
+    #         logger=logger,
+    #     )
 
-    def __load_bls_aggregation_service(self):
-        operator_info_service = OperatorsInfoServiceInMemory(
-            avs_registry_reader=self.clients.avs_registry_reader,
-            start_block_pub=0,
-            start_block_socket=0,
-            logger=logger,
-        )
+    #     avs_registry_service = AvsRegistryService(
+    #         self.clients.avs_registry_reader, operator_info_service, logger
+    #     )
 
-        avs_registry_service = AvsRegistryService(
-            self.clients.avs_registry_reader, operator_info_service, logger
-        )
-
-        self.bls_aggregation_service = BlsAggregationService(
-            avs_registry_service, hasher
-        )
+    #     self.bls_aggregation_service = BlsAggregationService(
+    #         avs_registry_service, hasher
+    #     )
 
 
 if __name__ == "__main__":
-    with open("configs/aggregator.yaml", "r") as f:
-        config = yaml.load(f, Loader=yaml.BaseLoader)
-    aggregator = Aggregator(config)
+    # sertnServiceManager address - 0x9d4454B023096f34B160D6B654540c56A1F81688
+    aggregator = Aggregator()
     # threading.Thread(target=aggregator.start_submitting_signatures, args=[]).start()
     threading.Thread(target=aggregator.start_sending_new_tasks, args=[]).start()
     aggregator.start_server()
