@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "eth-abi>=5.2.0",
     "fastapi>=0.115.12",
     "mcl",
     "pydantic>=2.10.6",

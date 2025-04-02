@@ -2,6 +2,9 @@
 cache/
 out/
 
+anvil/anvil.pid
+# anvil/state.json
+
 # Ignores development broadcast logs
 broadcast/*
 
