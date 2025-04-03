@@ -19,7 +19,7 @@
 */
 
 pragma solidity >=0.7.0 <0.9.0;
-import {IVerifier} from "./IVerifier.sol";
+import {IVerifier} from "../interfaces/IVerifier.sol";
 
 contract Groth16Verifier is IVerifier {
     // Scalar field size
@@ -43,14 +43,14 @@ contract Groth16Verifier is IVerifier {
     uint256 constant deltay1 = 17202612554711599482908196053543148107101733311343697700169381132321591863125;
     uint256 constant deltay2 = 4835400880193782974544359089020544644149031593488168540442619636629931464521;
 
-    
+
     uint256 constant IC0x = 16493382902433484056683108117744035731954883933192154513407322565438822152720;
     uint256 constant IC0y = 4160100878012971236554258998656890264051510398644277727833993744915115602196;
-    
+
     uint256 constant IC1x = 14488204737911373411322520066035576542895370985663684574254404767512147199840;
     uint256 constant IC1y = 21269212735368673795246787138481652585905855681579585231730664364645575985859;
-    
- 
+
+
     // Memory data
     uint16 constant pVk = 0;
     uint16 constant pPairing = 128;
@@ -70,7 +70,7 @@ contract Groth16Verifier is IVerifier {
                     return(0, 0x20)
                 }
             }
-            
+
             // G1 function to multiply a G1 value(x,y) to value in an address
             function g1_mulAccC(pR, x, y, s) {
                 let success
@@ -105,9 +105,9 @@ contract Groth16Verifier is IVerifier {
                 mstore(add(_pVk, 32), IC0y)
 
                 // Compute the linear combination vk_x
-                
+
                 g1_mulAccC(_pVk, IC1x, IC1y, calldataload(add(pubSignals, 0)))
-                
+
 
                 // -A
                 mstore(_pPairing, calldataload(pA))
@@ -160,9 +160,9 @@ contract Groth16Verifier is IVerifier {
             mstore(0x40, add(pMem, pLastMem))
 
             // Validate that all evaluations ∈ F
-            
+
             checkField(calldataload(add(_pubSignals, 0)))
-            
+
 
             // Validate all evaluations
             let isValid := checkPairing(_pA, _pB, _pC, _pubSignals, pMem)

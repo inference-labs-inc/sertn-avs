@@ -27,8 +27,6 @@ import {Test, console2 as console} from "forge-std/Test.sol";
 import {SertnServiceManager} from "./SertnServiceManager.sol";
 import {ModelStorage} from "./ModelStorage.sol";
 
-
-
 contract SertnTaskManager is
     SertnServiceManagerStorage,
     ISertnServiceManagerErrors,
@@ -49,13 +47,13 @@ contract SertnTaskManager is
     SertnServiceManager public sertnServiceManager;
     ModelStorage public modelStorage;
 
-
     modifier onlyAggregators() {
         if (!sertnServiceManager.isAggregator(msg.sender) && msg.sender != address(sertnServiceManager)) {
             revert NotAggregator();
         }
         _;
     }
+
     modifier onlyOperators() {
         if (!sertnServiceManager.isOperator(msg.sender)) {
             revert NotOperator();
@@ -63,23 +61,21 @@ contract SertnTaskManager is
         _;
     }
 
-    constructor(
+    function initialize(
         address _rewardsCoordinator,
         address _delegationManager,
         address _allocationManager,
         address _sertnServiceManager,
         address _modelStorage,
         address _ser
-    ) OwnableUpgradeable() {
+    ) public initializer {
+        __Ownable_init();
         _transferOwnership(msg.sender);
         allocationManager = IAllocationManager(_allocationManager);
         delegationManager = IDelegationManager(_delegationManager);
         rewardsCoordinator = IRewardsCoordinator(_rewardsCoordinator);
         sertnServiceManager = SertnServiceManager(_sertnServiceManager);
         modelStorage = ModelStorage(_modelStorage);
-
-
-
 
         opSet = OperatorSet({avs: address(sertnServiceManager), id: 0});
         ser = IERC20(_ser);

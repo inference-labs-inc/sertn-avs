@@ -1,0 +1,12 @@
+{
+  "addresses": {
+    "serviceManager": "0x804b7eF97c4B46b26730aFadDCCaf8468D99aDB2",
+    "taskManager": "0xF735910EB19b1CE52Af5Fad7465F4a6eb0490F50",
+    "modelStorage": "0xc5658694Ec751831f530C3Cf7a1c2C876301E0a7"
+  },
+  "implementations": {
+    "serviceManager": "0xA2bEc4fFdc91790A5C279aD71104540Af911bE30",
+    "taskManager": "0xA2b56aB27Cb652f48bD2D40Eff98F37550bEc5a5",
+    "modelStorage": "0x3316FE9EA81E8186D27795F0a25b25AA0104f57F"
+  }
+}

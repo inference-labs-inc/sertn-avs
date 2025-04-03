@@ -3,7 +3,7 @@ src = "src"
 out = "out"
 libs = ["lib"]
 fs_permissions = [{ access = "read-write", path = "./" }]
-solc = "0.8.28"
+solc = "0.8.29"
 optimizer = true
 via-ir = true
 

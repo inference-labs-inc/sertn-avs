@@ -22,6 +22,7 @@ import "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
 import "@openzeppelin-upgrades/contracts/utils/math/MathUpgradeable.sol";
 
 import "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
+import "@openzeppelin-upgrades/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
 import {SertnTaskManager} from "./SertnTaskManager.sol";
 import {ModelStorage} from "./ModelStorage.sol";
@@ -40,7 +41,7 @@ contract SertnServiceManager is
     ISertnServiceManagerErrors,
     ISertnServiceManagerEvents,
     OwnableUpgradeable,
-    ReentrancyGuard
+    ReentrancyGuardUpgradeable
 {
     uint256 public numOperatorModels;
     address[] public aggregators;
@@ -78,13 +79,16 @@ contract SertnServiceManager is
         _;
     }
 
-    constructor(
+    function initialize(
         address _rewardsCoordinator,
         address _delegationManager,
         address _allocationManager,
         IStrategy[] memory _strategies,
         string memory _avsMetadata
-    ) OwnableUpgradeable() {
+    ) public initializer {
+        __Ownable_init();
+        __ReentrancyGuard_init();
+
         // Set the deployer as an aggregator
         isAggregator[msg.sender] = true;
         BASE_APPROVAL = 100 ether;
@@ -491,5 +495,9 @@ contract SertnServiceManager is
             unchecked { ++i; }
         }
         emit OperatorDeleted(operator, operatorSetIds);
+    }
+
+    function getOperatorInfo(address _operator) public view returns (Operator memory) {
+        return abi.decode(opInfo[_operator], (Operator));
     }
 }

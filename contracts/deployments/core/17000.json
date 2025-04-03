@@ -1,0 +1,19 @@
+{
+  "addresses": {
+    "strategyFactory": "0x9c01252B580efD11a05C00Aa42Dd3ac1Ec52DF6d",
+    "strategyManager": "0xdfB5f6CE42aAA7830E94ECFCcAd411beF4d4D5b6",
+    "eigenPodManager": "0x30770d7E3e71112d7A6b7259542D1f680a70e315",
+    "delegation": "0xA44151489861Fe9e3055d95adC98FbD462B948e7",
+    "allocation": "0x78469728304326CBc65f8f95FA756B0B73164462",
+    "rewardsCoordinator": "0xAcc1fb458a1317E886dB376Fc8141540537E68fE",
+    "proxyAdmin": "0x0000000000000000000000000000000000000000"
+  },
+  "implementations": {
+    "strategyFactory": "0x62e328C554AD0F8eD4735C215Ff43d8b8a407aDE",
+    "strategyManager": "0x7798625888ECf3EB2c3c74Dc2746e09d72747679",
+    "eigenPodManager": "0x35b7743633AcdaEB18a4894469fcdBF23E13f304",
+    "delegation": "0xDa6F662777aDB5209644cF5cf1A61A2F8a99BF48",
+    "allocation": "0xe03D546ADa84B5624b50aA22Ff8B87baDEf44ee2",
+    "rewardsCoordinator": "0xA3c31d2FBAD3d924baA64f8789E03E9FA7d70d69"
+  }
+}
