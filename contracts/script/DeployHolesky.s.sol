@@ -1,4 +1,3 @@
-
 pragma solidity ^0.8.13;
 
 import {Script} from "forge-std/Script.sol";
@@ -8,23 +7,15 @@ import {SertnTaskManager} from "../src/SertnTaskManager.sol";
 import {ModelRegistry} from "../src/ModelRegistry.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
-import {IAVSDirectory} from "@eigenlayer/contracts/interfaces/IAVSDirectory.sol";
 import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
 import {ISignatureUtils} from "@eigenlayer/contracts/interfaces/ISignatureUtils.sol";
 import {IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 
-contract IAVSRegistrar {
-    function registerOperator(address operator, address avs, uint32[] calldata operatorSetIds, bytes calldata data) external {}
-    function deregisterOperator(address operator, address avs, uint32[] calldata operatorSetIds) external {}
-    function supportsAVS(address avs) external view returns (bool) {}
-    fallback () external {}
-}
 
 contract DeployHolesky is Script {
     function run() external {
         uint256 deployerKey = vm.envUint("HOLESKY_DEPLOYER_KEY");
-        address avsDirectory = vm.envAddress("AVS_DIRECTORY");
         address allocationManager = vm.envAddress("ALLOCATION_MANAGER");
         address strategy = vm.envAddress("STRATEGY_ADDRESS");
 
@@ -78,7 +69,6 @@ contract DeployHolesky is Script {
         );
 
 
-        IAVSDirectory avsDir = IAVSDirectory(avsDirectory);
         IAllocationManager allocMgr = IAllocationManager(allocationManager);
 
 
@@ -91,30 +81,6 @@ contract DeployHolesky is Script {
             strategies: strategies
         });
         allocMgr.createOperatorSets(address(serviceManagerProxy), sets);
-
-
-        uint256 expiry = type(uint256).max;
-        bytes32 salt = bytes32(uint256(0) + 1);
-        bytes32 digest = avsDir.calculateOperatorAVSRegistrationDigestHash(
-            address(serviceManagerProxy),
-            address(serviceManagerProxy),
-            salt,
-            expiry
-        );
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(deployerKey, digest);
-
-        avsDir.registerOperatorToAVS(
-            address(serviceManagerProxy),
-            ISignatureUtils.SignatureWithSaltAndExpiry(
-                abi.encodePacked(r, s, v),
-                salt,
-                expiry
-            )
-        );
-
-
-        allocMgr.setAVSRegistrar(address(serviceManagerProxy), new IAVSRegistrar());
-
 
         uint32[] memory operatorSetIds = new uint32[](1);
         operatorSetIds[0] = 1;

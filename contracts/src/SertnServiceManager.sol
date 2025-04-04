@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-import "./ISertnServiceManager.sol";
+import "../interfaces/ISertnServiceManager.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
@@ -16,7 +16,7 @@ import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import {IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
-import {IVerifier} from "./IVerifier.sol";
+import {IVerifier} from "../interfaces/IVerifier.sol";
 import "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
 
 import "@openzeppelin-upgrades/contracts/utils/math/MathUpgradeable.sol";
@@ -25,7 +25,7 @@ import "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
 import "@openzeppelin-upgrades/contracts/security/ReentrancyGuardUpgradeable.sol";
 import "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
 import {SertnTaskManager} from "./SertnTaskManager.sol";
-import {ModelStorage} from "./ModelStorage.sol";
+import {ModelRegistry} from "./ModelRegistry.sol";
 
 import {Test, console2 as console} from "forge-std/Test.sol";
 
@@ -49,7 +49,6 @@ contract SertnServiceManager is
     bytes[] public slashingQueue;
 
     IERC20 public ser;
-    uint256 public BASE_APPROVAL;
 
     IAllocationManager public allocationManager;
     IDelegationManager public delegationManager;
@@ -61,13 +60,6 @@ contract SertnServiceManager is
     modifier onlyAggregators() {
         if (!isAggregator[msg.sender]) {
             revert NotAggregator();
-        }
-        _;
-    }
-
-    modifier onlyOperators() {
-        if (!isOperator[msg.sender]) {
-            revert NotOperator();
         }
         _;
     }
@@ -88,11 +80,8 @@ contract SertnServiceManager is
     ) public initializer {
         __Ownable_init();
         __ReentrancyGuard_init();
-
         // Set the deployer as an aggregator
         isAggregator[msg.sender] = true;
-        BASE_APPROVAL = 100 ether;
-        _transferOwnership(msg.sender);
 
         allocationManager = IAllocationManager(_allocationManager);
         delegationManager = IDelegationManager(_delegationManager);

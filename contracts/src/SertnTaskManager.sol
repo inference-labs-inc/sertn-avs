@@ -15,7 +15,7 @@ import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationMa
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 
 import {IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
-import {IVerifier} from "./IVerifier.sol";
+import {IVerifier} from "../interfaces/IVerifier.sol";
 import "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
 
 import "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
@@ -25,7 +25,7 @@ import "@openzeppelin-upgrades/contracts/utils/math/MathUpgradeable.sol";
 import {Test, console2 as console} from "forge-std/Test.sol";
 
 import {SertnServiceManager} from "./SertnServiceManager.sol";
-import {ModelStorage} from "./ModelStorage.sol";
+import {ModelRegistry} from "./ModelRegistry.sol";
 
 contract SertnTaskManager is
     SertnServiceManagerStorage,
@@ -45,7 +45,7 @@ contract SertnTaskManager is
     OperatorSet public opSet;
 
     SertnServiceManager public sertnServiceManager;
-    ModelStorage public modelStorage;
+    ModelRegistry public ModelRegistry;
 
     modifier onlyAggregators() {
         if (!sertnServiceManager.isAggregator(msg.sender) && msg.sender != address(sertnServiceManager)) {
@@ -66,7 +66,7 @@ contract SertnTaskManager is
         address _delegationManager,
         address _allocationManager,
         address _sertnServiceManager,
-        address _modelStorage,
+        address _modelRegistry,
         address _ser
     ) public initializer {
         __Ownable_init();
@@ -75,7 +75,7 @@ contract SertnTaskManager is
         delegationManager = IDelegationManager(_delegationManager);
         rewardsCoordinator = IRewardsCoordinator(_rewardsCoordinator);
         sertnServiceManager = SertnServiceManager(_sertnServiceManager);
-        modelStorage = ModelStorage(_modelStorage);
+        ModelRegistry = ModelRegistry(_modelRegistry);
 
         opSet = OperatorSet({avs: address(sertnServiceManager), id: 0});
         ser = IERC20(_ser);
@@ -290,7 +290,7 @@ contract SertnTaskManager is
         }
 
         OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(_operatorModelId), (OperatorModel));
-        taskVerified[_taskId] = IVerifier(modelStorage.modelAddresses(_operatorModel.modelId_)).verifyProof(_proof);
+        taskVerified[_taskId] = IVerifier(ModelRegistry.modelAddresses(_operatorModel.modelId_)).verifyProof(_proof);
     }
 
     function verifyTask(bytes memory _taskId, bytes memory _proof) external onlyOperators() {
@@ -309,7 +309,7 @@ contract SertnTaskManager is
             revert IncorrectOperator();
         }
 
-        taskVerified[_taskId] = IVerifier(modelStorage.modelAddresses(_operatorModel.modelId_)).verifyProof(_proof);
+        taskVerified[_taskId] = IVerifier(ModelRegistry.modelAddresses(_operatorModel.modelId_)).verifyProof(_proof);
     }
 
     function verifiedOffChain(bytes memory _taskId, bool _verified) external onlyAggregators() {

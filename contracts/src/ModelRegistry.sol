@@ -3,8 +3,10 @@ pragma solidity ^0.8.29;
 import {OwnableUpgradeable} from "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
 import {IModelRegistry} from "../interfaces/IModelRegistry.sol";
 contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
+
     // Current model index
     uint256 public modelIndex;
+
     // modelVerifier => modelId
     mapping(address => uint256) public modelVerifiers;
 
@@ -12,6 +14,8 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
     mapping(uint256 => address) public modelVerifier;
     // modelId => modelURI
     mapping(uint256 => string) public modelURI;
+    // modelId => verificationStrategy
+    mapping(uint256 => VerificationStrategy) public verificationStrategy;
 
 
     function initialize(
@@ -21,6 +25,7 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
 
     function createNewModel(
        address _modelVerifier,
+       VerificationStrategy _verificationStrategy,
        string memory _modelURI
     ) external onlyOwner() {
         // Validation checks for model verifier
@@ -29,10 +34,11 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
         // Assign verifier and URI
         modelVerifier[modelIndex] = _modelVerifier;
         modelURI[modelIndex] = _modelURI;
+        verificationStrategy[modelIndex] = _verificationStrategy;
         // Assign reverse mapping values
         modelVerifiers[_modelVerifier] = modelIndex;
 
-        emit ModelCreated(modelIndex, _modelVerifier, _modelURI);
+        emit ModelCreated(modelIndex, _modelVerifier, _verificationStrategy, _modelURI);
         // Increment model index
         modelIndex++;
     }

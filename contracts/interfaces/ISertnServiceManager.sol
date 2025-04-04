@@ -1,12 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
-
 import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
 
 interface ISertnServiceManager {
-}
-
-interface ISertnServiceManagerErrors {
     error IncorrectAVS();
     error IncorrectOperatorSetIds();
     error NotModelId();
@@ -29,24 +25,18 @@ interface ISertnServiceManagerErrors {
     error NoPermission();
     error NotRegisteredToModel();
     error InvalidAggregator();
-}
 
-interface ISertnServiceManagerEvents {
     event NewOperator(address opAddr_);
     event NewModels(uint256[] modelId_);
     event NewStrategies(address[] newSupportedTokens_);
     event NewTask(address indexed opAddr_, bytes indexed taskId_);
-    event TaskResponded(uint256 indexed model, bytes indexed taskId, ISertnServiceManagerTypes.TaskResponse task);
+    event TaskResponded(uint256 indexed model, bytes indexed taskId, TaskResponse task);
     event UpForSlashing(address indexed operator, bytes indexed taskId);
     event ProofRequested(address indexed operator, bytes indexed taskId);
     event OperatorSlashed(address indexed operator, bytes indexed taskId);
-    event ModelUpdated(uint256 indexed modelId, ISertnServiceManagerTypes.OperatorModel operatorModel);
+    event ModelUpdated(uint256 indexed modelId, OperatorModel operatorModel);
     event OpInfoChanged(address indexed _operator, bytes _opInfo);
     event OperatorDeleted(address indexed _operator, uint32[] opSetIds);
-}
-
-interface ISertnServiceManagerTypes {
-
     struct Model {
         string title_;
         string description_;
