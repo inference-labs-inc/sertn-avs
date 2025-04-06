@@ -127,7 +127,7 @@ class Aggregator:
         # Define the _task struct, the dict should correspond to the struct in the contract
         # here: `contracts/src/ISertnServiceManager.sol` -> `ISertnServiceManagerTypes.Task`
         task = {
-            "operatorModelId_": 1,  # uint256 - Replace with the actual model ID
+            "operatorModelId_": 0,  # uint256 - Replace with the actual model ID
             # TODO: INPUT DATA here:
             "inputs_": "".encode(),  # bytes - actual input data
             "poc_": 100,  # uint256 - Proof of computation value (WTF is this?)
@@ -147,11 +147,11 @@ class Aggregator:
             }
         )
 
-        try:
-            # Simulate the transaction
-            self.web3.eth.call(tx)
-        except Exception as e:
-            print(f"Transaction simulation failed: {e}")
+        # try:
+        #     # Simulate the transaction
+        #     self.web3.eth.call(tx)
+        # except Exception as e:
+        #     print(f"Transaction simulation failed: {e}")
 
         signed_tx: SignedTransaction = self.web3.eth.account.sign_transaction(
             tx, private_key=AGGREGATOR_KEY

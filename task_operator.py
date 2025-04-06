@@ -10,6 +10,7 @@ import requests
 import yaml
 from eth_abi import encode
 from eth_account import Account
+from eth_account.datastructures import SignedTransaction
 from web3 import Web3
 
 from eigensdk._types import Operator
@@ -59,6 +60,13 @@ class TaskOperator:
         """
         operator_address = Account.from_key(OPERATOR_KEY).address
 
+        # AllocationManager.registerForOperatorSets(address operator, RegisterParams params)
+        # struct RegisterParams {
+        #     address avs;
+        #     uint32[] operatorSetIds;
+        #     bytes data;
+        # }
+
         # `data` argument for `registerOperator` function is just `bytes` type
         # and is encoded as a tuple of the following types:
         data_schema = [
@@ -88,9 +96,9 @@ class TaskOperator:
         # OperatorModel[] memory _operatorModels:
         operator_models = [
             (
-                operator_address,  # operator_ - Example operator address
+                operator_address,  # operator_ - value will be set in the contract
                 1,  # modelId_
-                1000,  # maxBlocks_
+                100,  # maxBlocks_
                 [ETH_STRATEGY_ADDRESSES[0]],  # ethStrategies_ - IStrategy[]
                 [100, 200],  # ethShares_
                 0,  # baseFee_
@@ -126,7 +134,7 @@ class TaskOperator:
         # Example operator set IDs, according to the contract, must be `[0]`
         operator_set_ids = [0]
 
-        self.service_manager.functions.registerOperator(
+        tx = self.service_manager.functions.registerOperator(
             operator_address, avs, operator_set_ids, data
         ).build_transaction(
             {
@@ -138,11 +146,31 @@ class TaskOperator:
             }
         )
 
+        try:
+            # Simulate the transaction
+            self.web3.eth.call(tx)
+        except Exception as e:
+            print(f"Transaction simulation failed: {e}")
+
+        signed_tx: SignedTransaction = self.web3.eth.account.sign_transaction(
+            tx, private_key=OPERATOR_KEY
+        )
+        tx_hash = self.web3.eth.send_raw_transaction(signed_tx.raw_transaction)
+        receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash)
+
+        if not receipt["logs"]:
+            logger.error(
+                "Failed to register operator, no logs found in transaction receipt."
+            )
+            return
+
+        logger.info(f"Operator registered successfully, tx hash: {tx_hash.hex()}")
+
     def start(self):
         logger.info("Checking Operator registration...")
         self.register()
         logger.info("Starting Operator...")
-        event_filter = self.task_manager.events.NewTaskCreated.create_filter(
+        event_filter = self.task_manager.events.NewTask.create_filter(
             from_block="latest"
         )
         while True:
