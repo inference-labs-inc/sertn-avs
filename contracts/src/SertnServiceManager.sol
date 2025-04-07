@@ -5,10 +5,9 @@ import "../interfaces/ISertnServiceManager.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {SertnServiceManagerStorage} from "./SertnServiceManagerStorage.sol";
 
 import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
-import {IAVSRegistrar} from "@eigenlayer/contracts/interfaces/IAVSRegistrar.sol";
+import {ISertnRegistrar} from "../interfaces/ISertnRegistrar.sol";
 
 import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
@@ -37,25 +36,43 @@ import {Test, console2 as console} from "forge-std/Test.sol";
 contract SertnServiceManager is
     ISertnServiceManager,
     SertnServiceManagerStorage,
-    IAVSRegistrar,
-    ISertnServiceManagerErrors,
-    ISertnServiceManagerEvents,
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable
 {
-    uint256 public numOperatorModels;
-    address[] public aggregators;
-    address[] public operators;
-    bytes[] public slashingQueue;
 
     IERC20 public ser;
 
     IAllocationManager public allocationManager;
     IDelegationManager public delegationManager;
     IRewardsCoordinator public rewardsCoordinator;
-    OperatorSet public opSet;
     SertnTaskManager public sertnTaskManager;
     ModelStorage public modelStorage;
+    ISertnRegistrar public sertnRegistrar;
+
+    uint256 public PROOF_REQUEST_COST = 100;
+    uint32 public TASK_EXPIRY_BLOCKS = 1e3;
+    uint256 public BOUNTY = 500;
+
+    mapping(address => IStrategy) public tokenToStrategy;
+    mapping(address => bytes) public opInfo;
+    mapping(address => bool) public isAggregator;
+    mapping(address => bool) public isOperator;
+    mapping(uint256 => bytes) public operatorModelInfo;
+    mapping(address => mapping(bytes32 => uint256)) public computeUnits;
+    mapping(uint256 => uint256[]) public modelsByName;
+    mapping(bytes => bool) public taskVerified;
+    mapping(bytes  => bytes) public taskResponse;
+    mapping(address => bytes[]) public operatorSlashingQueue;
+    mapping(bytes => address) public bountyHunter;
+    mapping(uint256 => address) public modelAddresses;
+    mapping(address => bytes) public modelVerifiers;
+
+    // The number of nodes that a given operator has
+    mapping(address => uint256) public operatorNodeCount;
+    // Compute units for a given operator-node
+    mapping(address => mapping(uint256 => uint256)) public operatorNodeComputeUnits;
+    // Which models a given operator node supports
+    mapping(address => mapping(uint256 => mapping(uint256 => bool))) public operatorNodeModelIds;
 
     modifier onlyAggregators() {
         if (!isAggregator[msg.sender]) {
@@ -75,6 +92,7 @@ contract SertnServiceManager is
         address _rewardsCoordinator,
         address _delegationManager,
         address _allocationManager,
+        address _sertnRegistrar,
         IStrategy[] memory _strategies,
         string memory _avsMetadata
     ) public initializer {
@@ -86,11 +104,8 @@ contract SertnServiceManager is
         allocationManager = IAllocationManager(_allocationManager);
         delegationManager = IDelegationManager(_delegationManager);
         rewardsCoordinator = IRewardsCoordinator(_rewardsCoordinator);
-
+        sertnRegistrar = ISertnRegistrar(_sertnRegistrar);
         _registerToEigen(_strategies, _avsMetadata);
-
-        opSet = OperatorSet({avs: address(this), id: 0});
-        ser = _strategies[0].underlyingToken();
     }
 
     function setTaskManagerandModelStorage(address _sertnTaskManager, address _modelStorage) external onlyOwner {
@@ -120,6 +135,7 @@ contract SertnServiceManager is
             strategies: _strategies
         });
         allocationManager.createOperatorSets(address(this), setParams);
+        allocationManager.setAVSRegistrar(address(sertnRegistrar));
         _addStrategies(_strategies, false);
     }
 
