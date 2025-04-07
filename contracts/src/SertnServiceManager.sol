@@ -85,6 +85,13 @@ contract SertnServiceManager is
         _;
     }
 
+    modifier onlySertnRegistrar() {
+        if (msg.sender != address(sertnRegistrar)) {
+            revert NotSertnRegistrar();
+        }
+        _;
+    }
+
     function initialize(
         address _rewardsCoordinator,
         address _delegationManager,

@@ -2,6 +2,11 @@
 pragma solidity ^0.8.29;
 import {OwnableUpgradeable} from "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
 import {IModelRegistry} from "../interfaces/IModelRegistry.sol";
+/**
+ * @title ModelRegistry
+ * @author Inference Labs, Inc.
+ * @notice ModelRegistry is a contract that stores models for the Sertn network.
+ */
 contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
 
     // Current model index
