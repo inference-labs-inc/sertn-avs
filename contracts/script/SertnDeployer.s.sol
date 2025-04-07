@@ -8,8 +8,7 @@ import {CoreDeploymentLib} from "./utils/CoreDeploymentLib.sol";
 import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
 import {StrategyBase} from "@eigenlayer/contracts/strategies/StrategyBase.sol";
 import {ERC20Mock} from "../test/ERC20Mock.sol";
-import {TransparentUpgradeableProxy} from
-    "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {StrategyFactory} from "@eigenlayer/contracts/strategies/StrategyFactory.sol";
 import {StrategyManager} from "@eigenlayer/contracts/core/StrategyManager.sol";
 import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
@@ -20,7 +19,7 @@ import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IE
 
 import {IERC20, StrategyFactory} from "@eigenlayer/contracts/strategies/StrategyFactory.sol";
 import {SertnTaskManager} from "../src/SertnTaskManager.sol";
-import {ModelStorage} from "../src/ModelStorage.sol";
+import {ModelRegistry} from "../src/ModelRegistry.sol";
 import "forge-std/Test.sol";
 
 contract SertnDeployer is Script, Test {
@@ -38,7 +37,7 @@ contract SertnDeployer is Script, Test {
     // IECDSAStakeRegistryTypes.Quorum internal quorum;
     ERC20Mock token;
 
-        IStrategy[] _tokenToStrategy;
+    IStrategy[] _tokenToStrategy;
     IStrategy[] _ethStrategies;
     IStrategy _serStrategy;
     IStrategy[] strategies;
@@ -51,15 +50,16 @@ contract SertnDeployer is Script, Test {
 
     SertnServiceManager sertnServiceManager;
     SertnTaskManager sertnTaskManager;
-    ModelStorage modelStorage;
+    ModelRegistry modelRegistry;
 
     function setUp() public virtual {
         deployer = vm.rememberKey(vm.envUint("PRIVATE_KEY"));
         vm.label(deployer, "Deployer");
 
-
-
-        coreDeployment = CoreDeploymentLib.readDeploymentJson("deployments/core/", block.chainid);
+        coreDeployment = CoreDeploymentLib.readDeploymentJson(
+            "deployments/core/",
+            block.chainid
+        );
     }
 
     function run() external {
@@ -91,19 +91,19 @@ contract SertnDeployer is Script, Test {
             ""
         );
 
-        modelStorage = new ModelStorage(address(sertnServiceManager));
+        modelRegistry = new ModelRegistry(address(sertnServiceManager));
 
         sertnTaskManager = new SertnTaskManager(
             coreDeployment.rewardsCoordinator,
             coreDeployment.delegationManager,
             coreDeployment.allocationManager,
             address(sertnServiceManager),
-            address(modelStorage),
+            address(modelRegistry),
             address(serToken)
         );
 
-
-        sertnServiceManager.setTaskManagerandModelStorage(address(sertnTaskManager), address(modelStorage));
+        sertnServiceManager.updateTaskManager(address(sertnTaskManager));
+        sertnServiceManager.updateModelRegistry(address(modelRegistry));
 
         // sertnServiceManager.setTaskManager(address(sertnTaskManager));
 
@@ -113,9 +113,7 @@ contract SertnDeployer is Script, Test {
         // SertnDeploymentLib.writeDeploymentJson(sertnDeployment);
     }
 
-
     function addStrategy(address token) public returns (IStrategy) {
-
         StrategyFactory strategyFactory = StrategyFactory(
             coreDeployment.strategyFactory
         );
@@ -124,21 +122,21 @@ contract SertnDeployer is Script, Test {
         );
         return newStrategy;
     }
-        
-//     function verifyDeployment() internal view {y
 
-//         require(
-//             sertnDeployment.stakeRegistry != address(0), "StakeRegistry address cannot be zero"
-//         );
-//         require(
-//             sertnDeployment.sertnServiceManager != address(0),
-//             "SertnServiceManager address cannot be zero"
-//         );
-//         require(sertnDeployment.strategy != address(0), "Strategy address cannot be zero");
-//         require(proxyAdmin != address(0), "ProxyAdmin address cannot be zero");
-//         require(
-//             coreDeployment.delegationManager != address(0),
-//             "DelegationManager address cannot be zero"
-//         );
-//     }
+    //     function verifyDeployment() internal view {y
+
+    //         require(
+    //             sertnDeployment.stakeRegistry != address(0), "StakeRegistry address cannot be zero"
+    //         );
+    //         require(
+    //             sertnDeployment.sertnServiceManager != address(0),
+    //             "SertnServiceManager address cannot be zero"
+    //         );
+    //         require(sertnDeployment.strategy != address(0), "Strategy address cannot be zero");
+    //         require(proxyAdmin != address(0), "ProxyAdmin address cannot be zero");
+    //         require(
+    //             coreDeployment.delegationManager != address(0),
+    //             "DelegationManager address cannot be zero"
+    //         );
+    //     }
 }

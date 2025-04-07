@@ -3,7 +3,7 @@ pragma solidity ^0.8.12;
 
 import {SertnServiceManager} from "../src/SertnServiceManager.sol";
 import {SertnTaskManager} from "../src/SertnTaskManager.sol";
-import "../src/ISertnServiceManager.sol";
+import "../interfaces/ISertnServiceManager.sol";
 import {MockAVSDeployer} from "@eigenlayer-middleware/test/utils/MockAVSDeployer.sol";
 import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
 import {Vm} from "forge-std/Vm.sol";
@@ -27,11 +27,10 @@ import {OperatorSet} from "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
 
 import "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
 import {Test, console2 as console} from "forge-std/Test.sol";
-import {ISertnServiceManager} from "../src/ISertnServiceManager.sol";
 import {ECDSAUpgradeable} from "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
 import {MockVerifier} from "./MockVerifier.sol";
 import {MockVerifier2} from "./MockVerifier2.sol";
-import {ModelStorage} from "../src/ModelStorage.sol";
+import {ModelRegistry} from "../src/ModelRegistry.sol";
 
 contract AVSSetup2 is Test {
     IECDSAStakeRegistryTypes.Quorum internal quorum;
@@ -74,8 +73,7 @@ contract AVSSetup2 is Test {
     SertnTaskManager sertnTaskManager;
     MockVerifier mockVerifier;
     MockVerifier2 mockVerifier2;
-    ModelStorage modelStorage;
-    
+    ModelRegistry modelRegistry;
 
     mapping(address => IStrategy) public tokenToStrategy;
 
@@ -121,26 +119,26 @@ contract AVSSetup2 is Test {
             ""
         );
 
-        modelStorage = new ModelStorage(address(sertnServiceManager));
-
-
+        modelRegistry = new ModelRegistry(address(sertnServiceManager));
 
         sertnTaskManager = new SertnTaskManager(
             coreDeployment.rewardsCoordinator,
             coreDeployment.delegationManager,
             coreDeployment.allocationManager,
             address(sertnServiceManager),
-            address(modelStorage),
+            address(modelRegistry),
             address(serToken)
         );
 
         // console.log(sertnServiceManager.owner(), owner.key.addr);
 
-        sertnServiceManager.setTaskManagerandModelStorage(address(sertnTaskManager), address(modelStorage));
+        sertnServiceManager.setTaskManagerandModelRegistry(
+            address(sertnTaskManager),
+            address(modelRegistry)
+        );
 
         mockVerifier = new MockVerifier();
         mockVerifier2 = new MockVerifier2();
-
 
         vm.stopPrank();
         labelContracts(coreDeployment);
@@ -234,19 +232,27 @@ contract AVSSetup2 is Test {
         ISertnServiceManager sm = ISertnServiceManager(
             address(sertnServiceManager)
         );
-        ISertnServiceManagerTypes.Model[] memory _model = new ISertnServiceManagerTypes.Model[](1);
+        ISertnServiceManagerTypes.Model[]
+            memory _model = new ISertnServiceManagerTypes.Model[](1);
         address[] memory _operators = new address[](1);
         _operators[0] = operator.key.addr;
-        _model[0] = ISertnServiceManagerTypes.Model({title_: "HelloWorldModel", description_: "Returns hello world", modelVerifier_: address(mockVerifier), operators_: _operators});
+        _model[0] = ISertnServiceManagerTypes.Model({
+            title_: "HelloWorldModel",
+            description_: "Returns hello world",
+            modelVerifier_: address(mockVerifier),
+            operators_: _operators
+        });
 
         ISertnServiceManagerTypes.OperatorModel[]
-            memory _operatorModel = new ISertnServiceManagerTypes.OperatorModel[](1);
+            memory _operatorModel = new ISertnServiceManagerTypes.OperatorModel[](
+                1
+            );
         uint256[] memory _ethShares = new uint256[](2);
         _ethShares[0] = 10;
         _ethShares[1] = 10;
         _operatorModel[0] = ISertnServiceManagerTypes.OperatorModel({
             operator_: operator.key.addr,
-            modelId_: 2**96 - 1,
+            modelId_: 2 ** 96 - 1,
             maxBlocks_: 1e2,
             ethStrategies_: _ethStrategies,
             ethShares_: _ethShares,
@@ -260,7 +266,8 @@ contract AVSSetup2 is Test {
         _computeUnitNames[0] = bytes32("model1");
         uint256[] memory _computeUnits = new uint256[](1);
         _computeUnits[0] = 10;
-        bytes memory _data = abi.encode(_model,
+        bytes memory _data = abi.encode(
+            _model,
             _operatorModel,
             _computeUnitNames,
             _computeUnits
@@ -295,7 +302,6 @@ contract AVSSetup2 is Test {
         operators.push(newOperator);
         return newOperator;
     }
-
 }
 
 contract RegisterOperatorToAVS2 is AVSSetup2 {
@@ -396,7 +402,6 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         _respondToTask1(operators[0].key.addr, taskId, false, bytes(""), false);
         _checkTaskResponse(user.key.addr, taskId);
         _slashTask(taskId);
-
     }
 
     function test_base() public {
@@ -430,16 +435,23 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
 
         address[] memory _operators = new address[](1);
         _operators[0] = operators[0].key.addr;
-        _model[0] = ISertnServiceManagerTypes.Model({title_: "WassupModel", description_: "Returns wassup", modelVerifier_: address(mockVerifier2), operators_: _operators});
+        _model[0] = ISertnServiceManagerTypes.Model({
+            title_: "WassupModel",
+            description_: "Returns wassup",
+            modelVerifier_: address(mockVerifier2),
+            operators_: _operators
+        });
 
         ISertnServiceManagerTypes.OperatorModel[]
-            memory _operatorModel = new ISertnServiceManagerTypes.OperatorModel[](1);
+            memory _operatorModel = new ISertnServiceManagerTypes.OperatorModel[](
+                1
+            );
         _operatorModel[0] = ISertnServiceManagerTypes.OperatorModel({
             operator_: operators[0].key.addr,
-            modelId_: 2**96 - 1,
+            modelId_: 2 ** 96 - 1,
             maxBlocks_: 1e2,
             ethStrategies_: _ethStrategies,
-            ethShares_: _ethShares, 
+            ethShares_: _ethShares,
             baseFee_: 1e2,
             maxSer_: 1e4,
             computeType_: bytes32("model2"),
@@ -472,14 +484,17 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         _respondToTask2(operators[0].key.addr, taskId, true, bytes("1"), false);
         vm.roll(block.number + 10);
         _respondToTask2(operators[0].key.addr, taskId, true, bytes("2"), false);
-        _checkTaskResponse(user.key.addr, taskId); 
+        _checkTaskResponse(user.key.addr, taskId);
         vm.roll(block.number + 1e2);
         // _clearTask(taskId);
-        
+
         _slashTask(taskId);
     }
 
-    function _sendTask(address _user, ISertnServiceManagerTypes.Task memory task) internal returns (bytes memory _taskId) {
+    function _sendTask(
+        address _user,
+        ISertnServiceManagerTypes.Task memory task
+    ) internal returns (bytes memory _taskId) {
         vm.startPrank(_user);
 
         ethToken1.mint(_user, 1 ether);
@@ -494,19 +509,28 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         ethToken2.approve(address(sertnTaskManager), 1e4);
         serToken.approve(address(sertnTaskManager), 1e4);
 
-        
         sertnTaskManager.sendTask(task);
         vm.stopPrank();
-        ISertnServiceManagerTypes.OperatorModel memory _operatorModel = abi.decode(sertnServiceManager.operatorModelInfo(task.operatorModelId_), (ISertnServiceManagerTypes.OperatorModel));
+        ISertnServiceManagerTypes.OperatorModel memory _operatorModel = abi
+            .decode(
+                sertnServiceManager.operatorModelInfo(task.operatorModelId_),
+                (ISertnServiceManagerTypes.OperatorModel)
+            );
         return _getLatestTaskId(_operatorModel.operator_);
     }
 
-    function _respondToTask1(address operator, bytes memory _taskId, bool _verification, bytes memory _proof, bool _alreadyVerified) internal {
+    function _respondToTask1(
+        address operator,
+        bytes memory _taskId,
+        bool _verification,
+        bytes memory _proof,
+        bool _alreadyVerified
+    ) internal {
         vm.startPrank(operator);
-        ISertnServiceManagerTypes.Operator
-            memory _operator = abi.decode(sertnServiceManager.opInfo(
-                operator), (ISertnServiceManagerTypes.Operator)
-            );
+        ISertnServiceManagerTypes.Operator memory _operator = abi.decode(
+            sertnServiceManager.opInfo(operator),
+            (ISertnServiceManagerTypes.Operator)
+        );
         require(_inBytesArray(_operator.openTasks_, _taskId), "Not open task");
         ISertnServiceManagerTypes.TaskResponse
             memory _taskResponse = ISertnServiceManagerTypes.TaskResponse({
@@ -516,14 +540,20 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
             });
         sertnTaskManager.submitTask(_taskResponse, _verification, _proof);
         vm.stopPrank();
-    } 
+    }
 
-       function _respondToTask2(address operator, bytes memory _taskId, bool _verification, bytes memory _proof, bool _alreadyVerified) internal {
+    function _respondToTask2(
+        address operator,
+        bytes memory _taskId,
+        bool _verification,
+        bytes memory _proof,
+        bool _alreadyVerified
+    ) internal {
         vm.startPrank(operator);
-        ISertnServiceManagerTypes.Operator
-            memory _operator = abi.decode(sertnServiceManager.opInfo(
-                operator), (ISertnServiceManagerTypes.Operator)
-            );
+        ISertnServiceManagerTypes.Operator memory _operator = abi.decode(
+            sertnServiceManager.opInfo(operator),
+            (ISertnServiceManagerTypes.Operator)
+        );
         require(_inBytesArray(_operator.openTasks_, _taskId), "Not open task");
         ISertnServiceManagerTypes.TaskResponse
             memory _taskResponse = ISertnServiceManagerTypes.TaskResponse({
@@ -533,14 +563,15 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
             });
         sertnTaskManager.submitTask(_taskResponse, _verification, _proof);
         vm.stopPrank();
-    } 
+    }
 
     function _checkTaskResponse(address _user, bytes memory _taskId) internal {
         vm.startPrank(_user);
-        ISertnServiceManagerTypes.TaskResponse
-            memory _taskResponse = abi.decode(sertnServiceManager.taskResponse(
-            _taskId), (ISertnServiceManagerTypes.TaskResponse)
-        );
+        ISertnServiceManagerTypes.TaskResponse memory _taskResponse = abi
+            .decode(
+                sertnServiceManager.taskResponse(_taskId),
+                (ISertnServiceManagerTypes.TaskResponse)
+            );
         string memory _outputData = string(_taskResponse.output_);
         console.log(_outputData);
     }
@@ -573,16 +604,26 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         vm.stopPrank();
     }
 
-    function _addModel(address _operator, ISertnServiceManagerTypes.Model[] memory _models, SertnServiceManager.OperatorModel[] memory _operatorModels) internal {
+    function _addModel(
+        address _operator,
+        ISertnServiceManagerTypes.Model[] memory _models,
+        SertnServiceManager.OperatorModel[] memory _operatorModels
+    ) internal {
         vm.startPrank(_operator);
-        for (uint8 i = 0; i < _models.length; i ++) {
-            _operatorModels[i].modelId_ = modelStorage.createNewModel(_models[i]);
+        for (uint8 i = 0; i < _models.length; i++) {
+            _operatorModels[i].modelId_ = modelRegistry.createNewModel(
+                _models[i]
+            );
         }
         sertnServiceManager.addModels(_operatorModels);
         vm.stopPrank();
     }
 
-    function _addCompute(address _operator, bytes32[] memory _computeUnitNames, uint256[] memory _computeUnits) internal {
+    function _addCompute(
+        address _operator,
+        bytes32[] memory _computeUnitNames,
+        uint256[] memory _computeUnits
+    ) internal {
         vm.startPrank(_operator);
         sertnServiceManager.modifyCompute(_computeUnitNames, _computeUnits);
         vm.stopPrank();
@@ -594,22 +635,30 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         vm.stopPrank();
     }
 
-    function _getLatestTaskId(address operator) internal returns (bytes memory) {
-        ISertnServiceManagerTypes.Operator memory _operator = abi.decode(sertnServiceManager.opInfo(
-                operator), (ISertnServiceManagerTypes.Operator)
-            );
+    function _getLatestTaskId(
+        address operator
+    ) internal returns (bytes memory) {
+        ISertnServiceManagerTypes.Operator memory _operator = abi.decode(
+            sertnServiceManager.opInfo(operator),
+            (ISertnServiceManagerTypes.Operator)
+        );
         require(_operator.openTasks_.length > 0, "No open tasks");
-        return(_operator.openTasks_[_operator.openTasks_.length - 1]);
+        return (_operator.openTasks_[_operator.openTasks_.length - 1]);
     }
 
-    function _inBytesArray(bytes[] memory _byteArray, bytes memory _byteElement) internal pure returns(bool) {
+    function _inBytesArray(
+        bytes[] memory _byteArray,
+        bytes memory _byteElement
+    ) internal pure returns (bool) {
         bytes32 elementHash = keccak256(_byteElement);
         for (uint256 i = 0; i < _byteArray.length; i++) {
-            if (_byteArray[i].length > 0 && elementHash == keccak256(_byteArray[i])) {
+            if (
+                _byteArray[i].length > 0 &&
+                elementHash == keccak256(_byteArray[i])
+            ) {
                 return true;
             }
         }
         return false;
     }
-
 }

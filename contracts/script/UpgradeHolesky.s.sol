@@ -1,4 +1,3 @@
-
 pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
@@ -10,7 +9,7 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 import {SertnServiceManager} from "../src/SertnServiceManager.sol";
 import {SertnTaskManager} from "../src/SertnTaskManager.sol";
-import {ModelStorage} from "../src/ModelStorage.sol";
+import {ModelRegistry} from "../src/ModelRegistry.sol";
 
 contract UpgradeHolesky is Script {
     using stdJson for *;
@@ -19,7 +18,7 @@ contract UpgradeHolesky is Script {
     struct DeploymentData {
         address serviceManager;
         address taskManager;
-        address modelStorage;
+        address modelRegistry;
     }
 
     address private deployer;
@@ -43,8 +42,16 @@ contract UpgradeHolesky is Script {
         console2.log("Proxy admin from env:", proxyAdmin);
     }
 
-    function readDeploymentJson() internal view returns (DeploymentData memory) {
-        string memory filePath = string.concat("deployments/sertn/", vm.toString(block.chainid), ".json");
+    function readDeploymentJson()
+        internal
+        view
+        returns (DeploymentData memory)
+    {
+        string memory filePath = string.concat(
+            "deployments/sertn/",
+            vm.toString(block.chainid),
+            ".json"
+        );
         console2.log("Reading Sertn deployment from:", filePath);
 
         require(vm.exists(filePath), "Deployment file does not exist");
@@ -56,12 +63,12 @@ contract UpgradeHolesky is Script {
         DeploymentData memory data;
         data.serviceManager = json.readAddress(".addresses.serviceManager");
         data.taskManager = json.readAddress(".addresses.taskManager");
-        data.modelStorage = json.readAddress(".addresses.modelStorage");
+        data.modelRegistry = json.readAddress(".addresses.modelRegistry");
 
         console2.log("Deployment data decoded successfully");
         console2.log("Service manager:", data.serviceManager);
         console2.log("Task manager:", data.taskManager);
-        console2.log("Model storage:", data.modelStorage);
+        console2.log("Model registry:", data.modelRegistry);
 
         return data;
     }
@@ -72,64 +79,87 @@ contract UpgradeHolesky is Script {
 
         DeploymentData memory deployment = readDeploymentJson();
 
-
         console2.log("Deploying new implementations...");
         SertnServiceManager newServiceManagerImpl = new SertnServiceManager();
-        console2.log("New service manager implementation:", address(newServiceManagerImpl));
+        console2.log(
+            "New service manager implementation:",
+            address(newServiceManagerImpl)
+        );
 
         SertnTaskManager newTaskManagerImpl = new SertnTaskManager();
-        console2.log("New task manager implementation:", address(newTaskManagerImpl));
+        console2.log(
+            "New task manager implementation:",
+            address(newTaskManagerImpl)
+        );
 
-        ModelStorage newModelStorageImpl = new ModelStorage();
-        console2.log("New model storage implementation:", address(newModelStorageImpl));
-
+        ModelRegistry newModelRegistryImpl = new ModelRegistry();
+        console2.log(
+            "New model registry implementation:",
+            address(newModelRegistryImpl)
+        );
 
         console2.log("Upgrading service manager...");
-        TransparentUpgradeableProxy(payable(deployment.serviceManager)).upgradeTo(address(newServiceManagerImpl));
+        TransparentUpgradeableProxy(payable(deployment.serviceManager))
+            .upgradeTo(address(newServiceManagerImpl));
         console2.log("Service manager upgraded successfully");
 
-
         console2.log("Upgrading task manager...");
-        TransparentUpgradeableProxy(payable(deployment.taskManager)).upgradeTo(address(newTaskManagerImpl));
+        TransparentUpgradeableProxy(payable(deployment.taskManager)).upgradeTo(
+            address(newTaskManagerImpl)
+        );
         console2.log("Task manager upgraded successfully");
 
-
-        if (deployment.modelStorage != address(0)) {
-            console2.log("Upgrading model storage...");
-            TransparentUpgradeableProxy(payable(deployment.modelStorage)).upgradeTo(address(newModelStorageImpl));
-            console2.log("Model storage upgraded successfully");
+        if (deployment.modelRegistry != address(0)) {
+            console2.log("Upgrading model registry...");
+            TransparentUpgradeableProxy(payable(deployment.modelRegistry))
+                .upgradeTo(address(newModelRegistryImpl));
+            console2.log("Model registry upgraded successfully");
         }
 
         vm.stopBroadcast();
 
-
-        string memory deploymentPath = string.concat("deployments/sertn/", vm.toString(block.chainid), ".json");
+        string memory deploymentPath = string.concat(
+            "deployments/sertn/",
+            vm.toString(block.chainid),
+            ".json"
+        );
         string memory json = vm.readFile(deploymentPath);
-
 
         string memory addresses = string.concat(
             '"addresses":{',
-            '"serviceManager":"', vm.toString(deployment.serviceManager), '",',
-            '"taskManager":"', vm.toString(deployment.taskManager), '",',
-            '"modelStorage":"', vm.toString(deployment.modelStorage), '"}'
+            '"serviceManager":"',
+            vm.toString(deployment.serviceManager),
+            '",',
+            '"taskManager":"',
+            vm.toString(deployment.taskManager),
+            '",',
+            '"modelRegistry":"',
+            vm.toString(deployment.modelRegistry),
+            '"}'
         );
-
 
         string memory newJson = string.concat(
-            '{',
-            addresses, ',',
+            "{",
+            addresses,
+            ",",
             '"implementations":{',
-            '"serviceManager":"', vm.toString(address(newServiceManagerImpl)), '",',
-            '"taskManager":"', vm.toString(address(newTaskManagerImpl)), '"'
+            '"serviceManager":"',
+            vm.toString(address(newServiceManagerImpl)),
+            '",',
+            '"taskManager":"',
+            vm.toString(address(newTaskManagerImpl)),
+            '"'
         );
 
-        if (deployment.modelStorage != address(0)) {
+        if (deployment.modelRegistry != address(0)) {
             newJson = string.concat(
                 newJson,
-                ',"modelStorage":"', vm.toString(address(newModelStorageImpl)), '"'
+                ',"modelRegistry":"',
+                vm.toString(address(newModelRegistryImpl)),
+                '"'
             );
         }
-        newJson = string.concat(newJson, '}}');
+        newJson = string.concat(newJson, "}}");
 
         vm.writeFile(deploymentPath, newJson);
         console2.log("Updated implementation addresses in:", deploymentPath);
