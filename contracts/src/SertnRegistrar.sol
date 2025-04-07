@@ -27,6 +27,7 @@ contract SertnRegistrar is IAVSRegistrar, OwnableUpgradeable {
      */
     function registerOperator(
         address operator,
+        address avs,
         uint32[] calldata operatorSetIds,
         bytes calldata data
     ) external {}
@@ -36,6 +37,7 @@ contract SertnRegistrar is IAVSRegistrar, OwnableUpgradeable {
      */
     function deregisterOperator(
         address operator,
+        address avs,
         uint32[] calldata operatorSetIds
     ) external {}
 
