@@ -2,7 +2,7 @@
   "python.defaultInterpreterPath": "./client/.venv/bin/python",
   "isort.args": [
     "--settings-file",
-    "./.isort.cfg"
+    "./client/.isort.cfg"
   ],
   "makefile.configureOnOpen": false,
   "[python]": {

@@ -1,11 +1,30 @@
-from web3 import Web3
+import json
 from typing import Optional
 
-from common.abis import TASK_MANAGER_ABI, SERVICE_MANAGER_ABI
+from eth_account import Account
+from web3 import Web3
+
+from common.abis import SERVICE_MANAGER_ABI, TASK_MANAGER_ABI
 from common.constants import (
-    TASK_MANAGER_ADDRESS,
     SERVICE_MANAGER_ADDRESS,
+    TASK_MANAGER_ADDRESS,
 )
+from console import console, styles
+
+
+def load_ecdsa_private_key(keystore_path: str, password: str) -> str:
+    """
+    Load ECDSA private key from keystore file
+    """
+    if not password:
+        console.print(
+            "ECDSA key not set. using empty string.",
+            style=styles.debug,
+        )
+
+    with open(keystore_path, "r") as f:
+        keystore = json.load(f)
+    return Account.decrypt(keystore, password).hex()
 
 
 class EthereumClient:

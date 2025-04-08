@@ -1,5 +1,4 @@
 import os
-import json
 import time
 from typing import Optional
 
@@ -11,7 +10,7 @@ from eth_account.datastructures import SignedTransaction
 from eth_abi import encode
 
 from console import console, styles
-from common.eth import EthereumClient
+from common.eth import EthereumClient, load_ecdsa_private_key
 from common.constants import (
     ETH_STRATEGY_ADDRESSES,
 )
@@ -31,33 +30,19 @@ def run_operator(config: dict) -> None:
 class TaskOperator:
     def __init__(self, config: dict):
         self.config = config
-
         self.eth_client = EthereumClient(rpc_url=self.config["eth_rpc_url"])
-        self.load_ecdsa_private_key()
-
-    def load_ecdsa_private_key(self):
-        """
-        Load ECDSA private key from keystore file
-        """
-        ecdsa_key_password = os.environ.get("OPERATOR_ECDSA_KEY_PASSWORD", "")
-        if not ecdsa_key_password:
-            console.print(
-                "OPERATOR_ECDSA_KEY_PASSWORD not set. using empty string.",
-                style=styles.debug,
-            )
-
-        with open(self.config["ecdsa_private_key_store_path"], "r") as f:
-            keystore = json.load(f)
-        self.operator_ecdsa_private_key = Account.decrypt(
-            keystore, ecdsa_key_password
-        ).hex()
+        self.private_key = load_ecdsa_private_key(
+            keystore_path=self.config["ecdsa_private_key_store_path"],
+            password=os.environ.get("OPERATOR_ECDSA_KEY_PASSWORD", ""),
+        )
+        self.operator_address = Account.from_key(self.private_key).address
 
     def register(self):
         """
         Register operator with the AVS registry
         TODO: verify isn't the operator already registered
         """
-        operator_address = Account.from_key(self.operator_ecdsa_private_key).address
+        operator_address = Account.from_key(self.private_key).address
 
         # `data` argument for `registerOperator` function is just `bytes` type
         # and is encoded as a tuple of the following types:
@@ -145,7 +130,7 @@ class TaskOperator:
             print(f"Transaction simulation failed: {e}")
 
         signed_tx: SignedTransaction = self.eth_client.w3.eth.account.sign_transaction(
-            tx, private_key=self.operator_ecdsa_private_key
+            tx, private_key=self.private_key
         )
         tx_hash = self.eth_client.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
         receipt = self.eth_client.w3.eth.wait_for_transaction_receipt(tx_hash)
