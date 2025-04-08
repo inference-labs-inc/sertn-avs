@@ -1,13 +1,15 @@
 from typing import Optional
+
 from tqdm import tqdm
-from rich.console import Console
+import yaml
 
-console = Console()
+from console import console, styles
 
 
-def run_operator(config: Optional[str] = None) -> None:
-    console.print("[bold green]Starting Sertn Operator...[/bold green]")
+def run_operator(config: dict) -> None:
+    console.print("Starting Sertn Operator...", style=styles.op_info)
 
     with tqdm(total=100, desc="Initializing operator") as pbar:
+
         pbar.update(50)
         pbar.update(50)

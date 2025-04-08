@@ -1,12 +1,11 @@
 from typing import Optional
 from tqdm import tqdm
-from rich.console import Console
 
-console = Console()
+from console import console, styles
 
 
-def run_aggregator(config: Optional[str] = None) -> None:
-    console.print("[bold blue]Starting Sertn Aggregator...[/bold blue]")
+def run_aggregator(config: dict) -> None:
+    console.print("Starting Sertn Aggregator...", style=styles.agg_info)
 
     with tqdm(total=100, desc="Initializing aggregator") as pbar:
         pbar.update(50)

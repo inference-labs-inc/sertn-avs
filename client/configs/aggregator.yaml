@@ -6,8 +6,5 @@ eth_ws_url: ws://localhost:8545
 aggregator_server_ip_port_address: localhost:8090
 ecdsa_private_key_store_path: tests/keys/aggregator.ecdsa.key.json
 
-task_manager_address: 0x9d4454B023096f34B160D6B654540c56A1F81688
-
-# wtf is this?
 avs_registry_coordinator_address: 0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9
 operator_state_retriever_address: 0x95401dc811bb5740090279Ba06cfA8fcF6113778

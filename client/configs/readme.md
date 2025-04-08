@@ -1,0 +1,1 @@
+This folder contains some example configurations for the client. You can use these as a starting point for your own configurations. The configurations are in YAML format, which is a human-readable data serialization format. You can find more information about YAML [here](https://yaml.org/).
