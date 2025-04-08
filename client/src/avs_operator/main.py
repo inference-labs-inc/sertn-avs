@@ -9,7 +9,7 @@ from eth_account import Account
 from eth_account.datastructures import SignedTransaction
 from eth_abi import encode
 
-from console import console, styles
+from common.console import console, styles
 from common.eth import EthereumClient, load_ecdsa_private_key
 from common.constants import (
     ETH_STRATEGY_ADDRESSES,

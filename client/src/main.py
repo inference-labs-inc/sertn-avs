@@ -6,7 +6,7 @@ import yaml
 
 from avs_operator import run_operator
 from aggregator import run_aggregator
-from console import console, styles
+from common.console import console, styles
 
 app = typer.Typer(
     name="sertn",
@@ -30,31 +30,27 @@ def start(
         help="Path to config file",
     ),
 ) -> None:
+    console.print(f"Starting Sertn in {mode} mode...", style=styles.debug)
+
     try:
-        console.print(f"Starting Sertn in {mode} mode...", style=styles.debug)
-
-        try:
-            with open(config, "r") as f:
-                config_dict = config = yaml.load(f, Loader=yaml.BaseLoader)
-        except Exception as e:
-            console.print(
-                f"Error loading config file. Please check the path and format.",
-                style=styles.error,
-            )
-            raise typer.Exit(1)
-
-        if mode == "operator":
-            run_operator(config_dict)
-        elif mode == "aggregator":
-            run_aggregator(config_dict)
-        else:
-            console.print(
-                f"Invalid mode: {mode}. Use 'operator' or 'aggregator'",
-                style=styles.error,
-            )
-            raise typer.Exit(1)
+        with open(config, "r") as f:
+            config_dict = config = yaml.load(f, Loader=yaml.BaseLoader)
     except Exception as e:
-        console.print(f"Error: {str(e)}", style=styles.error)
+        console.print(
+            f"Error loading config file. Please check the path and format.",
+            style=styles.error,
+        )
+        raise typer.Exit(1)
+
+    if mode == "operator":
+        run_operator(config_dict)
+    elif mode == "aggregator":
+        run_aggregator(config_dict)
+    else:
+        console.print(
+            f"Invalid mode: {mode}. Use 'operator' or 'aggregator'",
+            style=styles.error,
+        )
         raise typer.Exit(1)
 
 

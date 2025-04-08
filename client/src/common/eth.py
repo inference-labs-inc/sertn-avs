@@ -9,7 +9,7 @@ from common.constants import (
     SERVICE_MANAGER_ADDRESS,
     TASK_MANAGER_ADDRESS,
 )
-from console import console, styles
+from common.console import console, styles
 
 
 def load_ecdsa_private_key(keystore_path: str, password: str) -> str:
