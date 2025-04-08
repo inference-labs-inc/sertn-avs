@@ -1081,6 +1081,7 @@ name = "sertn-avs"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "eth-account" },
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "rich" },
@@ -1098,6 +1099,7 @@ test = [
 
 [package.metadata]
 requires-dist = [
+    { name = "eth-account", specifier = ">=0.13.5" },
     { name = "pydantic", specifier = ">=2.6.3" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8.0.0" },
     { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=0.23.5" },
