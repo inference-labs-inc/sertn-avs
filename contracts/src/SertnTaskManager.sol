@@ -23,10 +23,11 @@ import "@openzeppelin-upgrades/contracts/utils/math/MathUpgradeable.sol";
 
 import {Test, console2 as console} from "forge-std/Test.sol";
 
-import {SertnServiceManager} from "./SertnServiceManager.sol";
+import {ISertnServiceManager} from "../interfaces/ISertnServiceManager.sol";
 import {ModelRegistry} from "./ModelRegistry.sol";
+import {ISertnTaskManager} from "../interfaces/ISertnTaskManager.sol";
 
-contract SertnTaskManager is OwnableUpgradeable {
+contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
     address[] public aggregators;
     address[] public operators;
     bytes[] public slashingQueue;
@@ -36,10 +37,9 @@ contract SertnTaskManager is OwnableUpgradeable {
     IAllocationManager public allocationManager;
     IDelegationManager public delegationManager;
     IRewardsCoordinator public rewardsCoordinator;
-    OperatorSet public opSet;
 
-    SertnServiceManager public sertnServiceManager;
-    ModelRegistry public ModelRegistry;
+    ISertnServiceManager public sertnServiceManager;
+    ModelRegistry public modelRegistry;
 
     modifier onlyAggregators() {
         if (
@@ -67,55 +67,19 @@ contract SertnTaskManager is OwnableUpgradeable {
         address _ser
     ) public initializer {
         __Ownable_init();
-        _transferOwnership(msg.sender);
         allocationManager = IAllocationManager(_allocationManager);
         delegationManager = IDelegationManager(_delegationManager);
         rewardsCoordinator = IRewardsCoordinator(_rewardsCoordinator);
-        sertnServiceManager = SertnServiceManager(_sertnServiceManager);
-        ModelRegistry = ModelRegistry(_modelRegistry);
-
-        opSet = OperatorSet({avs: address(sertnServiceManager), id: 0});
-        ser = IERC20(_ser);
+        sertnServiceManager = ISertnServiceManager(_sertnServiceManager);
+        modelRegistry = ModelRegistry(_modelRegistry);
     }
 
-    function sendTask(Task memory _task) external {
-        uint256 _operatorModelId = _task.operatorModelId_;
-        _task.startTime_ = block.timestamp;
-        _task.startingBlock_ = uint32(block.number);
+    function sendTask(Task memory _task) external onlyAggregators {
+        _task.startTime = block.timestamp;
+        _task.startingBlock = uint32(block.number);
 
-        if (
-            0 > _operatorModelId ||
-            sertnServiceManager.numOperatorModels() < _operatorModelId
-        ) {
-            revert NotModelId();
-        }
-        OperatorModel memory _operatorModel = abi.decode(
-            sertnServiceManager.operatorModelInfo(_operatorModelId),
-            (OperatorModel)
-        );
-        Operator memory _operator = abi.decode(
-            sertnServiceManager.opInfo(_operatorModel.operator_),
-            (Operator)
-        );
-        // OperatorModel memory _operatorModel = sertnServiceManager.getModelInfo(_operatorModelId);
-        if (_task.proveOnResponse_ && !_operatorModel.proveOnResponse_) {
-            revert NoProofOnResponse();
-        }
-
-        if (_task.proveOnResponse_) {
-            _checkFinancialSecurity(
-                _task.poc_,
-                _operatorModel,
-                _operator,
-                _operatorModel.maxBlocks_
-            );
-        } else {
-            _checkFinancialSecurity(
-                _task.poc_ * 10,
-                _operatorModel,
-                _operator,
-                uint32(TASK_EXPIRY_BLOCKS)
-            );
+        if (sertnServiceManager.numOperatorModels() < _task.modelId) {
+            revert InvalidModelId();
         }
 
         if (
@@ -184,8 +148,8 @@ contract SertnTaskManager is OwnableUpgradeable {
 
     function _checkFinancialSecurity(
         uint256 _poc,
-        OperatorModel memory _operatorModel,
-        Operator memory _operator,
+        ISertnServiceManager.OperatorModel memory _operatorModel,
+        ISertnServiceManager.Operator memory _operator,
         uint32 _securityDuration
     ) internal view {
         address[] memory _operators = new address[](1);
@@ -232,7 +196,10 @@ contract SertnTaskManager is OwnableUpgradeable {
         bool _verification,
         bytes memory _proof
     ) external {
-        Task memory _task = abi.decode(_taskResponse.taskId_, (Task));
+        ISertnServiceManager.Task memory _task = abi.decode(
+            _taskResponse.taskId_,
+            (ISertnServiceManager.Task)
+        );
 
         uint256 _operatorModelId = _task.operatorModelId_;
 
@@ -242,9 +209,9 @@ contract SertnTaskManager is OwnableUpgradeable {
         ) {
             revert NotModelId();
         }
-        OperatorModel memory _operatorModel = abi.decode(
+        ISertnServiceManager.OperatorModel memory _operatorModel = abi.decode(
             sertnServiceManager.operatorModelInfo(_operatorModelId),
-            (OperatorModel)
+            (ISertnServiceManager.OperatorModel)
         );
         // OperatorModel memory _operatorModel = operatorModelInfo[_operatorModelId];
 
@@ -252,9 +219,9 @@ contract SertnTaskManager is OwnableUpgradeable {
             revert IncorrectOperator();
         }
 
-        Operator memory _operator = abi.decode(
+        ISertnServiceManager.Operator memory _operator = abi.decode(
             sertnServiceManager.opInfo(_operatorModel.operator_),
-            (Operator)
+            (ISertnServiceManager.Operator)
         );
 
         if (
@@ -270,7 +237,9 @@ contract SertnTaskManager is OwnableUpgradeable {
                 10 * _task.poc_,
                 _operatorModel,
                 _operator,
-                TASK_EXPIRY_BLOCKS + _task.startingBlock_ - uint32(block.number)
+                sertnServiceManager.TASK_EXPIRY_BLOCKS() +
+                    _task.startingBlock_ -
+                    uint32(block.number)
             );
         }
 
@@ -339,15 +308,18 @@ contract SertnTaskManager is OwnableUpgradeable {
         if (sertnServiceManager.bountyHunter(_taskId) != address(0)) {
             revert BountyAlreadySet();
         }
-        Task memory _task = abi.decode(_taskId, (Task));
-        OperatorModel memory _operatorModel = abi.decode(
+        ISertnServiceManager.Task memory _task = abi.decode(
+            _taskId,
+            (ISertnServiceManager.Task)
+        );
+        ISertnServiceManager.OperatorModel memory _operatorModel = abi.decode(
             sertnServiceManager.operatorModelInfo(_task.operatorModelId_),
-            (OperatorModel)
+            (ISertnServiceManager.OperatorModel)
         );
         // OperatorModel memory _operatorModel = sertnServiceManager.getModelInfo(_task.operatorModelId_);
-        Operator memory _operator = abi.decode(
+        ISertnServiceManager.Operator memory _operator = abi.decode(
             sertnServiceManager.opInfo(_operatorModel.operator_),
-            (Operator)
+            (ISertnServiceManager.Operator)
         );
 
         uint256 _amount = PROOF_REQUEST_COST *
@@ -374,7 +346,10 @@ contract SertnTaskManager is OwnableUpgradeable {
 
     function _verifyTask(bytes memory _taskId, bytes memory _proof) internal {
         //logic to verify task
-        Task memory _task = abi.decode(_taskId, (Task));
+        ISertnServiceManager.Task memory _task = abi.decode(
+            _taskId,
+            (ISertnServiceManager.Task)
+        );
 
         uint256 _operatorModelId = _task.operatorModelId_;
 
@@ -385,9 +360,9 @@ contract SertnTaskManager is OwnableUpgradeable {
             revert NotModelId();
         }
 
-        OperatorModel memory _operatorModel = abi.decode(
+        ISertnServiceManager.OperatorModel memory _operatorModel = abi.decode(
             sertnServiceManager.operatorModelInfo(_operatorModelId),
-            (OperatorModel)
+            (ISertnServiceManager.OperatorModel)
         );
         taskVerified[_taskId] = IVerifier(
             ModelRegistry.modelAddresses(_operatorModel.modelId_)
@@ -399,7 +374,10 @@ contract SertnTaskManager is OwnableUpgradeable {
         bytes memory _proof
     ) external onlyOperators {
         //logic to verify task
-        Task memory _task = abi.decode(_taskId, (Task));
+        ISertnServiceManager.Task memory _task = abi.decode(
+            _taskId,
+            (ISertnServiceManager.Task)
+        );
 
         uint256 _operatorModelId = _task.operatorModelId_;
 
@@ -409,9 +387,9 @@ contract SertnTaskManager is OwnableUpgradeable {
         ) {
             revert NotModelId();
         }
-        OperatorModel memory _operatorModel = abi.decode(
+        ISertnServiceManager.OperatorModel memory _operatorModel = abi.decode(
             sertnServiceManager.operatorModelInfo(_operatorModelId),
-            (OperatorModel)
+            (ISertnServiceManager.OperatorModel)
         );
         // OperatorModel memory _operatorModel = operatorModelInfo[_operatorModelId];
 
@@ -432,9 +410,13 @@ contract SertnTaskManager is OwnableUpgradeable {
     }
 
     function _clearTask(bytes memory _taskId, bool _slashed) internal {
-        Task memory _task = abi.decode(_taskId, (Task));
+        ISertnServiceManager.Task memory _task = abi.decode(
+            _taskId,
+            (ISertnServiceManager.Task)
+        );
         if (
-            _task.startingBlock_ + TASK_EXPIRY_BLOCKS > uint32(block.number) &&
+            _task.startingBlock_ + sertnServiceManager.TASK_EXPIRY_BLOCKS() >
+            uint32(block.number) &&
             !taskVerified[_taskId] &&
             !_slashed
         ) {
@@ -449,13 +431,13 @@ contract SertnTaskManager is OwnableUpgradeable {
         ) {
             revert NotModelId();
         }
-        OperatorModel memory _operatorModel = abi.decode(
+        ISertnServiceManager.OperatorModel memory _operatorModel = abi.decode(
             sertnServiceManager.operatorModelInfo(_operatorModelId),
-            (OperatorModel)
+            (ISertnServiceManager.OperatorModel)
         );
-        Operator memory _operator = abi.decode(
+        ISertnServiceManager.Operator memory _operator = abi.decode(
             sertnServiceManager.opInfo(_operatorModel.operator_),
-            (Operator)
+            (ISertnServiceManager.Operator)
         );
         _operator.openTasks_ = _removeBytesElement(
             _operator.openTasks_,

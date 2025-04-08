@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
-import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
+import {IStrategy} from "lib/eigenlayer-contracts/src/contracts/interfaces/IStrategy.sol";
 
 interface ISertnServiceManager {
     error IncorrectAVS();
@@ -30,7 +30,11 @@ interface ISertnServiceManager {
     event NewModels(uint256[] modelId_);
     event NewStrategies(address[] newSupportedTokens_);
     event NewTask(address indexed opAddr_, bytes indexed taskId_);
-    event TaskResponded(uint256 indexed model, bytes indexed taskId, TaskResponse task);
+    event TaskResponded(
+        uint256 indexed model,
+        bytes indexed taskId,
+        TaskResponse task
+    );
     event UpForSlashing(address indexed operator, bytes indexed taskId);
     event ProofRequested(address indexed operator, bytes indexed taskId);
     event OperatorSlashed(address indexed operator, bytes indexed taskId);
@@ -78,6 +82,7 @@ interface ISertnServiceManager {
         uint32 startingBlock_;
         bool proveOnResponse_;
         address user_;
+        uint256 nonce_;
     }
 
     struct TaskResponse {
@@ -85,5 +90,4 @@ interface ISertnServiceManager {
         bytes output_;
         bool proven_;
     }
-
 }
