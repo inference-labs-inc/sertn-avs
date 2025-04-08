@@ -18,6 +18,11 @@ interface ISertnAggregator {
     error InvalidEOASignature();
 
     /**
+     * @notice Thrown when the address is zero
+     */
+    error ZeroAddress();
+
+    /**
      * @notice Emitted when a task is submitted
      */
     event TaskSubmitted(bytes32 indexed taskId, address indexed submitter);

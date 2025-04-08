@@ -58,7 +58,7 @@ contract SertnServiceManager is
     mapping(address => mapping(bytes32 => uint256)) public computeUnits;
     mapping(uint256 => uint256[]) public modelsByName;
     mapping(bytes => bool) public taskVerified;
-    mapping(bytes  => bytes) public taskResponse;
+    mapping(bytes => bytes) public taskResponse;
     mapping(address => bytes[]) public operatorSlashingQueue;
     mapping(bytes => address) public bountyHunter;
     mapping(uint256 => address) public modelAddresses;
@@ -67,9 +67,11 @@ contract SertnServiceManager is
     // The number of nodes that a given operator has
     mapping(address => uint256) public operatorNodeCount;
     // Compute units for a given operator-node
-    mapping(address => mapping(uint256 => uint256)) public operatorNodeComputeUnits;
+    mapping(address => mapping(uint256 => uint256))
+        public operatorNodeComputeUnits;
     // Which models a given operator node supports
-    mapping(address => mapping(uint256 => mapping(uint256 => bool))) public operatorNodeModelIds;
+    mapping(address => mapping(uint256 => mapping(uint256 => bool)))
+        public operatorNodeModelIds;
 
     modifier onlyAggregators() {
         if (!isAggregator[msg.sender]) {
@@ -143,25 +145,30 @@ contract SertnServiceManager is
     }
 
     function _addStrategies(
-        IStrategy[] memory _strategies, bool _newStrategies
+        IStrategy[] memory _strategies,
+        bool _newStrategies
     ) internal {
-        for (uint256 i; i < _strategies.length;) {
+        for (uint256 i; i < _strategies.length; ) {
             tokenToStrategy[
                 address(_strategies[i].underlyingToken())
             ] = _strategies[i];
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
         if (_newStrategies) {
             allocationManager.addStrategiesToOperatorSet(
-            address(this),
-            0,
-            _strategies
-        );
+                address(this),
+                0,
+                _strategies
+            );
         }
     }
+
     function addStrategies(
-        IStrategy[] memory _strategies, bool _newStrategies
-    ) external onlyAggregators() {
+        IStrategy[] memory _strategies,
+        bool _newStrategies
+    ) external onlyAggregators {
         _addStrategies(_strategies, _newStrategies);
     }
 
@@ -176,24 +183,35 @@ contract SertnServiceManager is
         isAggregator[_aggregator] = true;
     }
 
-
-    function pushToSlashingQueue(bytes calldata _taskId) external onlyTaskManager() {
+    function pushToSlashingQueue(
+        bytes calldata _taskId
+    ) external onlyTaskManager {
         slashingQueue.push(_taskId);
     }
 
-    function pushToOperatorSlashingQueue(address _operator, bytes calldata _taskId) external onlyTaskManager() {
+    function pushToOperatorSlashingQueue(
+        address _operator,
+        bytes calldata _taskId
+    ) external onlyTaskManager {
         operatorSlashingQueue[_operator].push(_taskId);
     }
 
-    function setTaskResponse(TaskResponse calldata _taskResponse) external onlyTaskManager() {
+    function setTaskResponse(
+        TaskResponse calldata _taskResponse
+    ) external onlyTaskManager {
         taskResponse[_taskResponse.taskId_] = abi.encode(_taskResponse);
     }
 
-    function setBountyHunter(bytes calldata _taskId, address _bountyHunter) external onlyTaskManager() {
+    function setBountyHunter(
+        bytes calldata _taskId,
+        address _bountyHunter
+    ) external onlyTaskManager {
         bountyHunter[_taskId] = _bountyHunter;
     }
 
-    function getOperatorInfo(address _operator) public view returns (Operator memory) {
+    function getOperatorInfo(
+        address _operator
+    ) public view returns (Operator memory) {
         return abi.decode(opInfo[_operator], (Operator));
     }
 }

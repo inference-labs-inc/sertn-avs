@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.29;
 
-import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {OwnableUpgradeable} from "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
 import {ISertnAggregator} from "../interfaces/ISertnAggregator.sol";
 import {ISertnTaskManager} from "../interfaces/ISertnTaskManager.sol";
 
@@ -13,14 +13,14 @@ contract SertnAggregator is OwnableUpgradeable, ISertnAggregator {
         address _aggregatorEOA,
         address _sertnTaskManager
     ) public initializer {
-        __Ownable_init(msg.sender);
+        __Ownable_init();
         aggregatorEOA = _aggregatorEOA;
         sertnTaskManager = ISertnTaskManager(_sertnTaskManager);
     }
 
     function updateAggregatorEOA(address _aggregatorEOA) external onlyOwner {
         if (_aggregatorEOA == address(0)) {
-            revert InvalidEOA();
+            revert ZeroAddress();
         }
         aggregatorEOA = _aggregatorEOA;
     }
@@ -29,7 +29,7 @@ contract SertnAggregator is OwnableUpgradeable, ISertnAggregator {
         address _sertnTaskManager
     ) external onlyOwner {
         if (_sertnTaskManager == address(0)) {
-            revert InvalidTaskManager();
+            revert ZeroAddress();
         }
         sertnTaskManager = ISertnTaskManager(_sertnTaskManager);
     }
