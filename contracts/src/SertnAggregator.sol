@@ -34,15 +34,19 @@ contract SertnAggregator is OwnableUpgradeable, ISertnAggregator {
         sertnTaskManager = ISertnTaskManager(_sertnTaskManager);
     }
 
-    function submitTask(bytes32 _taskId, bytes memory _proof) external {
-        bytes32 messageHash = keccak256(abi.encodePacked(_taskId));
+    function submitTask(
+        ISertnTaskManager.Task memory _task,
+        bytes memory _proof
+    ) external {
+        bytes32 messageHash = keccak256(abi.encode(_task));
         address signer = recoverSigner(messageHash, _proof);
 
         if (signer != aggregatorEOA) {
             revert InvalidEOASignature();
         }
 
-        emit TaskSubmitted(_taskId, msg.sender);
+        sertnTaskManager.sendTask(_task);
+        emit TaskSubmitted(messageHash, msg.sender);
     }
 
     function recoverSigner(
