@@ -1,3 +1,5 @@
+Python implementation of operator and aggregator services for the Eigenlayer SERTN protocol.
+
 # Developer Guide
 
 This document provides a guide for developers who contribute to the project.
