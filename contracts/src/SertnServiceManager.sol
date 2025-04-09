@@ -139,32 +139,15 @@ contract SertnServiceManager is
         _addStrategies(_strategies, false);
     }
 
-    function _addStrategies(
-        IStrategy[] memory _strategies,
-        bool _newStrategies
-    ) internal {
-        for (uint256 i; i < _strategies.length; ) {
-            tokenToStrategy[
-                address(_strategies[i].underlyingToken())
-            ] = _strategies[i];
-            unchecked {
-                ++i;
-            }
-        }
-        if (_newStrategies) {
-            allocationManager.addStrategiesToOperatorSet(
-                address(this),
-                0,
-                _strategies
-            );
-        }
-    }
-
     function addStrategies(
         IStrategy[] memory _strategies,
-        bool _newStrategies
+        uint256 operatorSetId
     ) external onlyOwner {
-        _addStrategies(_strategies, _newStrategies);
+        allocationManager.addStrategiesToOperatorSet(
+            address(this),
+            operatorSetId,
+            _strategies
+        );
     }
 
     function addAggregator(address _aggregator) external onlyOwner {
@@ -176,19 +159,6 @@ contract SertnServiceManager is
         }
         aggregators.push(_aggregator);
         isAggregator[_aggregator] = true;
-    }
-
-    function setTaskResponse(
-        TaskResponse calldata _taskResponse
-    ) external onlyTaskManager {
-        taskResponse[_taskResponse.taskId_] = abi.encode(_taskResponse);
-    }
-
-    function setBountyHunter(
-        bytes calldata _taskId,
-        address _bountyHunter
-    ) external onlyTaskManager {
-        bountyHunter[_taskId] = _bountyHunter;
     }
 
     function getOperatorInfo(
