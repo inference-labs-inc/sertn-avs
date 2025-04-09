@@ -1,12 +1,10 @@
 #!/bin/bash
 
-STATE_FILE="contracts/anvil/state.json"
+# Load environment variables
+source contracts/anvil/load-env.sh
 
-mkdir -p "$(dirname "$STATE_FILE")"
-
-echo "Starting Anvil with state dump in background"
-anvil --dump-state "$STATE_FILE" --host 0.0.0.0 --port 8545 --base-fee 0 --gas-price 0 &
-ANVIL_PID=$!
+@chmod +x contracts/anvil/start-anvil.sh
+contracts/anvil/start-anvil.sh true
 
 sleep 3
 
@@ -22,5 +20,12 @@ make deploy-eigenlayer-contracts
 echo "Deploying Sertn contracts."
 make deploy-sertn-contracts
 
-echo "Killed Anvil"
-kill $ANVIL_PID
+# Kill Anvil using the PID from the file
+if [ -f $PID_FILE ]; then
+    ANVIL_PID=$(cat $ANVIL_PID_FILE)
+    echo "Killing Anvil with PID $ANVIL_PID"
+    kill $ANVIL_PID
+    rm $PID_FILE
+else
+    echo "Anvil PID file not found. Skipping termination."
+fi

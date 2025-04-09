@@ -1,16 +1,18 @@
-import typer
-from rich.console import Console
+from dataclasses import dataclass
 from typing import Optional
+
+import typer
+import yaml
 
 from avs_operator import run_operator
 from aggregator import run_aggregator
+from common.console import console, styles
 
 app = typer.Typer(
     name="sertn",
     help="Sertn AVS Client",
     add_completion=False,
 )
-console = Console()
 
 
 @app.command()
@@ -28,20 +30,27 @@ def start(
         help="Path to config file",
     ),
 ) -> None:
-    try:
-        console.print(f"Starting Sertn in {mode} mode...")
+    console.print(f"Starting Sertn in {mode} mode...", style=styles.debug)
 
-        if mode == "operator":
-            run_operator(config)
-        elif mode == "aggregator":
-            run_aggregator(config)
-        else:
-            console.print(
-                f"[red]Invalid mode: {mode}. Use 'operator' or 'aggregator'[/red]"
-            )
-            raise typer.Exit(1)
+    try:
+        with open(config, "r") as f:
+            config_dict = config = yaml.load(f, Loader=yaml.BaseLoader)
     except Exception as e:
-        console.print(f"[red]Error: {str(e)}[/red]")
+        console.print(
+            f"Error loading config file. Please check the path and format.",
+            style=styles.error,
+        )
+        raise typer.Exit(1)
+
+    if mode == "operator":
+        run_operator(config_dict)
+    elif mode == "aggregator":
+        run_aggregator(config_dict)
+    else:
+        console.print(
+            f"Invalid mode: {mode}. Use 'operator' or 'aggregator'",
+            style=styles.error,
+        )
         raise typer.Exit(1)
 
 

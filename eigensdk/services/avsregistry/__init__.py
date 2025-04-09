@@ -1,0 +1,1 @@
+from .avsregistry import AvsRegistryService
