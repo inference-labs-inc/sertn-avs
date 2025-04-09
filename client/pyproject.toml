@@ -9,7 +9,11 @@ dependencies = [
     "rich>=13.7.0",
     "tqdm>=4.66.2",
     "pydantic>=2.6.3",
-    "web3>=6.15.1"
+    "web3>=6.15.1",
+    "pyyaml>=6.0.2",
+    "eth-account>=0.13.5",
+    "fastapi>=0.115.12",
+    "uvicorn>=0.34.0",
 ]
 
 [project.optional-dependencies]
