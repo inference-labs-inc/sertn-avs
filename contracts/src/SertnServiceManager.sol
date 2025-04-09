@@ -50,19 +50,14 @@ contract SertnServiceManager is
     uint32 public TASK_EXPIRY_BLOCKS = 1e3;
     uint256 public BOUNTY = 500;
 
-    mapping(address => IStrategy) public tokenToStrategy;
+    // Operator info
     mapping(address => bytes) public opInfo;
+    // Mapping of aggregators
     mapping(address => bool) public isAggregator;
-    mapping(address => bool) public isOperator;
-    mapping(uint256 => bytes) public operatorModelInfo;
-    mapping(address => mapping(bytes32 => uint256)) public computeUnits;
-    mapping(uint256 => uint256[]) public modelsByName;
+
     mapping(bytes => bool) public taskVerified;
     mapping(bytes => bytes) public taskResponse;
-    mapping(address => bytes[]) public operatorSlashingQueue;
     mapping(bytes => address) public bountyHunter;
-    mapping(uint256 => address) public modelAddresses;
-    mapping(address => bytes) public modelVerifiers;
 
     // The number of nodes that a given operator has
     mapping(address => uint256) public operatorNodeCount;
@@ -168,7 +163,7 @@ contract SertnServiceManager is
     function addStrategies(
         IStrategy[] memory _strategies,
         bool _newStrategies
-    ) external onlyAggregators {
+    ) external onlyOwner {
         _addStrategies(_strategies, _newStrategies);
     }
 
@@ -181,19 +176,6 @@ contract SertnServiceManager is
         }
         aggregators.push(_aggregator);
         isAggregator[_aggregator] = true;
-    }
-
-    function pushToSlashingQueue(
-        bytes calldata _taskId
-    ) external onlyTaskManager {
-        slashingQueue.push(_taskId);
-    }
-
-    function pushToOperatorSlashingQueue(
-        address _operator,
-        bytes calldata _taskId
-    ) external onlyTaskManager {
-        operatorSlashingQueue[_operator].push(_taskId);
     }
 
     function setTaskResponse(

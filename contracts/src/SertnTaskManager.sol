@@ -28,9 +28,12 @@ import {ModelRegistry} from "./ModelRegistry.sol";
 import {ISertnTaskManager} from "../interfaces/ISertnTaskManager.sol";
 
 contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
-    address[] public aggregators;
+    // queue of tasks that are waiting to be assigned to an operator
     address[] public operators;
+    // queue of tasks that are waiting to be challenged
     bytes[] public slashingQueue;
+    // nonce for tasks to ensure uniqueness
+    uint256 taskNonce;
 
     IERC20 public ser;
 
@@ -42,10 +45,7 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
     ModelRegistry public modelRegistry;
 
     modifier onlyAggregators() {
-        if (
-            !sertnServiceManager.isAggregator(msg.sender) &&
-            msg.sender != address(sertnServiceManager)
-        ) {
+        if (!sertnServiceManager.isAggregator(msg.sender)) {
             revert NotAggregator();
         }
         _;
@@ -74,9 +74,9 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         modelRegistry = ModelRegistry(_modelRegistry);
     }
 
-    function sendTask(Task memory _task) external onlyAggregators {
-        _task.startTime = block.timestamp;
-        _task.startingBlock = uint32(block.number);
+    function sendTask(Task memory task) external onlyAggregators {
+        task.startTime = block.timestamp;
+        task.startingBlock = uint32(block.number);
 
         if (sertnServiceManager.numOperatorModels() < _task.modelId) {
             revert InvalidModelId();
