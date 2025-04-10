@@ -25,6 +25,8 @@ interface ISertnServiceManager {
     error NoPermission();
     error NotRegisteredToModel();
     error InvalidAggregator();
+    error NotSertnRegistrar();
+    error ZeroAddress();
 
     event NewOperator(address opAddr_);
     event NewModels(uint256[] modelId_);

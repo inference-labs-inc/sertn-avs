@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.29;
 
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
-import {TransparentUpgradeableProxy} from
-    "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {UpgradeableBeacon} from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import {console2} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
@@ -42,7 +41,8 @@ library CoreDeploymentLib {
     using Strings for *;
     using UpgradeableProxyLib for address;
 
-    Vm internal constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
+    Vm internal constant vm =
+        Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
     struct StrategyManagerConfig {
         uint256 initPausedStatus;
@@ -100,15 +100,29 @@ library CoreDeploymentLib {
     ) internal returns (DeploymentData memory) {
         DeploymentData memory result;
 
-        result.delegationManager = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
-        result.allocationManager = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
-        result.permissionController = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
-        result.strategyManager = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
-        result.eigenPodManager = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
-        result.rewardsCoordinator = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
+        result.delegationManager = UpgradeableProxyLib.setUpEmptyProxy(
+            proxyAdmin
+        );
+        result.allocationManager = UpgradeableProxyLib.setUpEmptyProxy(
+            proxyAdmin
+        );
+        result.permissionController = UpgradeableProxyLib.setUpEmptyProxy(
+            proxyAdmin
+        );
+        result.strategyManager = UpgradeableProxyLib.setUpEmptyProxy(
+            proxyAdmin
+        );
+        result.eigenPodManager = UpgradeableProxyLib.setUpEmptyProxy(
+            proxyAdmin
+        );
+        result.rewardsCoordinator = UpgradeableProxyLib.setUpEmptyProxy(
+            proxyAdmin
+        );
         result.eigenPodBeacon = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         result.pauserRegistry = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
-        result.strategyFactory = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
+        result.strategyFactory = UpgradeableProxyLib.setUpEmptyProxy(
+            proxyAdmin
+        );
 
         // Deploy the implementation contracts, using the proxy contracts as inputs
         address delegationManagerImpl = address(
@@ -127,13 +141,14 @@ library CoreDeploymentLib {
         //Allocation Manager
         address allocationManagerImpl = address(
             new AllocationManager(
-                IDelegationManager(result.delegationManager), 
+                IDelegationManager(result.delegationManager),
                 IPauserRegistry(result.pauserRegistry),
                 IPermissionController(result.permissionController),
                 configData.allocationManager.deallocationDelay,
                 configData.allocationManager.allocationConfigurationDelay
                 // configData.version
-        ));
+            )
+        );
 
         string memory _strategyVersion = "";
 
@@ -150,7 +165,8 @@ library CoreDeploymentLib {
                 IStrategyManager(result.strategyManager),
                 IPauserRegistry(result.pauserRegistry)
                 // configData.version
-                ));
+            )
+        );
 
         address ethPOSDeposit;
         if (block.chainid == 1) {
@@ -168,7 +184,7 @@ library CoreDeploymentLib {
                 IDelegationManager(result.delegationManager),
                 IPauserRegistry(result.pauserRegistry)
                 // configData.version
-                )
+            )
         );
 
         address rewardsCoordinatorImpl = address(
@@ -198,14 +214,17 @@ library CoreDeploymentLib {
             )
         );
 
-        address eigenPodBeaconImpl = address(new UpgradeableBeacon(eigenPodImpl));
+        address eigenPodBeaconImpl = address(
+            new UpgradeableBeacon(eigenPodImpl)
+        );
 
         address baseStrategyImpl = address(
             new StrategyBase(
                 IStrategyManager(result.strategyManager),
                 IPauserRegistry(result.pauserRegistry)
                 // configData.version
-                ));
+            )
+        );
         /// TODO: PauserRegistry isn't upgradeable
         address pauserRegistryImpl = address(
             new PauserRegistry(
@@ -217,7 +236,9 @@ library CoreDeploymentLib {
         address permissionControllerImpl = address(new PermissionController());
 
         // Deploy and configure the strategy beacon
-        result.strategyBeacon = address(new UpgradeableBeacon(baseStrategyImpl));
+        result.strategyBeacon = address(
+            new UpgradeableBeacon(baseStrategyImpl)
+        );
 
         // Upgrade contracts
         /// TODO: Get from config
@@ -226,7 +247,9 @@ library CoreDeploymentLib {
             (proxyAdmin, configData.delegationManager.initPausedStatus)
         );
         UpgradeableProxyLib.upgradeAndCall(
-            result.delegationManager, delegationManagerImpl, upgradeCall
+            result.delegationManager,
+            delegationManagerImpl,
+            upgradeCall
         );
 
         upgradeCall = abi.encodeCall(
@@ -234,7 +257,9 @@ library CoreDeploymentLib {
             (proxyAdmin, configData.allocationManager.initPausedStatus)
         );
         UpgradeableProxyLib.upgradeAndCall(
-            result.allocationManager, allocationManagerImpl, upgradeCall
+            result.allocationManager,
+            allocationManagerImpl,
+            upgradeCall
         );
 
         // Upgrade StrategyManager contract
@@ -246,7 +271,11 @@ library CoreDeploymentLib {
                 configData.strategyManager.initPausedStatus // initialPausedStatus
             )
         );
-        UpgradeableProxyLib.upgradeAndCall(result.strategyManager, strategyManagerImpl, upgradeCall);
+        UpgradeableProxyLib.upgradeAndCall(
+            result.strategyManager,
+            strategyManagerImpl,
+            upgradeCall
+        );
 
         // Upgrade StrategyFactory contract
         upgradeCall = abi.encodeCall(
@@ -257,7 +286,11 @@ library CoreDeploymentLib {
                 IBeacon(result.strategyBeacon)
             )
         );
-        UpgradeableProxyLib.upgradeAndCall(result.strategyFactory, strategyFactoryImpl, upgradeCall);
+        UpgradeableProxyLib.upgradeAndCall(
+            result.strategyFactory,
+            strategyFactoryImpl,
+            upgradeCall
+        );
 
         // Upgrade EigenPodManager contract
         upgradeCall = abi.encodeCall(
@@ -267,7 +300,11 @@ library CoreDeploymentLib {
                 configData.eigenPodManager.initPausedStatus // initialPausedStatus
             )
         );
-        UpgradeableProxyLib.upgradeAndCall(result.eigenPodManager, eigenPodManagerImpl, upgradeCall);
+        UpgradeableProxyLib.upgradeAndCall(
+            result.eigenPodManager,
+            eigenPodManagerImpl,
+            upgradeCall
+        );
 
         // Upgrade RewardsCoordinator contract
         upgradeCall = abi.encodeCall(
@@ -277,14 +314,21 @@ library CoreDeploymentLib {
                 configData.rewardsCoordinator.initPausedStatus, // initialPausedStatus
                 configData.rewardsCoordinator.updater,
                 uint32(configData.rewardsCoordinator.activationDelay), // _activationDelay
-                uint16(configData.rewardsCoordinator.globalOperatorCommissionBips) // _globalCommissionBips
+                uint16(
+                    configData.rewardsCoordinator.globalOperatorCommissionBips
+                ) // _globalCommissionBips
             )
         );
         UpgradeableProxyLib.upgradeAndCall(
-            result.rewardsCoordinator, rewardsCoordinatorImpl, upgradeCall
+            result.rewardsCoordinator,
+            rewardsCoordinatorImpl,
+            upgradeCall
         );
 
-        UpgradeableProxyLib.upgrade(result.permissionController, permissionControllerImpl);
+        UpgradeableProxyLib.upgrade(
+            result.permissionController,
+            permissionControllerImpl
+        );
 
         // Upgrade EigenPod contract
         upgradeCall = abi.encodeCall(
@@ -292,7 +336,11 @@ library CoreDeploymentLib {
             // TODO: Double check this
             (address(result.eigenPodManager)) // _podOwner
         );
-        UpgradeableProxyLib.upgradeAndCall(result.eigenPodBeacon, eigenPodImpl, upgradeCall);
+        UpgradeableProxyLib.upgradeAndCall(
+            result.eigenPodBeacon,
+            eigenPodImpl,
+            upgradeCall
+        );
 
         return result;
     }
@@ -306,6 +354,7 @@ library CoreDeploymentLib {
         RewardsCoordinatorConfig rewardsCoordinator;
         StrategyFactoryConfig strategyFactory;
     }
+
     // StrategyConfig[] strategies;
 
     function readDeploymentConfigValues(
@@ -314,60 +363,88 @@ library CoreDeploymentLib {
     ) internal view returns (DeploymentConfigData memory) {
         string memory pathToFile = string.concat(directoryPath, fileName);
 
-        require(vm.exists(pathToFile), "CoreDeployment: Deployment config file does not exist");
+        require(
+            vm.exists(pathToFile),
+            "CoreDeployment: Deployment config file does not exist"
+        );
 
         string memory json = vm.readFile(pathToFile);
 
         DeploymentConfigData memory data;
 
-        data.version = json.readString("._version");                
+        data.version = json.readString("._version");
 
         // StrategyManager config start
-        data.strategyManager.initPausedStatus = json.readUint(".strategyManager.init_paused_status");
+        data.strategyManager.initPausedStatus = json.readUint(
+            ".strategyManager.init_paused_status"
+        );
         // StrategyManager config end
 
         // AllocationManager config start
-        data.allocationManager.initPausedStatus = json.readUint(".allocation.init_paused_status");
-        data.allocationManager.allocationConfigurationDelay = uint32(json.readUint(".allocation.allocation_config_delay"));
-        data.allocationManager.deallocationDelay = uint32(json.readUint(".allocation.deallocation_delay"));
+        data.allocationManager.initPausedStatus = json.readUint(
+            ".allocation.init_paused_status"
+        );
+        data.allocationManager.allocationConfigurationDelay = uint32(
+            json.readUint(".allocation.allocation_config_delay")
+        );
+        data.allocationManager.deallocationDelay = uint32(
+            json.readUint(".allocation.deallocation_delay")
+        );
         // AllocationManager config end
 
         // DelegationManager config start
-        data.delegationManager.initPausedStatus = json.readUint(".delegation.init_paused_status");
-        data.delegationManager.withdrawalDelayBlocks =
-            uint32(json.readUint(".delegation.init_withdrawal_delay_blocks"));
+        data.delegationManager.initPausedStatus = json.readUint(
+            ".delegation.init_paused_status"
+        );
+        data.delegationManager.withdrawalDelayBlocks = uint32(
+            json.readUint(".delegation.init_withdrawal_delay_blocks")
+        );
         // DelegationManager config end
 
         // EigenPodManager config start
-        data.eigenPodManager.initPausedStatus = json.readUint(".eigenPodManager.init_paused_status");
+        data.eigenPodManager.initPausedStatus = json.readUint(
+            ".eigenPodManager.init_paused_status"
+        );
         // EigenPodManager config end
 
         // RewardsCoordinator config start
-        data.rewardsCoordinator.initPausedStatus =
-            json.readUint(".rewardsCoordinator.init_paused_status");
-        data.rewardsCoordinator.maxRewardsDuration =
-            uint32(json.readUint(".rewardsCoordinator.MAX_REWARDS_DURATION"));
-        data.rewardsCoordinator.maxRetroactiveLength =
-            uint32(json.readUint(".rewardsCoordinator.MAX_RETROACTIVE_LENGTH"));
-        data.rewardsCoordinator.maxFutureLength =
-            uint32(json.readUint(".rewardsCoordinator.MAX_FUTURE_LENGTH"));
-        data.rewardsCoordinator.genesisRewardsTimestamp =
-            uint32(json.readUint(".rewardsCoordinator.GENESIS_REWARDS_TIMESTAMP"));
-        data.rewardsCoordinator.updater =
-            json.readAddress(".rewardsCoordinator.rewards_updater_address");
-        data.rewardsCoordinator.updaterKey =
-            json.readUint(".rewardsCoordinator.rewards_updater_key");
-        data.rewardsCoordinator.activationDelay =
-            json.readUint(".rewardsCoordinator.activation_delay");
-        data.rewardsCoordinator.calculationIntervalSeconds =
-            uint32(json.readUint(".rewardsCoordinator.calculation_interval_seconds"));
-        data.rewardsCoordinator.globalOperatorCommissionBips =
-            json.readUint(".rewardsCoordinator.global_operator_commission_bips");
+        data.rewardsCoordinator.initPausedStatus = json.readUint(
+            ".rewardsCoordinator.init_paused_status"
+        );
+        data.rewardsCoordinator.maxRewardsDuration = uint32(
+            json.readUint(".rewardsCoordinator.MAX_REWARDS_DURATION")
+        );
+        data.rewardsCoordinator.maxRetroactiveLength = uint32(
+            json.readUint(".rewardsCoordinator.MAX_RETROACTIVE_LENGTH")
+        );
+        data.rewardsCoordinator.maxFutureLength = uint32(
+            json.readUint(".rewardsCoordinator.MAX_FUTURE_LENGTH")
+        );
+        data.rewardsCoordinator.genesisRewardsTimestamp = uint32(
+            json.readUint(".rewardsCoordinator.GENESIS_REWARDS_TIMESTAMP")
+        );
+        data.rewardsCoordinator.updater = json.readAddress(
+            ".rewardsCoordinator.rewards_updater_address"
+        );
+        data.rewardsCoordinator.updaterKey = json.readUint(
+            ".rewardsCoordinator.rewards_updater_key"
+        );
+        data.rewardsCoordinator.activationDelay = json.readUint(
+            ".rewardsCoordinator.activation_delay"
+        );
+        data.rewardsCoordinator.calculationIntervalSeconds = uint32(
+            json.readUint(".rewardsCoordinator.calculation_interval_seconds")
+        );
+        data.rewardsCoordinator.globalOperatorCommissionBips = json.readUint(
+            ".rewardsCoordinator.global_operator_commission_bips"
+        );
         // RewardsCoordinator config end
 
         // StrategyFactory config start
-        data.strategyFactory.initPausedStatus = json.readUint(".strategyFactory.init_paused_status");
-        // StrategyFactory config end        
+        data.strategyFactory.initPausedStatus = json.readUint(
+            ".strategyFactory.init_paused_status"
+        );
+        // StrategyFactory config end
 
         return data;
     }
@@ -377,14 +454,21 @@ library CoreDeploymentLib {
         uint256 chainId
     ) internal view returns (DeploymentConfigData memory) {
         return
-            readDeploymentConfigValues(directoryPath, string.concat(vm.toString(chainId), ".json"));
+            readDeploymentConfigValues(
+                directoryPath,
+                string.concat(vm.toString(chainId), ".json")
+            );
     }
 
     function readDeploymentJson(
         string memory directoryPath,
         uint256 chainId
     ) internal view returns (DeploymentData memory) {
-        return readDeploymentJson(directoryPath, string.concat(vm.toString(chainId), ".json"));
+        return
+            readDeploymentJson(
+                directoryPath,
+                string.concat(vm.toString(chainId), ".json")
+            );
     }
 
     function readDeploymentJson(
@@ -393,7 +477,10 @@ library CoreDeploymentLib {
     ) internal view returns (DeploymentData memory) {
         string memory pathToFile = string.concat(path, fileName);
 
-        require(vm.exists(pathToFile), "CoreDeployment: Deployment file does not exist");
+        require(
+            vm.exists(pathToFile),
+            "CoreDeployment: Deployment file does not exist"
+        );
 
         string memory json = vm.readFile(pathToFile);
 
@@ -403,16 +490,16 @@ library CoreDeploymentLib {
         data.eigenPodManager = json.readAddress(".addresses.eigenPodManager");
         data.delegationManager = json.readAddress(".addresses.delegation");
         data.allocationManager = json.readAddress(".addresses.allocation");
-        data.rewardsCoordinator = json.readAddress(".addresses.rewardsCoordinator");
+        data.rewardsCoordinator = json.readAddress(
+            ".addresses.rewardsCoordinator"
+        );
         data.initialOwner = json.readAddress(".addresses.proxyAdmin");
 
         return data;
     }
 
     /// TODO: Need to be able to read json from eigenlayer-contracts repo for holesky/mainnet and output the json here
-    function writeDeploymentJson(
-        DeploymentData memory data
-    ) internal {
+    function writeDeploymentJson(DeploymentData memory data) internal {
         writeDeploymentJson("deployments/core/", block.chainid, data);
     }
 
@@ -421,11 +508,20 @@ library CoreDeploymentLib {
         uint256 chainId,
         DeploymentData memory data
     ) internal {
-        address proxyAdmin = address(UpgradeableProxyLib.getProxyAdmin(data.strategyManager));
+        address proxyAdmin = address(
+            UpgradeableProxyLib.getProxyAdmin(data.strategyManager)
+        );
 
-        string memory deploymentData = _generateDeploymentJson(data, proxyAdmin);
+        string memory deploymentData = _generateDeploymentJson(
+            data,
+            proxyAdmin
+        );
 
-        string memory fileName = string.concat(path, vm.toString(chainId), ".json");
+        string memory fileName = string.concat(
+            path,
+            vm.toString(chainId),
+            ".json"
+        );
         if (!vm.exists(path)) {
             vm.createDir(path, true);
         }
@@ -438,15 +534,16 @@ library CoreDeploymentLib {
         DeploymentData memory data,
         address proxyAdmin
     ) private view returns (string memory) {
-        return string.concat(
-            '{"lastUpdate":{"timestamp":"',
-            vm.toString(block.timestamp),
-            '","block_number":"',
-            vm.toString(block.number),
-            '"},"addresses":',
-            _generateContractsJson(data, proxyAdmin),
-            "}"
-        );
+        return
+            string.concat(
+                '{"lastUpdate":{"timestamp":"',
+                vm.toString(block.timestamp),
+                '","block_number":"',
+                vm.toString(block.number),
+                '"},"addresses":',
+                _generateContractsJson(data, proxyAdmin),
+                "}"
+            );
     }
 
     function _generateContractsJson(
@@ -454,36 +551,37 @@ library CoreDeploymentLib {
         address proxyAdmin
     ) private view returns (string memory) {
         /// TODO: namespace contracts -> {avs, core}
-        return string.concat(
-            '{"proxyAdmin":"',
-            proxyAdmin.toHexString(),
-            '","delegation":"',
-            data.delegationManager.toHexString(),
-            '","delegationManagerImpl":"',
-            data.delegationManager.getImplementation().toHexString(),
-            '","allocation":"',
-            data.allocationManager.toHexString(),
-            '","allocationManagerImpl":"',
-            data.allocationManager.getImplementation().toHexString(),
-            '","strategyManager":"',
-            data.strategyManager.toHexString(),
-            '","strategyManagerImpl":"',
-            data.strategyManager.getImplementation().toHexString(),
-            '","eigenPodManager":"',
-            data.eigenPodManager.toHexString(),
-            '","eigenPodManagerImpl":"',
-            data.eigenPodManager.getImplementation().toHexString(),
-            '","strategyFactory":"',
-            data.strategyFactory.toHexString(),
-            '","strategyFactoryImpl":"',
-            data.strategyFactory.getImplementation().toHexString(),
-            '","strategyBeacon":"',
-            data.strategyBeacon.toHexString(),
-            '","rewardsCoordinator":"',
-            data.rewardsCoordinator.toHexString(),
-            '","permissionController":"',
-            data.permissionController.toHexString(),
-            '"}'
-        );
+        return
+            string.concat(
+                '{"proxyAdmin":"',
+                proxyAdmin.toHexString(),
+                '","delegation":"',
+                data.delegationManager.toHexString(),
+                '","delegationManagerImpl":"',
+                data.delegationManager.getImplementation().toHexString(),
+                '","allocation":"',
+                data.allocationManager.toHexString(),
+                '","allocationManagerImpl":"',
+                data.allocationManager.getImplementation().toHexString(),
+                '","strategyManager":"',
+                data.strategyManager.toHexString(),
+                '","strategyManagerImpl":"',
+                data.strategyManager.getImplementation().toHexString(),
+                '","eigenPodManager":"',
+                data.eigenPodManager.toHexString(),
+                '","eigenPodManagerImpl":"',
+                data.eigenPodManager.getImplementation().toHexString(),
+                '","strategyFactory":"',
+                data.strategyFactory.toHexString(),
+                '","strategyFactoryImpl":"',
+                data.strategyFactory.getImplementation().toHexString(),
+                '","strategyBeacon":"',
+                data.strategyBeacon.toHexString(),
+                '","rewardsCoordinator":"',
+                data.rewardsCoordinator.toHexString(),
+                '","permissionController":"',
+                data.permissionController.toHexString(),
+                '"}'
+            );
     }
 }

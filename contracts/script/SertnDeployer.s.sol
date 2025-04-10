@@ -16,7 +16,6 @@ import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoor
 
 import {SertnServiceManager} from "../src/SertnServiceManager.sol";
 import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
-import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 
 import {IERC20, StrategyFactory} from "@eigenlayer/contracts/strategies/StrategyFactory.sol";
 import {SertnTaskManager} from "../src/SertnTaskManager.sol";
