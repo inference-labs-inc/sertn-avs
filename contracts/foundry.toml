@@ -8,7 +8,7 @@ optimizer = true
 via-ir = true
 remappings = [
   "@openzeppelin/=lib/openzeppelin-contracts-upgradeable/",
-  "eigenlayer-contracts/=lib/eigenlayer-contracts/",
+  "@eigenlayer/=lib/eigenlayer-contracts/src/",
   "forge-std/=lib/forge-std/src/",
 ]
 
