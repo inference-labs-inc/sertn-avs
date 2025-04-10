@@ -8,15 +8,15 @@ import {ISertnRegistrar} from "../interfaces/ISertnRegistrar.sol";
 import {IModelRegistry} from "../interfaces/IModelRegistry.sol";
 import {IVerifier} from "../interfaces/IVerifier.sol";
 // EigenLayer
-import {IRewardsCoordinator} from "@eigenlayer/interfaces/IRewardsCoordinator.sol";
-import {IAllocationManager} from "@eigenlayer/interfaces/IAllocationManager.sol";
-import {IDelegationManager} from "@eigenlayer/interfaces/IDelegationManager.sol";
-import {IStrategy} from "@eigenlayer/interfaces/IStrategy.sol";
+import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
+import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
+import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
+import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
 // OpenZeppelin
-import {TransparentUpgradeableProxy} from "@openzeppelin/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {OwnableUpgradeable} from "@openzeppelin-upgradeable/access/OwnableUpgradeable.sol";
-import {ReentrancyGuardUpgradeable} from "@openzeppelin-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts/security/ReentrancyGuardUpgradeable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title Primary entrypoint for procuring services from Sertn.
