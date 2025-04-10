@@ -4,7 +4,8 @@ pragma solidity ^0.8.29;
 import {OwnableUpgradeable} from "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
 import {ISertnAggregator} from "../interfaces/ISertnAggregator.sol";
 import {ISertnTaskManager} from "../interfaces/ISertnTaskManager.sol";
-import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {ECDSA} from "@openzeppelin/lib/openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
+import {MessageHashUtils} from "@openzeppelin/lib/openzeppelin-contracts/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /**
  * @title Sertn Aggregator
@@ -46,7 +47,7 @@ contract SertnAggregator is OwnableUpgradeable, ISertnAggregator {
     ) external {
         bytes32 messageHash = keccak256(abi.encode(_task));
         address signer = ECDSA.recover(
-            ECDSA.toEthSignedMessageHash(messageHash),
+            MessageHashUtils.toEthSignedMessageHash(messageHash),
             _proof
         );
 

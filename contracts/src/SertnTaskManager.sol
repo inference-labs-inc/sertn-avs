@@ -1,31 +1,19 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.29;
 
-import "../interfaces/ISertnServiceManager.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
-import "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-
-import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
 import {IAVSRegistrar} from "@eigenlayer/contracts/interfaces/IAVSRegistrar.sol";
-
 import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
-import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
-import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
-
 import {IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
-import {IVerifier} from "../interfaces/IVerifier.sol";
-import "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
-
-import "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
-import "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
-import "@openzeppelin-upgrades/contracts/utils/math/MathUpgradeable.sol";
-
-import {Test, console2 as console} from "forge-std/Test.sol";
-
+import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
+import {IERC20} from "@openzeppelin/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
 import {ISertnServiceManager} from "../interfaces/ISertnServiceManager.sol";
-import {ModelRegistry} from "./ModelRegistry.sol";
 import {ISertnTaskManager} from "../interfaces/ISertnTaskManager.sol";
+import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
+import {IVerifier} from "../interfaces/IVerifier.sol";
+import {ModelRegistry} from "./ModelRegistry.sol";
+import {OwnableUpgradeable} from "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/lib/openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
     // queue of tasks that are waiting to be assigned to an operator
