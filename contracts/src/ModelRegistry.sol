@@ -28,6 +28,7 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
         __Ownable_init();
     }
 
+    /// @inheritdoc IModelRegistry
     function createNewModel(
         address _modelVerifier,
         VerificationStrategy _verificationStrategy,
@@ -57,6 +58,7 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
         modelIndex++;
     }
 
+    /// @inheritdoc IModelRegistry
     function updateModelURI(
         uint256 modelId,
         string memory _modelURI
@@ -66,6 +68,7 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
         emit ModelURIUpdated(modelId, _modelURI);
     }
 
+    /// @inheritdoc IModelRegistry
     function updateComputeCost(
         uint256 modelId,
         uint256 _computeCost
