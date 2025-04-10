@@ -1,32 +1,22 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-import "../interfaces/ISertnServiceManager.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
-import "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-
-import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
+// Sertn
+import {ISertnServiceManager} from "../interfaces/ISertnServiceManager.sol";
+import {ISertnTaskManager} from "../interfaces/ISertnTaskManager.sol";
 import {ISertnRegistrar} from "../interfaces/ISertnRegistrar.sol";
-
-import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
-import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
-import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-
-import {IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
+import {IModelRegistry} from "../interfaces/IModelRegistry.sol";
 import {IVerifier} from "../interfaces/IVerifier.sol";
-import "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
-
-import "@openzeppelin-upgrades/contracts/utils/math/MathUpgradeable.sol";
-
-import "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
-import "@openzeppelin-upgrades/contracts/security/ReentrancyGuardUpgradeable.sol";
-import "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
-import {SertnTaskManager} from "./SertnTaskManager.sol";
-import {ModelRegistry} from "./ModelRegistry.sol";
-
-import {Test, console2 as console} from "forge-std/Test.sol";
+// EigenLayer
+import {IRewardsCoordinator} from "@eigenlayer/interfaces/IRewardsCoordinator.sol";
+import {IAllocationManager} from "@eigenlayer/interfaces/IAllocationManager.sol";
+import {IDelegationManager} from "@eigenlayer/interfaces/IDelegationManager.sol";
+import {IStrategy} from "@eigenlayer/interfaces/IStrategy.sol";
+// OpenZeppelin
+import {TransparentUpgradeableProxy} from "@openzeppelin/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {OwnableUpgradeable} from "@openzeppelin-upgradeable/access/OwnableUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
 /**
  * @title Primary entrypoint for procuring services from Sertn.
@@ -35,7 +25,6 @@ import {Test, console2 as console} from "forge-std/Test.sol";
 
 contract SertnServiceManager is
     ISertnServiceManager,
-    SertnServiceManagerStorage,
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable
 {
@@ -89,15 +78,7 @@ contract SertnServiceManager is
         _;
     }
 
-    /**
-     * @notice Initializes the SertnServiceManager
-     * @param _rewardsCoordinator The address of the rewards coordinator
-     * @param _delegationManager The address of the delegation manager
-     * @param _allocationManager The address of the allocation manager
-     * @param _sertnRegistrar The address of the sertn registrar
-     * @param _strategies The strategies to add to the operator set
-     * @param _avsMetadata The metadata for the AVS
-     */
+    /// @inheritdoc ISertnServiceManager
     function initialize(
         address _rewardsCoordinator,
         address _delegationManager,
@@ -118,10 +99,7 @@ contract SertnServiceManager is
         _registerToEigen(_strategies, _avsMetadata);
     }
 
-    /**
-     * @notice Updates the task manager
-     * @param _sertnTaskManager The address of the task manager
-     */
+    /// @inheritdoc ISertnServiceManager
     function updateTaskManager(address _sertnTaskManager) external onlyOwner {
         if (_sertnTaskManager == address(0)) {
             revert InvalidTaskManager();
@@ -129,10 +107,7 @@ contract SertnServiceManager is
         sertnTaskManager = SertnTaskManager(_sertnTaskManager);
     }
 
-    /**
-     * @notice Updates the model registry
-     * @param _modelRegistry The address of the model registry
-     */
+    /// @inheritdoc ISertnServiceManager
     function updateModelRegistry(address _modelRegistry) external onlyOwner {
         if (_modelRegistry == address(0)) {
             revert InvalidModelRegistry();
@@ -140,11 +115,7 @@ contract SertnServiceManager is
         modelRegistry = IModelRegistry(_modelRegistry);
     }
 
-    /**
-     * @notice Registers the service manager to EigenLayer
-     * @param _strategies The strategies to add to the operator set
-     * @param _avsMetadata The metadata for the AVS
-     */
+    /// @inheritdoc ISertnServiceManager
     function _registerToEigen(
         IStrategy[] memory _strategies,
         string memory _avsMetadata
@@ -165,6 +136,7 @@ contract SertnServiceManager is
         allocationManager.setAVSRegistrar(address(sertnRegistrar));
     }
 
+    /// @inheritdoc ISertnServiceManager
     function addStrategies(
         IStrategy[] memory _strategies,
         uint256 operatorSetId
@@ -176,6 +148,7 @@ contract SertnServiceManager is
         );
     }
 
+    /// @inheritdoc ISertnServiceManager
     function addAggregator(address _aggregator) external onlyOwner {
         if (_aggregator == address(0)) {
             revert InvalidAggregator();

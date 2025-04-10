@@ -6,19 +6,11 @@ fs_permissions = [{ access = "read-write", path = "./" }]
 solc = "0.8.29"
 optimizer = true
 via-ir = true
-
 remappings = [
-  "@eigenlayer/=lib/eigenlayer-contracts/src/",
-  "@eigenlayer-scripts/=lib/eigenlayer-contracts/script/",
-  "@eigenlayer-middleware/=lib/eigenlayer-middleware/",
-  "@openzeppelin/=lib/eigenlayer-middleware/lib/openzeppelin-contracts/",
-  "@openzeppelin-upgrades/=lib/eigenlayer-middleware/lib/openzeppelin-contracts-upgradeable/",
+  "@openzeppelin/=lib/openzeppelin-contracts-upgradeable/",
+  "eigenlayer-contracts/=lib/eigenlayer-contracts/",
   "forge-std/=lib/forge-std/src/",
-  "@eigenlayer/contracts/=lib/eigenlayer-contracts/src/contracts/",
-  "@eigenlayer-contracts/=lib/eigenlayer-contracts/src/",
-  "@openzeppelin-current/=lib/openzeppelin-contracts-current/"
 ]
-
 
 [rpc_endpoints]
 mainnet = "${MAINNET_RPC_URL}"
