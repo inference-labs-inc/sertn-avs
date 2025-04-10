@@ -4,8 +4,8 @@ pragma solidity ^0.8.29;
 import {OwnableUpgradeable} from "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
 import {ISertnAggregator} from "../interfaces/ISertnAggregator.sol";
 import {ISertnTaskManager} from "../interfaces/ISertnTaskManager.sol";
-import {ECDSA} from "@openzeppelin/lib/openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
-import {MessageHashUtils} from "@openzeppelin/lib/openzeppelin-contracts/contracts/utils/cryptography/MessageHashUtils.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /**
  * @title Sertn Aggregator

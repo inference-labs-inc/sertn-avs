@@ -4,17 +4,14 @@ pragma solidity ^0.8.12;
 import {SertnServiceManager} from "../src/SertnServiceManager.sol";
 import {SertnTaskManager} from "../src/SertnTaskManager.sol";
 import "../interfaces/ISertnServiceManager.sol";
-import {MockAVSDeployer} from "@eigenlayer-middleware/test/utils/MockAVSDeployer.sol";
-import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
 import {Vm} from "forge-std/Vm.sol";
-// import {SertnDeploymentLib} from "../script/utils/SertnDeploymentLib.sol";
+
 import {CoreDeploymentLib} from "../script/utils/CoreDeploymentLib.sol";
 import {UpgradeableProxyLib} from "../script/utils/UpgradeableProxyLib.sol";
 import {ERC20Mock} from "./ERC20Mock.sol";
 import {IERC20, StrategyFactory} from "@eigenlayer/contracts/strategies/StrategyFactory.sol";
 import {IPermissionController} from "@eigenlayer/contracts/interfaces/IPermissionController.sol";
 import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
-import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 
 import {IStrategyManager} from "@eigenlayer/contracts/interfaces/IStrategyManager.sol";
 import {IDelegationManagerTypes} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";

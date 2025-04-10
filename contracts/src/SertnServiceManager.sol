@@ -9,14 +9,15 @@ import {IModelRegistry} from "../interfaces/IModelRegistry.sol";
 import {IVerifier} from "../interfaces/IVerifier.sol";
 // EigenLayer
 import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
-import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
+import {IAllocationManager, IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
+
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
 import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
 // OpenZeppelin
-import {TransparentUpgradeableProxy} from "@openzeppelin/lib/openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {OwnableUpgradeable} from "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
-import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts/utils/ReentrancyGuardUpgradeable.sol";
-import {IERC20} from "@openzeppelin/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {OwnableUpgradeable} from "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin-upgradeable/contracts/utils/ReentrancyGuardUpgradeable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title Primary entrypoint for procuring services from Sertn.
@@ -31,7 +32,7 @@ contract SertnServiceManager is
     IAllocationManager public allocationManager;
     IDelegationManager public delegationManager;
     IRewardsCoordinator public rewardsCoordinator;
-    SertnTaskManager public sertnTaskManager;
+    ISertnTaskManager public sertnTaskManager;
     IModelRegistry public modelRegistry;
     ISertnRegistrar public sertnRegistrar;
 
@@ -47,6 +48,9 @@ contract SertnServiceManager is
     // Which models a given operator node supports
     mapping(address => mapping(uint256 => mapping(uint256 => bool)))
         public operatorNodeModelIds;
+
+    // List of aggregators
+    address[] public aggregators;
 
     /**
      * @notice Modifier to ensure the caller is an aggregator
@@ -104,13 +108,13 @@ contract SertnServiceManager is
         if (_sertnTaskManager == address(0)) {
             revert InvalidTaskManager();
         }
-        sertnTaskManager = SertnTaskManager(_sertnTaskManager);
+        sertnTaskManager = ISertnTaskManager(_sertnTaskManager);
     }
 
     /// @inheritdoc ISertnServiceManager
     function updateModelRegistry(address _modelRegistry) external onlyOwner {
         if (_modelRegistry == address(0)) {
-            revert InvalidModelRegistry();
+            revert ZeroAddress();
         }
         modelRegistry = IModelRegistry(_modelRegistry);
     }
@@ -158,5 +162,18 @@ contract SertnServiceManager is
         }
         aggregators.push(_aggregator);
         isAggregator[_aggregator] = true;
+    }
+
+    /// @inheritdoc ISertnServiceManager
+    function removeAggregator(address _aggregator) external onlyOwner {
+        if (!isAggregator[_aggregator]) {
+            revert NotAggregator();
+        }
+        for (uint256 i = 0; i < aggregators.length; i++) {
+            if (aggregators[i] == _aggregator) {
+                aggregators[i] = aggregators[aggregators.length - 1];
+                aggregators.pop();
+            }
+        }
     }
 }

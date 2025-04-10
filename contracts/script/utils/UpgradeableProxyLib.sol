@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.29;
 
 import {Vm} from "forge-std/Vm.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
-import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {EmptyContract} from "@eigenlayer/test/mocks/EmptyContract.sol";
 
 library UpgradeableProxyLib {
@@ -16,7 +16,7 @@ library UpgradeableProxyLib {
         Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
     function deployProxyAdmin() internal returns (address) {
-        return address(new ProxyAdmin());
+        return address(new ProxyAdmin(address(this)));
     }
 
     function setUpEmptyProxy(address admin) internal returns (address) {
@@ -27,7 +27,11 @@ library UpgradeableProxyLib {
 
     function upgrade(address proxy, address impl) internal {
         ProxyAdmin admin = getProxyAdmin(proxy);
-        admin.upgrade(TransparentUpgradeableProxy(payable(proxy)), impl);
+        admin.upgradeAndCall(
+            ITransparentUpgradeableProxy(payable(proxy)),
+            impl,
+            ""
+        );
     }
 
     function upgradeAndCall(
@@ -37,7 +41,7 @@ library UpgradeableProxyLib {
     ) internal {
         ProxyAdmin admin = getProxyAdmin(proxy);
         admin.upgradeAndCall(
-            TransparentUpgradeableProxy(payable(proxy)),
+            ITransparentUpgradeableProxy(payable(proxy)),
             impl,
             initData
         );
