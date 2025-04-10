@@ -186,10 +186,4 @@ contract SertnServiceManager is
         aggregators.push(_aggregator);
         isAggregator[_aggregator] = true;
     }
-
-    function getOperatorInfo(
-        address _operator
-    ) public view returns (Operator memory) {
-        return abi.decode(opInfo[_operator], (Operator));
-    }
 }
