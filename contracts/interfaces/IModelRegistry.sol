@@ -64,7 +64,8 @@ interface IModelRegistry {
     function createNewModel(
         address modelVerifier,
         VerificationStrategy verificationStrategy,
-        string memory modelURI
+        string memory modelURI,
+        uint256 computeCost
     ) external;
 
     /**
