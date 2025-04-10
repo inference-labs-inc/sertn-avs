@@ -7,5 +7,4 @@
   tag = v1.1.1
 [submodule "contracts/lib/openzeppelin-contracts"]
 	path = contracts/lib/openzeppelin-contracts
-	url = https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable
-	tag = v5.3.0
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable.git
