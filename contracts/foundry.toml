@@ -7,7 +7,7 @@ solc = "0.8.29"
 optimizer = true
 via-ir = true
 remappings = [
-  "@openzeppelin/=lib/openzeppelin-contracts-upgradeable/",
+  "@openzeppelin/=lib/openzeppelin-contracts/",
   "@eigenlayer/=lib/eigenlayer-contracts/src/",
   "forge-std/=lib/forge-std/src/",
 ]
