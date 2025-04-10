@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.29;
-import {OwnableUpgradeable} from "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts/access/OwnableUpgradeable.sol";
 import {IModelRegistry} from "../interfaces/IModelRegistry.sol";
 
 /**
@@ -25,7 +25,7 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
     mapping(uint256 => uint256) public computeCost;
 
     function initialize() public initializer {
-        __Ownable_init();
+        __Ownable_init(msg.sender);
     }
 
     /// @inheritdoc IModelRegistry
