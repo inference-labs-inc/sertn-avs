@@ -46,19 +46,10 @@ contract SertnServiceManager is
     IModelRegistry public modelRegistry;
     ISertnRegistrar public sertnRegistrar;
 
-    uint256 public PROOF_REQUEST_COST = 100;
-    uint32 public TASK_EXPIRY_BLOCKS = 1e3;
-    uint256 public BOUNTY = 500;
-
     // Operator info
     mapping(address => bytes) public opInfo;
     // Mapping of aggregators
     mapping(address => bool) public isAggregator;
-
-    mapping(bytes => bool) public taskVerified;
-    mapping(bytes => bytes) public taskResponse;
-    mapping(bytes => address) public bountyHunter;
-
     // The number of nodes that a given operator has
     mapping(address => uint256) public operatorNodeCount;
     // Compute units for a given operator-node
@@ -68,6 +59,9 @@ contract SertnServiceManager is
     mapping(address => mapping(uint256 => mapping(uint256 => bool)))
         public operatorNodeModelIds;
 
+    /**
+     * @notice Modifier to ensure the caller is an aggregator
+     */
     modifier onlyAggregators() {
         if (!isAggregator[msg.sender]) {
             revert NotAggregator();
@@ -75,6 +69,9 @@ contract SertnServiceManager is
         _;
     }
 
+    /**
+     * @notice Modifier to ensure the caller is the task manager
+     */
     modifier onlyTaskManager() {
         if (msg.sender != address(sertnTaskManager)) {
             revert NotTaskManager();
@@ -82,6 +79,9 @@ contract SertnServiceManager is
         _;
     }
 
+    /**
+     * @notice Modifier to ensure the caller is the sertn registrar
+     */
     modifier onlySertnRegistrar() {
         if (msg.sender != address(sertnRegistrar)) {
             revert NotSertnRegistrar();
@@ -89,6 +89,15 @@ contract SertnServiceManager is
         _;
     }
 
+    /**
+     * @notice Initializes the SertnServiceManager
+     * @param _rewardsCoordinator The address of the rewards coordinator
+     * @param _delegationManager The address of the delegation manager
+     * @param _allocationManager The address of the allocation manager
+     * @param _sertnRegistrar The address of the sertn registrar
+     * @param _strategies The strategies to add to the operator set
+     * @param _avsMetadata The metadata for the AVS
+     */
     function initialize(
         address _rewardsCoordinator,
         address _delegationManager,
@@ -109,6 +118,10 @@ contract SertnServiceManager is
         _registerToEigen(_strategies, _avsMetadata);
     }
 
+    /**
+     * @notice Updates the task manager
+     * @param _sertnTaskManager The address of the task manager
+     */
     function updateTaskManager(address _sertnTaskManager) external onlyOwner {
         if (_sertnTaskManager == address(0)) {
             revert InvalidTaskManager();
@@ -116,6 +129,10 @@ contract SertnServiceManager is
         sertnTaskManager = SertnTaskManager(_sertnTaskManager);
     }
 
+    /**
+     * @notice Updates the model registry
+     * @param _modelRegistry The address of the model registry
+     */
     function updateModelRegistry(address _modelRegistry) external onlyOwner {
         if (_modelRegistry == address(0)) {
             revert InvalidModelRegistry();
@@ -123,20 +140,29 @@ contract SertnServiceManager is
         modelRegistry = IModelRegistry(_modelRegistry);
     }
 
+    /**
+     * @notice Registers the service manager to EigenLayer
+     * @param _strategies The strategies to add to the operator set
+     * @param _avsMetadata The metadata for the AVS
+     */
     function _registerToEigen(
         IStrategy[] memory _strategies,
         string memory _avsMetadata
     ) internal {
         allocationManager.updateAVSMetadataURI(address(this), _avsMetadata);
-        IAllocationManagerTypes.CreateSetParams[]
-            memory setParams = new IAllocationManagerTypes.CreateSetParams[](1);
-        setParams[0] = IAllocationManagerTypes.CreateSetParams({
-            operatorSetId: 0,
-            strategies: _strategies
-        });
-        allocationManager.createOperatorSets(address(this), setParams);
+        allocationManager.createOperatorSets(
+            address(this),
+            abi.decode(
+                abi.encode(
+                    IAllocationManagerTypes.CreateSetParams({
+                        operatorSetId: 0,
+                        strategies: _strategies
+                    })
+                ),
+                (IAllocationManagerTypes.CreateSetParams[])
+            )
+        );
         allocationManager.setAVSRegistrar(address(sertnRegistrar));
-        _addStrategies(_strategies, false);
     }
 
     function addStrategies(
