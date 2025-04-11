@@ -11,23 +11,32 @@ interface ISertnTaskManager {
     /// @notice Thrown when not called by an operator
     error NotOperator();
 
+    /// @notice Thrown when the task does not exist
+    error TaskDoesNotExist();
+
+    /// @notice Thrown when a non-operator attempts to submit a task
+    error NotAssignedToTask();
+
+    /// @notice Thrown when the task state is incorrect
+    error TaskStateIncorrect(TaskState expected);
+
     /// @notice Emitted when a task is created
-    event TaskCreated(bytes32 indexed taskId, address indexed user);
+    event TaskCreated(uint256 indexed taskId, address indexed user);
 
     /// @notice Emitted when a task is assigned to an operator
-    event TaskAssigned(bytes32 indexed taskId, address indexed operator);
+    event TaskAssigned(uint256 indexed taskId, address indexed operator);
 
     /// @notice Emitted when a task is completed by an operator
-    event TaskCompleted(bytes32 indexed taskId, address indexed operator);
+    event TaskCompleted(uint256 indexed taskId, address indexed operator);
 
     /// @notice Emitted when a task is challenged by a user
-    event TaskChallenged(bytes32 indexed taskId, address indexed user);
+    event TaskChallenged(uint256 indexed taskId, address indexed user);
 
     /// @notice Emitted when a task is rejected and the operator is slashed
-    event TaskRejected(bytes32 indexed taskId, address indexed operator);
+    event TaskRejected(uint256 indexed taskId, address indexed operator);
 
     /// @notice Emitted when a task is resolved and the operator is rewarded
-    event TaskResolved(bytes32 indexed taskId, address indexed operator);
+    event TaskResolved(uint256 indexed taskId, address indexed operator);
 
     /**
      * @notice The task struct
@@ -48,6 +57,9 @@ interface ISertnTaskManager {
         address user;
         uint256 nonce;
         address operator;
+        TaskState state;
+        bytes output;
+        uint256 fee;
     }
 
     /**

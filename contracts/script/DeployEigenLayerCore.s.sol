@@ -27,12 +27,22 @@ contract DeployEigenLayerCore is Script, Test {
     function run() external {
         vm.startBroadcast(deployer);
         //set the rewards updater to the deployer address for payment flow
-        configData = CoreDeploymentLib.readDeploymentConfigValues("config/core/", block.chainid);
+        configData = CoreDeploymentLib.readDeploymentConfigValues(
+            "config/core/",
+            block.chainid
+        );
         configData.rewardsCoordinator.updater = deployer;
         proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
-        deploymentData = CoreDeploymentLib.deployContracts(proxyAdmin, configData);
+        deploymentData = CoreDeploymentLib.deployContracts(
+            proxyAdmin,
+            configData
+        );
         vm.stopBroadcast();
         string memory deploymentPath = "deployments/core/";
-        CoreDeploymentLib.writeDeploymentJson(deploymentPath, block.chainid, deploymentData);
+        CoreDeploymentLib.writeDeploymentJson(
+            deploymentPath,
+            block.chainid,
+            deploymentData
+        );
     }
 }

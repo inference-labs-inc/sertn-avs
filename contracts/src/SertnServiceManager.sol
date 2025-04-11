@@ -8,7 +8,7 @@ import {ISertnRegistrar} from "../interfaces/ISertnRegistrar.sol";
 import {IModelRegistry} from "../interfaces/IModelRegistry.sol";
 import {IVerifier} from "../interfaces/IVerifier.sol";
 // EigenLayer
-import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
+import {IRewardsCoordinator, IRewardsCoordinatorTypes} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
 import {IAllocationManager, IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
@@ -16,7 +16,7 @@ import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
 // OpenZeppelin
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {OwnableUpgradeable} from "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
-import {ReentrancyGuardUpgradeable} from "@openzeppelin-upgradeable/contracts/utils/ReentrancyGuardUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
@@ -91,7 +91,7 @@ contract SertnServiceManager is
         IStrategy[] memory _strategies,
         string memory _avsMetadata
     ) public initializer {
-        __Ownable_init(msg.sender);
+        __Ownable_init();
         __ReentrancyGuard_init();
         // Set the deployer as an aggregator
         isAggregator[msg.sender] = true;
@@ -175,5 +175,55 @@ contract SertnServiceManager is
                 aggregators.pop();
             }
         }
+    }
+
+    function pullFeeFromUser(
+        address _user,
+        IERC20 _token,
+        uint256 _fee
+    ) external onlyTaskManager nonReentrant {
+        _token.transferFrom(_user, address(this), _fee);
+    }
+
+    function taskCompleted(
+        address _operator,
+        uint256 _fee,
+        IStrategy _strategy,
+        IERC20 _token
+    ) external onlyTaskManager nonReentrant {
+        IRewardsCoordinatorTypes.StrategyAndMultiplier[]
+            memory strategiesAndMultipliers = new IRewardsCoordinatorTypes.StrategyAndMultiplier[](
+                1
+            );
+        strategiesAndMultipliers[0] = IRewardsCoordinatorTypes
+            .StrategyAndMultiplier({strategy: _strategy, multiplier: 1});
+
+        IRewardsCoordinatorTypes.OperatorReward[]
+            memory operatorRewards = new IRewardsCoordinatorTypes.OperatorReward[](
+                1
+            );
+        operatorRewards[0] = IRewardsCoordinatorTypes.OperatorReward({
+            operator: _operator,
+            amount: _fee
+        });
+
+        IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[]
+            memory submissions = new IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[](
+                1
+            );
+        submissions[0] = IRewardsCoordinatorTypes
+            .OperatorDirectedRewardsSubmission({
+                strategiesAndMultipliers: strategiesAndMultipliers,
+                token: _token,
+                operatorRewards: operatorRewards,
+                startTimestamp: uint32(block.timestamp),
+                duration: 12,
+                description: "Compensation for task completed"
+            });
+
+        rewardsCoordinator.createOperatorDirectedAVSRewardsSubmission(
+            address(this),
+            submissions
+        );
     }
 }

@@ -16,7 +16,7 @@ library UpgradeableProxyLib {
         Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
     function deployProxyAdmin() internal returns (address) {
-        return address(new ProxyAdmin(address(this)));
+        return address(new ProxyAdmin());
     }
 
     function setUpEmptyProxy(address admin) internal returns (address) {

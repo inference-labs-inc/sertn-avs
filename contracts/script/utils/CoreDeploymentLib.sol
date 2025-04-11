@@ -33,6 +33,7 @@ import {IPermissionController} from "@eigenlayer/contracts/interfaces/IPermissio
 import {IPauserRegistry} from "@eigenlayer/contracts/interfaces/IPauserRegistry.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {StrategyFactory} from "@eigenlayer/contracts/strategies/StrategyFactory.sol";
+import {IRewardsCoordinatorTypes} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
 
 import {UpgradeableProxyLib} from "./UpgradeableProxyLib.sol";
 
@@ -132,9 +133,9 @@ library CoreDeploymentLib {
                 IAllocationManager(result.allocationManager),
                 IPauserRegistry(result.pauserRegistry),
                 IPermissionController(result.permissionController),
-                configData.delegationManager.withdrawalDelayBlocks
+                configData.delegationManager.withdrawalDelayBlocks,
                 //Middleware will likely update to need version in constructor
-                // configData.version
+                configData.version
             )
         );
 
@@ -145,8 +146,8 @@ library CoreDeploymentLib {
                 IPauserRegistry(result.pauserRegistry),
                 IPermissionController(result.permissionController),
                 configData.allocationManager.deallocationDelay,
-                configData.allocationManager.allocationConfigurationDelay
-                // configData.version
+                configData.allocationManager.allocationConfigurationDelay,
+                configData.version
             )
         );
 
@@ -155,16 +156,16 @@ library CoreDeploymentLib {
         address strategyManagerImpl = address(
             new StrategyManager(
                 IDelegationManager(result.delegationManager),
-                IPauserRegistry(result.pauserRegistry)
-                // configData.version
+                IPauserRegistry(result.pauserRegistry),
+                configData.version
             )
         );
 
         address strategyFactoryImpl = address(
             new StrategyFactory(
                 IStrategyManager(result.strategyManager),
-                IPauserRegistry(result.pauserRegistry)
-                // configData.version
+                IPauserRegistry(result.pauserRegistry),
+                configData.version
             )
         );
 
@@ -182,23 +183,26 @@ library CoreDeploymentLib {
                 IETHPOSDeposit(ethPOSDeposit),
                 IBeacon(result.eigenPodBeacon),
                 IDelegationManager(result.delegationManager),
-                IPauserRegistry(result.pauserRegistry)
-                // configData.version
+                IPauserRegistry(result.pauserRegistry),
+                configData.version
             )
         );
 
         address rewardsCoordinatorImpl = address(
             new RewardsCoordinator(
-                IDelegationManager(result.delegationManager),
-                IStrategyManager(result.strategyManager),
-                IAllocationManager(result.allocationManager),
-                IPauserRegistry(result.pauserRegistry),
-                IPermissionController(result.permissionController),
-                configData.rewardsCoordinator.calculationIntervalSeconds,
-                configData.rewardsCoordinator.maxRewardsDuration,
-                configData.rewardsCoordinator.maxRetroactiveLength,
-                configData.rewardsCoordinator.maxFutureLength,
-                configData.rewardsCoordinator.genesisRewardsTimestamp
+                IRewardsCoordinatorTypes.RewardsCoordinatorConstructorParams(
+                    IDelegationManager(result.delegationManager),
+                    IStrategyManager(result.strategyManager),
+                    IAllocationManager(result.allocationManager),
+                    IPauserRegistry(result.pauserRegistry),
+                    IPermissionController(result.permissionController),
+                    configData.rewardsCoordinator.calculationIntervalSeconds,
+                    configData.rewardsCoordinator.maxRewardsDuration,
+                    configData.rewardsCoordinator.maxRetroactiveLength,
+                    configData.rewardsCoordinator.maxFutureLength,
+                    configData.rewardsCoordinator.genesisRewardsTimestamp,
+                    configData.version
+                )
             )
         );
 
@@ -209,8 +213,8 @@ library CoreDeploymentLib {
             new EigenPod(
                 IETHPOSDeposit(ethPOSDeposit),
                 IEigenPodManager(result.eigenPodManager),
-                GENESIS_TIME
-                // configData.version
+                GENESIS_TIME,
+                configData.version
             )
         );
 
@@ -221,8 +225,8 @@ library CoreDeploymentLib {
         address baseStrategyImpl = address(
             new StrategyBase(
                 IStrategyManager(result.strategyManager),
-                IPauserRegistry(result.pauserRegistry)
-                // configData.version
+                IPauserRegistry(result.pauserRegistry),
+                configData.version
             )
         );
         /// TODO: PauserRegistry isn't upgradeable
@@ -233,7 +237,9 @@ library CoreDeploymentLib {
             )
         );
 
-        address permissionControllerImpl = address(new PermissionController());
+        address permissionControllerImpl = address(
+            new PermissionController(configData.version)
+        );
 
         // Deploy and configure the strategy beacon
         result.strategyBeacon = address(
