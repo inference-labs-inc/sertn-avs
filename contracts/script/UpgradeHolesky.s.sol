@@ -5,6 +5,8 @@ import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/Test.sol";
 import {CoreDeploymentLib} from "./utils/CoreDeploymentLib.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+import {ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
@@ -100,19 +102,25 @@ contract UpgradeHolesky is Script {
         );
 
         console2.log("Upgrading service manager...");
-        TransparentUpgradeableProxy(payable(deployment.serviceManager))
-            .upgradeToAndCall(address(newServiceManagerImpl), "");
+        ProxyAdmin(proxyAdmin).upgrade(
+            ITransparentUpgradeableProxy(deployment.serviceManager),
+            address(newServiceManagerImpl)
+        );
         console2.log("Service manager upgraded successfully");
 
         console2.log("Upgrading task manager...");
-        TransparentUpgradeableProxy(payable(deployment.taskManager))
-            .upgradeToAndCall(address(newTaskManagerImpl), "");
+        ProxyAdmin(proxyAdmin).upgrade(
+            ITransparentUpgradeableProxy(deployment.taskManager),
+            address(newTaskManagerImpl)
+        );
         console2.log("Task manager upgraded successfully");
 
         if (deployment.modelRegistry != address(0)) {
             console2.log("Upgrading model registry...");
-            TransparentUpgradeableProxy(payable(deployment.modelRegistry))
-                .upgradeToAndCall(address(newModelRegistryImpl), "");
+            ProxyAdmin(proxyAdmin).upgrade(
+                ITransparentUpgradeableProxy(deployment.modelRegistry),
+                address(newModelRegistryImpl)
+            );
             console2.log("Model registry upgraded successfully");
         }
 

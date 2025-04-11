@@ -10,7 +10,6 @@ import {IVerifier} from "../interfaces/IVerifier.sol";
 // EigenLayer
 import {IRewardsCoordinator, IRewardsCoordinatorTypes} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
 import {IAllocationManager, IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
-
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
 import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
 // OpenZeppelin
@@ -72,17 +71,6 @@ contract SertnServiceManager is
         _;
     }
 
-    /**
-     * @notice Modifier to ensure the caller is the sertn registrar
-     */
-    modifier onlySertnRegistrar() {
-        if (msg.sender != address(sertnRegistrar)) {
-            revert NotSertnRegistrar();
-        }
-        _;
-    }
-
-    /// @inheritdoc ISertnServiceManager
     function initialize(
         address _rewardsCoordinator,
         address _delegationManager,
@@ -106,7 +94,7 @@ contract SertnServiceManager is
     /// @inheritdoc ISertnServiceManager
     function updateTaskManager(address _sertnTaskManager) external onlyOwner {
         if (_sertnTaskManager == address(0)) {
-            revert InvalidTaskManager();
+            revert ZeroAddress();
         }
         sertnTaskManager = ISertnTaskManager(_sertnTaskManager);
     }
@@ -119,7 +107,11 @@ contract SertnServiceManager is
         modelRegistry = IModelRegistry(_modelRegistry);
     }
 
-    /// @inheritdoc ISertnServiceManager
+    /**
+     * @notice Register the AVS to EigenLayer
+     * @param _strategies The strategies to register
+     * @param _avsMetadata The AVS metadata to register
+     */
     function _registerToEigen(
         IStrategy[] memory _strategies,
         string memory _avsMetadata
@@ -155,7 +147,7 @@ contract SertnServiceManager is
     /// @inheritdoc ISertnServiceManager
     function addAggregator(address _aggregator) external onlyOwner {
         if (_aggregator == address(0)) {
-            revert InvalidAggregator();
+            revert ZeroAddress();
         }
         if (isAggregator[_aggregator]) {
             revert AggregatorAlreadyExists();
@@ -183,6 +175,29 @@ contract SertnServiceManager is
         uint256 _fee
     ) external onlyTaskManager nonReentrant {
         _token.transferFrom(_user, address(this), _fee);
+    }
+
+    /// @inheritdoc ISertnServiceManager
+    function slashOperator(
+        address _operator,
+        uint256 _fee,
+        uint32 _operatorSetId,
+        IStrategy _strategy
+    ) external onlyTaskManager nonReentrant {
+        IStrategy[] memory strategies = new IStrategy[](1);
+        strategies[0] = _strategy;
+        uint256[] memory wadsToSlash = new uint256[](1);
+        wadsToSlash[0] = _fee;
+        allocationManager.slashOperator(
+            address(this),
+            IAllocationManagerTypes.SlashingParams({
+                operator: _operator,
+                operatorSetId: _operatorSetId,
+                strategies: strategies,
+                wadsToSlash: wadsToSlash,
+                description: "Failure to provide a proof or output for a task"
+            })
+        );
     }
 
     function taskCompleted(

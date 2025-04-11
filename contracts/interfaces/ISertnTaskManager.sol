@@ -91,18 +91,18 @@ interface ISertnTaskManager {
      * @param taskId The task id
      * @param output The output of the task
      */
-    function submitTaskOutput(bytes32 taskId, bytes calldata output) external;
+    function submitTaskOutput(uint256 taskId, bytes calldata output) external;
 
     /**
      * @notice Challenge a task
      * @param taskId The task id
      */
-    function challengeTask(bytes32 taskId) external;
+    function challengeTask(uint256 taskId) external;
 
     /**
      * @notice Submit a task response to the task manager
      * @param taskId The task id
      * @param proof The proof of completion
      */
-    function submitProofForTask(bytes32 taskId, bytes calldata proof) external;
+    function submitProofForTask(uint256 taskId, bytes calldata proof) external;
 }

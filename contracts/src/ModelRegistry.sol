@@ -25,7 +25,7 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
     mapping(uint256 => uint256) public computeCost;
 
     function initialize() public initializer {
-        __Ownable_init(msg.sender);
+        __Ownable_init();
     }
 
     /// @inheritdoc IModelRegistry
