@@ -92,4 +92,24 @@ interface ISertnServiceManager {
         bytes output_;
         bool proven_;
     }
+
+    // State Variables
+    function isAggregator(address) external view returns (bool);
+
+    function isOperator(address) external view returns (bool);
+
+    function operatorNodeModelIds(
+        address,
+        uint256,
+        uint256
+    ) external view returns (bool);
+
+    function operatorNodeComputeUnits(
+        address,
+        uint256
+    ) external view returns (uint256);
+
+    function operatorNodeCount(address) external view returns (uint256);
+
+    function opInfo(address) external view returns (bytes memory);
 }
