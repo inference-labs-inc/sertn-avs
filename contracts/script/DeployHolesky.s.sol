@@ -17,6 +17,10 @@ contract DeployHolesky is Script {
         uint256 deployerKey = vm.envUint("HOLESKY_DEPLOYER_KEY");
         address allocationManager = vm.envAddress("ALLOCATION_MANAGER");
         address strategy = vm.envAddress("STRATEGY_ADDRESS");
+        address rewardsCoordinator = vm.envAddress("REWARDS_COORDINATOR");
+        address delegationManager = vm.envAddress("DELEGATION_MANAGER");
+        address sertnRegistrar = vm.envAddress("SERTN_REGISTRAR");
+        string memory avsMetadata = vm.envString("AVS_METADATA_URI");
 
         vm.startBroadcast(deployerKey);
 
@@ -56,23 +60,43 @@ contract DeployHolesky is Script {
         console2.log("- TaskManager:", address(taskManagerProxy));
         console2.log("- ServiceManager:", address(serviceManagerProxy));
 
+        IStrategy[] memory strategiesForInit = new IStrategy[](1);
+        strategiesForInit[0] = IStrategy(strategy);
+
         ModelRegistry(address(modelRegistryProxy)).initialize();
-        SertnTaskManager(address(taskManagerProxy)).initialize();
+        SertnTaskManager(address(taskManagerProxy)).initialize(
+            rewardsCoordinator,
+            delegationManager,
+            allocationManager,
+            address(serviceManagerProxy),
+            address(modelRegistryProxy)
+        );
         SertnServiceManager(address(serviceManagerProxy)).initialize(
-            address(taskManagerProxy),
+            rewardsCoordinator,
+            delegationManager,
+            allocationManager,
+            sertnRegistrar,
+            strategiesForInit,
+            avsMetadata
+        );
+
+        SertnServiceManager(address(serviceManagerProxy)).updateTaskManager(
+            address(taskManagerProxy)
+        );
+        SertnServiceManager(address(serviceManagerProxy)).updateModelRegistry(
             address(modelRegistryProxy)
         );
 
         IAllocationManager allocMgr = IAllocationManager(allocationManager);
 
-        IStrategy[] memory strategies = new IStrategy[](1);
-        strategies[0] = IStrategy(strategy);
+        IStrategy[] memory strategiesForSet = new IStrategy[](1);
+        strategiesForSet[0] = IStrategy(strategy);
 
         IAllocationManagerTypes.CreateSetParams[]
             memory sets = new IAllocationManagerTypes.CreateSetParams[](1);
         sets[0] = IAllocationManagerTypes.CreateSetParams({
             operatorSetId: 1,
-            strategies: strategies
+            strategies: strategiesForSet
         });
         allocMgr.createOperatorSets(address(serviceManagerProxy), sets);
 

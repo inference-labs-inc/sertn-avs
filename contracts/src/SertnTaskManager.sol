@@ -2,8 +2,7 @@
 pragma solidity ^0.8.29;
 
 import {IAVSRegistrar} from "@eigenlayer/contracts/interfaces/IAVSRegistrar.sol";
-import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
-import {IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
+import {IAllocationManager, IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
@@ -14,6 +13,7 @@ import {IVerifier} from "../interfaces/IVerifier.sol";
 import {ModelRegistry} from "./ModelRegistry.sol";
 import {OwnableUpgradeable} from "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {OperatorSet} from "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
 
 contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
     // queue of tasks that are waiting to be assigned to an operator
@@ -89,14 +89,11 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         OperatorSet memory operatorSet = allocationManager.getAllocatedSets(
             task.operator
         )[0];
-        IStrategy memory strategy = allocationManager.getAllocatedStrategies(
+        IStrategy strategy = allocationManager.getAllocatedStrategies(
             task.operator,
             operatorSet
         )[0];
-        IERC20 token = allocationManager.getAllocatedTokens(
-            task.operator,
-            operatorSet
-        )[0];
+        IERC20 token = strategy.underlyingToken();
 
         sertnServiceManager.taskCompleted(
             task.operator,
@@ -111,11 +108,25 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         if (taskId > taskNonce) {
             revert TaskDoesNotExist();
         }
+        // TODO: configurable timeout
         if (
             task.state != TaskState.COMPLETED &&
-            task.blockNumber + TIMEOUT > block.number
+            task.startBlock + 300 > block.number
         ) {
-            sertnServiceManager.slashOperator(task.operator, task.fee);
+            OperatorSet memory operatorSet = allocationManager.getAllocatedSets(
+                task.operator
+            )[0];
+            IStrategy strategy = allocationManager.getAllocatedStrategies(
+                task.operator,
+                operatorSet
+            )[0];
+
+            sertnServiceManager.slashOperator(
+                task.operator,
+                task.fee,
+                operatorSet.id,
+                strategy
+            );
         }
         if (task.state != TaskState.COMPLETED) {
             revert TaskStateIncorrect(TaskState.COMPLETED);
