@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.29;
 import {IStrategy} from "../lib/eigenlayer-contracts/src/contracts/interfaces/IStrategy.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface ISertnServiceManager {
     error IncorrectAVS();
@@ -93,10 +94,24 @@ interface ISertnServiceManager {
         bool proven_;
     }
 
+    /**
+     * @notice Remove an aggregator from the service manager
+     * @param _aggregator The address of the aggregator to remove
+     */
+    function removeAggregator(address _aggregator) external;
+
+    /**
+     * @notice Task completed
+     */
+    function taskCompleted(
+        address _operator,
+        uint256 _fee,
+        IStrategy _strategy,
+        IERC20 _token
+    ) external;
+
     // State Variables
     function isAggregator(address) external view returns (bool);
-
-    function isOperator(address) external view returns (bool);
 
     function operatorNodeModelIds(
         address,
@@ -112,4 +127,6 @@ interface ISertnServiceManager {
     function operatorNodeCount(address) external view returns (uint256);
 
     function opInfo(address) external view returns (bytes memory);
+
+    function aggregators(uint256) external view returns (address);
 }

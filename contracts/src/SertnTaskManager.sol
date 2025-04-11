@@ -22,6 +22,8 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
     bytes[] public slashingQueue;
     // nonce for tasks to ensure uniqueness
     uint256 taskNonce;
+    // Mapping from taskId to Task struct
+    mapping(uint256 => Task) public tasks;
 
     IERC20 public ser;
 
@@ -40,9 +42,9 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
     }
 
     modifier onlyOperators() {
-        if (!sertnServiceManager.isOperator(msg.sender)) {
-            revert NotOperator();
-        }
+        // if (!sertnServiceManager.isOperator(msg.sender)) {
+        //     revert NotOperator();
+        // }
         _;
     }
 
@@ -61,25 +63,82 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         modelRegistry = ModelRegistry(_modelRegistry);
     }
 
-    function sendTask(Task memory _task) external onlyAggregators {
-        // TODO: Implement
+    function sendTask(Task memory task) external onlyAggregators {
+        tasks[taskNonce] = task;
+        taskNonce++;
+        emit TaskCreated(taskNonce, task.user);
+        emit TaskAssigned(taskNonce, task.operator);
     }
 
-    function submitTaskOutput(
-        bytes32 taskId,
-        bytes calldata output
-    ) external onlyOperators {
-        // TODO: Implement
+    function submitTaskOutput(uint256 taskId, bytes calldata output) external {
+        Task memory task = tasks[taskId];
+        if (taskId > taskNonce) {
+            revert TaskDoesNotExist();
+        }
+        if (task.operator != msg.sender) {
+            revert NotAssignedToTask();
+        }
+        if (task.state != TaskState.ASSIGNED) {
+            revert TaskStateIncorrect(TaskState.ASSIGNED);
+        }
+
+        task.output = output;
+        task.state = TaskState.COMPLETED;
+        emit TaskCompleted(taskId, task.operator);
+
+        OperatorSet memory operatorSet = allocationManager.getAllocatedSets(
+            task.operator
+        )[0];
+        IStrategy memory strategy = allocationManager.getAllocatedStrategies(
+            task.operator,
+            operatorSet
+        )[0];
+        IERC20 token = allocationManager.getAllocatedTokens(
+            task.operator,
+            operatorSet
+        )[0];
+
+        sertnServiceManager.taskCompleted(
+            task.operator,
+            task.fee,
+            strategy,
+            token
+        );
     }
 
-    function challengeTask(bytes32 taskId) external onlyAggregators {
-        // TODO: Implement
+    function challengeTask(uint256 taskId) external onlyAggregators {
+        Task memory task = tasks[taskId];
+        if (taskId > taskNonce) {
+            revert TaskDoesNotExist();
+        }
+        if (
+            task.state != TaskState.COMPLETED &&
+            task.blockNumber + TIMEOUT > block.number
+        ) {
+            sertnServiceManager.slashOperator(task.operator, task.fee);
+        }
+        if (task.state != TaskState.COMPLETED) {
+            revert TaskStateIncorrect(TaskState.COMPLETED);
+        }
+        task.state = TaskState.CHALLENGED;
+        emit TaskChallenged(taskId, task.user);
     }
 
     function submitProofForTask(
-        bytes32 taskId,
+        uint256 taskId,
         bytes calldata proof
     ) external onlyOperators {
-        // TODO: Implement
+        if (taskId > taskNonce) {
+            revert TaskDoesNotExist();
+        }
+        if (tasks[taskId].operator != msg.sender) {
+            revert NotAssignedToTask();
+        }
+        if (tasks[taskId].state != TaskState.CHALLENGED) {
+            revert TaskStateIncorrect(TaskState.CHALLENGED);
+        }
+
+        tasks[taskId].state = TaskState.RESOLVED;
+        emit TaskResolved(taskId, tasks[taskId].operator);
     }
 }
