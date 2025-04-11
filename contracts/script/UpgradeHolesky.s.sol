@@ -101,19 +101,18 @@ contract UpgradeHolesky is Script {
 
         console2.log("Upgrading service manager...");
         TransparentUpgradeableProxy(payable(deployment.serviceManager))
-            .upgradeTo(address(newServiceManagerImpl));
+            .upgradeToAndCall(address(newServiceManagerImpl), "");
         console2.log("Service manager upgraded successfully");
 
         console2.log("Upgrading task manager...");
-        TransparentUpgradeableProxy(payable(deployment.taskManager)).upgradeTo(
-            address(newTaskManagerImpl)
-        );
+        TransparentUpgradeableProxy(payable(deployment.taskManager))
+            .upgradeToAndCall(address(newTaskManagerImpl), "");
         console2.log("Task manager upgraded successfully");
 
         if (deployment.modelRegistry != address(0)) {
             console2.log("Upgrading model registry...");
             TransparentUpgradeableProxy(payable(deployment.modelRegistry))
-                .upgradeTo(address(newModelRegistryImpl));
+                .upgradeToAndCall(address(newModelRegistryImpl), "");
             console2.log("Model registry upgraded successfully");
         }
 

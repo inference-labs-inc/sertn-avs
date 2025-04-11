@@ -5,6 +5,12 @@ interface ISertnTaskManager {
     /// @notice Thrown when the model id is invalid
     error InvalidModelId();
 
+    /// @notice Thrown when not called by an aggregator
+    error NotAggregator();
+
+    /// @notice Thrown when not called by an operator
+    error NotOperator();
+
     /// @notice Emitted when a task is created
     event TaskCreated(bytes32 indexed taskId, address indexed user);
 

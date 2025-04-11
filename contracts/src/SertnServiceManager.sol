@@ -91,7 +91,7 @@ contract SertnServiceManager is
         IStrategy[] memory _strategies,
         string memory _avsMetadata
     ) public initializer {
-        __Ownable_init();
+        __Ownable_init(msg.sender);
         __ReentrancyGuard_init();
         // Set the deployer as an aggregator
         isAggregator[msg.sender] = true;
@@ -137,13 +137,13 @@ contract SertnServiceManager is
                 (IAllocationManagerTypes.CreateSetParams[])
             )
         );
-        allocationManager.setAVSRegistrar(address(sertnRegistrar));
+        allocationManager.setAVSRegistrar(address(this), sertnRegistrar);
     }
 
     /// @inheritdoc ISertnServiceManager
     function addStrategies(
         IStrategy[] memory _strategies,
-        uint256 operatorSetId
+        uint32 operatorSetId
     ) external onlyOwner {
         allocationManager.addStrategiesToOperatorSet(
             address(this),
