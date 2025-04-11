@@ -16,7 +16,6 @@ import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoor
 
 import {SertnServiceManager} from "../src/SertnServiceManager.sol";
 import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
-import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 
 import {IERC20, StrategyFactory} from "@eigenlayer/contracts/strategies/StrategyFactory.sol";
 import {SertnTaskManager} from "../src/SertnTaskManager.sol";
@@ -84,23 +83,28 @@ contract SertnDeployer is Script, Test {
         // sertnDeployment = SertnDeploymentLib.deployContracts(
         //     proxyAdmin, coreDeployment, quorum, owner.key.addr, owner.key.addr
         // );
-        sertnServiceManager = new SertnServiceManager(
+        sertnServiceManager = new SertnServiceManager();
+        modelRegistry = new ModelRegistry();
+        sertnTaskManager = new SertnTaskManager();
+
+        // Initialize contracts
+        sertnServiceManager.initialize(
             coreDeployment.rewardsCoordinator,
             coreDeployment.delegationManager,
             coreDeployment.allocationManager,
+            address(0),
             strategies,
             ""
         );
 
-        modelRegistry = new ModelRegistry(address(sertnServiceManager));
+        modelRegistry.initialize();
 
-        sertnTaskManager = new SertnTaskManager(
+        sertnTaskManager.initialize(
             coreDeployment.rewardsCoordinator,
             coreDeployment.delegationManager,
             coreDeployment.allocationManager,
             address(sertnServiceManager),
-            address(modelRegistry),
-            address(serToken)
+            address(modelRegistry)
         );
 
         sertnServiceManager.updateTaskManager(address(sertnTaskManager));
