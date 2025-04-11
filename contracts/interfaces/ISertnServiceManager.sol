@@ -24,6 +24,13 @@ interface ISertnServiceManager {
     function updateTaskManager(address _sertnTaskManager) external;
 
     /**
+     * @notice Pull fee from a user
+     * @param _user The address of the user to pull fee from
+     * @param _fee The amount of fee to pull
+     */
+    function pullFeeFromUser(address _user, uint256 _fee) external;
+
+    /**
      * @notice Update the model registry
      * @param _modelRegistry The address of the model registry to update to
      */

@@ -66,6 +66,7 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
     function sendTask(Task memory task) external onlyAggregators {
         tasks[taskNonce] = task;
         taskNonce++;
+        sertnServiceManager.pullFeeFromUser(task.user, task.fee);
         emit TaskCreated(taskNonce, task.user);
         emit TaskAssigned(taskNonce, task.operator);
     }
