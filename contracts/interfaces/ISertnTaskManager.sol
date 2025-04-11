@@ -32,6 +32,9 @@ interface ISertnTaskManager {
     /// @notice Emitted when a task is challenged by a user
     event TaskChallenged(uint256 indexed taskId, address indexed user);
 
+    /// @notice Emitted when a proof is submitted for a task
+    event ProofSubmitted(uint256 indexed taskId, bytes proof);
+
     /// @notice Emitted when a task is rejected and the operator is slashed
     event TaskRejected(uint256 indexed taskId, address indexed operator);
 
