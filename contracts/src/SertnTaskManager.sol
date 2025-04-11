@@ -41,13 +41,6 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         _;
     }
 
-    modifier onlyOperators() {
-        // if (!sertnServiceManager.isOperator(msg.sender)) {
-        //     revert NotOperator();
-        // }
-        _;
-    }
-
     function initialize(
         address _rewardsCoordinator,
         address _delegationManager,
@@ -136,21 +129,58 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         emit TaskChallenged(taskId, task.user);
     }
 
-    function submitProofForTask(
-        uint256 taskId,
-        bytes calldata proof
-    ) external onlyOperators {
+    function submitProofForTask(uint256 taskId, bytes calldata proof) external {
         if (taskId > taskNonce) {
             revert TaskDoesNotExist();
         }
-        if (tasks[taskId].operator != msg.sender) {
+        Task memory task = tasks[taskId];
+        if (task.operator != msg.sender) {
             revert NotAssignedToTask();
         }
-        if (tasks[taskId].state != TaskState.CHALLENGED) {
+        if (task.state != TaskState.CHALLENGED) {
             revert TaskStateIncorrect(TaskState.CHALLENGED);
         }
+        emit ProofSubmitted(taskId, proof);
+    }
 
-        tasks[taskId].state = TaskState.RESOLVED;
-        emit TaskResolved(taskId, tasks[taskId].operator);
+    function resolveTask(
+        uint256 taskId,
+        bool success
+    ) external onlyAggregators {
+        if (taskId > taskNonce) {
+            revert TaskDoesNotExist();
+        }
+        Task memory task = tasks[taskId];
+        if (task.state != TaskState.CHALLENGED) {
+            revert TaskStateIncorrect(TaskState.CHALLENGED);
+        }
+        OperatorSet memory operatorSet = allocationManager.getAllocatedSets(
+            task.operator
+        )[0];
+        IStrategy strategy = allocationManager.getAllocatedStrategies(
+            task.operator,
+            operatorSet
+        )[0];
+        IERC20 token = strategy.underlyingToken();
+
+        if (success) {
+            sertnServiceManager.taskCompleted(
+                task.operator,
+                task.fee,
+                strategy,
+                token
+            );
+            task.state = TaskState.RESOLVED;
+            emit TaskResolved(taskId, task.operator);
+        } else {
+            sertnServiceManager.slashOperator(
+                task.operator,
+                task.fee,
+                operatorSet.id,
+                strategy
+            );
+            task.state = TaskState.REJECTED;
+            emit TaskRejected(taskId, task.operator);
+        }
     }
 }
