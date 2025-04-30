@@ -169,6 +169,7 @@ contract SertnServiceManager is
         }
     }
 
+    /// @inheritdoc ISertnServiceManager
     function pullFeeFromUser(
         address _user,
         IERC20 _token,

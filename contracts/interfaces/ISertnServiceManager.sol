@@ -28,7 +28,11 @@ interface ISertnServiceManager {
      * @param _user The address of the user to pull fee from
      * @param _fee The amount of fee to pull
      */
-    function pullFeeFromUser(address _user, uint256 _fee) external;
+    function pullFeeFromUser(
+        address _user,
+        IERC20 _token,
+        uint256 _fee
+    ) external;
 
     /**
      * @notice Update the model registry
