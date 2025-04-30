@@ -21,7 +21,7 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
     // queue of tasks that are waiting to be challenged
     bytes[] public slashingQueue;
     // nonce for tasks to ensure uniqueness
-    uint256 taskNonce;
+    uint256 public taskNonce;
     // Mapping from taskId to Task struct
     mapping(uint256 => Task) public tasks;
 
@@ -59,7 +59,12 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
     function sendTask(Task memory task) external onlyAggregators {
         tasks[taskNonce] = task;
         taskNonce++;
-        sertnServiceManager.pullFeeFromUser(task.user, task.fee);
+        IStrategy strategy = allocationManager.getAllocatedStrategies(
+            task.operator,
+            allocationManager.getAllocatedSets(task.operator)[0]
+        )[0];
+        IERC20 token = strategy.underlyingToken();
+        sertnServiceManager.pullFeeFromUser(task.user, token, task.fee);
         emit TaskCreated(taskNonce, task.user);
         emit TaskAssigned(taskNonce, task.operator);
     }
