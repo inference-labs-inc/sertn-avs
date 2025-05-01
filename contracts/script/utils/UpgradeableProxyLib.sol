@@ -27,11 +27,7 @@ library UpgradeableProxyLib {
 
     function upgrade(address proxy, address impl) internal {
         ProxyAdmin admin = getProxyAdmin(proxy);
-        admin.upgradeAndCall(
-            ITransparentUpgradeableProxy(payable(proxy)),
-            impl,
-            ""
-        );
+        admin.upgrade(ITransparentUpgradeableProxy(payable(proxy)), impl);
     }
 
     function upgradeAndCall(

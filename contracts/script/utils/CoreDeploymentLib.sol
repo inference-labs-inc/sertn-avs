@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.29;
 
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
@@ -9,9 +8,9 @@ import {Vm} from "forge-std/Vm.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {DelegationManager} from "@eigenlayer/contracts/core/DelegationManager.sol";
 import {StrategyManager} from "@eigenlayer/contracts/core/StrategyManager.sol";
-//Adding allocation manager
+
 import {AllocationManager} from "@eigenlayer/contracts/core/AllocationManager.sol";
-//Adding permission controller
+
 import {PermissionController} from "@eigenlayer/contracts/permissions/PermissionController.sol";
 import {EigenPodManager} from "@eigenlayer/contracts/pods/EigenPodManager.sol";
 import {RewardsCoordinator} from "@eigenlayer/contracts/core/RewardsCoordinator.sol";
@@ -26,9 +25,9 @@ import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationMa
 import {IBeacon} from "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
 import {IStrategyManager} from "@eigenlayer/contracts/interfaces/IStrategyManager.sol";
 import {IEigenPodManager} from "@eigenlayer/contracts/interfaces/IEigenPodManager.sol";
-//Adding Allocation Manager interface
+
 import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
-//Adding Permission controller interface
+
 import {IPermissionController} from "@eigenlayer/contracts/interfaces/IPermissionController.sol";
 import {IPauserRegistry} from "@eigenlayer/contracts/interfaces/IPauserRegistry.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
@@ -125,7 +124,6 @@ library CoreDeploymentLib {
             proxyAdmin
         );
 
-        // Deploy the implementation contracts, using the proxy contracts as inputs
         address delegationManagerImpl = address(
             new DelegationManager(
                 IStrategyManager(result.strategyManager),
@@ -134,12 +132,10 @@ library CoreDeploymentLib {
                 IPauserRegistry(result.pauserRegistry),
                 IPermissionController(result.permissionController),
                 configData.delegationManager.withdrawalDelayBlocks,
-                //Middleware will likely update to need version in constructor
                 configData.version
             )
         );
 
-        //Allocation Manager
         address allocationManagerImpl = address(
             new AllocationManager(
                 IDelegationManager(result.delegationManager),
@@ -172,11 +168,7 @@ library CoreDeploymentLib {
         address ethPOSDeposit;
         if (block.chainid == 1) {
             ethPOSDeposit = 0x00000000219ab540356cBB839Cbe05303d7705Fa;
-        } else {
-            // For non-mainnet chains, you might want to deploy a mock or read from a config
-            // This assumes you have a similar config setup as in M2_Deploy_From_Scratch.s.sol
-            /// TODO: Handle Eth pos
-        }
+        } else {}
 
         address eigenPodManagerImpl = address(
             new EigenPodManager(
@@ -206,7 +198,6 @@ library CoreDeploymentLib {
             )
         );
 
-        /// TODO: Get actual genesis time
         uint64 GENESIS_TIME = 1_564_000;
 
         address eigenPodImpl = address(
@@ -229,25 +220,19 @@ library CoreDeploymentLib {
                 configData.version
             )
         );
-        /// TODO: PauserRegistry isn't upgradeable
+
         address pauserRegistryImpl = address(
-            new PauserRegistry(
-                new address[](0), // Empty array for pausers
-                proxyAdmin // ProxyAdmin as the unpauser
-            )
+            new PauserRegistry(new address[](0), proxyAdmin)
         );
 
         address permissionControllerImpl = address(
             new PermissionController(configData.version)
         );
 
-        // Deploy and configure the strategy beacon
         result.strategyBeacon = address(
             new UpgradeableBeacon(baseStrategyImpl)
         );
 
-        // Upgrade contracts
-        /// TODO: Get from config
         bytes memory upgradeCall = abi.encodeCall(
             DelegationManager.initialize,
             (proxyAdmin, configData.delegationManager.initPausedStatus)
@@ -268,13 +253,12 @@ library CoreDeploymentLib {
             upgradeCall
         );
 
-        // Upgrade StrategyManager contract
         upgradeCall = abi.encodeCall(
             StrategyManager.initialize,
             (
-                proxyAdmin, // initialOwner
-                result.strategyFactory, // initialStrategyWhitelister
-                configData.strategyManager.initPausedStatus // initialPausedStatus
+                proxyAdmin,
+                result.strategyFactory,
+                configData.strategyManager.initPausedStatus
             )
         );
         UpgradeableProxyLib.upgradeAndCall(
@@ -283,12 +267,11 @@ library CoreDeploymentLib {
             upgradeCall
         );
 
-        // Upgrade StrategyFactory contract
         upgradeCall = abi.encodeCall(
             StrategyFactory.initialize,
             (
-                proxyAdmin, // initialOwner
-                configData.strategyFactory.initPausedStatus, // initialPausedStatus
+                proxyAdmin,
+                configData.strategyFactory.initPausedStatus,
                 IBeacon(result.strategyBeacon)
             )
         );
@@ -298,13 +281,9 @@ library CoreDeploymentLib {
             upgradeCall
         );
 
-        // Upgrade EigenPodManager contract
         upgradeCall = abi.encodeCall(
             EigenPodManager.initialize,
-            (
-                proxyAdmin, // initialOwner
-                configData.eigenPodManager.initPausedStatus // initialPausedStatus
-            )
+            (proxyAdmin, configData.eigenPodManager.initPausedStatus)
         );
         UpgradeableProxyLib.upgradeAndCall(
             result.eigenPodManager,
@@ -312,17 +291,16 @@ library CoreDeploymentLib {
             upgradeCall
         );
 
-        // Upgrade RewardsCoordinator contract
         upgradeCall = abi.encodeCall(
             RewardsCoordinator.initialize,
             (
-                proxyAdmin, // initialOwner
-                configData.rewardsCoordinator.initPausedStatus, // initialPausedStatus
+                proxyAdmin,
+                configData.rewardsCoordinator.initPausedStatus,
                 configData.rewardsCoordinator.updater,
-                uint32(configData.rewardsCoordinator.activationDelay), // _activationDelay
+                uint32(configData.rewardsCoordinator.activationDelay),
                 uint16(
                     configData.rewardsCoordinator.globalOperatorCommissionBips
-                ) // _globalCommissionBips
+                )
             )
         );
         UpgradeableProxyLib.upgradeAndCall(
@@ -336,11 +314,9 @@ library CoreDeploymentLib {
             permissionControllerImpl
         );
 
-        // Upgrade EigenPod contract
         upgradeCall = abi.encodeCall(
             EigenPod.initialize,
-            // TODO: Double check this
-            (address(result.eigenPodManager)) // _podOwner
+            (address(result.eigenPodManager))
         );
         UpgradeableProxyLib.upgradeAndCall(
             result.eigenPodBeacon,
@@ -361,8 +337,6 @@ library CoreDeploymentLib {
         StrategyFactoryConfig strategyFactory;
     }
 
-    // StrategyConfig[] strategies;
-
     function readDeploymentConfigValues(
         string memory directoryPath,
         string memory fileName
@@ -380,13 +354,10 @@ library CoreDeploymentLib {
 
         data.version = json.readString("._version");
 
-        // StrategyManager config start
         data.strategyManager.initPausedStatus = json.readUint(
             ".strategyManager.init_paused_status"
         );
-        // StrategyManager config end
 
-        // AllocationManager config start
         data.allocationManager.initPausedStatus = json.readUint(
             ".allocation.init_paused_status"
         );
@@ -396,24 +367,18 @@ library CoreDeploymentLib {
         data.allocationManager.deallocationDelay = uint32(
             json.readUint(".allocation.deallocation_delay")
         );
-        // AllocationManager config end
 
-        // DelegationManager config start
         data.delegationManager.initPausedStatus = json.readUint(
             ".delegation.init_paused_status"
         );
         data.delegationManager.withdrawalDelayBlocks = uint32(
             json.readUint(".delegation.init_withdrawal_delay_blocks")
         );
-        // DelegationManager config end
 
-        // EigenPodManager config start
         data.eigenPodManager.initPausedStatus = json.readUint(
             ".eigenPodManager.init_paused_status"
         );
-        // EigenPodManager config end
 
-        // RewardsCoordinator config start
         data.rewardsCoordinator.initPausedStatus = json.readUint(
             ".rewardsCoordinator.init_paused_status"
         );
@@ -444,13 +409,10 @@ library CoreDeploymentLib {
         data.rewardsCoordinator.globalOperatorCommissionBips = json.readUint(
             ".rewardsCoordinator.global_operator_commission_bips"
         );
-        // RewardsCoordinator config end
 
-        // StrategyFactory config start
         data.strategyFactory.initPausedStatus = json.readUint(
             ".strategyFactory.init_paused_status"
         );
-        // StrategyFactory config end
 
         return data;
     }
@@ -504,7 +466,6 @@ library CoreDeploymentLib {
         return data;
     }
 
-    /// TODO: Need to be able to read json from eigenlayer-contracts repo for holesky/mainnet and output the json here
     function writeDeploymentJson(DeploymentData memory data) internal {
         writeDeploymentJson("deployments/core/", block.chainid, data);
     }
@@ -556,7 +517,6 @@ library CoreDeploymentLib {
         DeploymentData memory data,
         address proxyAdmin
     ) private view returns (string memory) {
-        /// TODO: namespace contracts -> {avs, core}
         return
             string.concat(
                 '{"proxyAdmin":"',
