@@ -3,8 +3,20 @@ import json
 
 from common.constants import ROOT_DIR
 
-with open(os.path.join(ROOT_DIR, "abis", "SertnServiceManager.abi.json")) as f:
-    SERVICE_MANAGER_ABI = json.loads(f.read())
 
-with open(os.path.join(ROOT_DIR, "abis", "SertnTaskManager.abi.json")) as f:
-    TASK_MANAGER_ABI = json.loads(f.read())
+def load_abi(file_name):
+    with open(os.path.join(ROOT_DIR, "abis", file_name)) as f:
+        return json.loads(f.read())
+
+
+SERVICE_MANAGER_ABI = load_abi("SertnServiceManager.abi.json")
+
+TASK_MANAGER_ABI = load_abi("SertnTaskManager.abi.json")
+
+STRATEGY_ABI = load_abi("StrategyBase.abi.json")
+
+ERC20_MOCK_ABI = load_abi("ERC20Mock.abi.json")
+
+DELEGATION_MANAGER_ABI = load_abi("DelegationManager.abi.json")
+
+STRATEGY_MANAGER_ABI = load_abi("StrategyManager.abi.json")

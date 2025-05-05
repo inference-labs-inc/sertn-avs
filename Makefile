@@ -26,6 +26,10 @@ build-contracts: ## builds all contracts and generates ABIs
 	cd contracts && forge build
 	cd contracts && forge inspect SertnTaskManager abi --json > ../abis/SertnTaskManager.abi.json
 	cd contracts && forge inspect SertnServiceManager abi --json > ../abis/SertnServiceManager.abi.json
+	cd contracts && forge inspect StrategyBase abi --json > ../abis/StrategyBase.abi.json
+	cd contracts && forge inspect ERC20Mock abi --json > ../abis/ERC20Mock.abi.json
+	cd contracts && forge inspect DelegationManager abi --json > ../abis/DelegationManager.abi.json
+	cd contracts && forge inspect StrategyManager abi --json > ../abis/StrategyManager.abi.json
 
 deploy-eigenlayer-contracts:
 	@chmod +x ./contracts/anvil/deploy-el.sh
@@ -48,10 +52,10 @@ send-fund: ## sends fund to the operator saved in tests/keys/test.ecdsa.key.json
 # TODO: piping to zap-pretty only works when zapper environment is set to production, unsure why
 ____OFFCHAIN_SOFTWARE___:
 start-operator: ## start operator (part of quickstart)
-	uv run task_operator.py
+	cd client && uv run src/main.py -m operator --config configs/operator.yaml
 
 start-aggregator: ## start aggregator (part of quickstart)
-	uv run aggregator.py
+	cd client && uv run src/main.py -m aggregator --config configs/aggregator.yaml
 
 -----------------------------: ##
 _____HELPER_____: ##

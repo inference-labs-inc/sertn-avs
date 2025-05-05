@@ -5,8 +5,10 @@ operator_address: 0x860B6912C2d0337ef05bbC89b0C2CB6CbAEAB4A5  # can be retrieved
 
 
 # ETH RPC URL
-eth_rpc_url: http://localhost:8545
-eth_ws_url: ws://localhost:8545
+# eth_rpc_url: http://localhost:8545
+# eth_ws_url: ws://localhost:8545
+eth_rpc_url: "http://host.docker.internal:8545"
+eth_ws_url: "ws://host.docker.internal:8545"
 
 # If you running this using eigenlayer CLI and the provided AVS packaging structure,
 # this should be /operator_keys/ecdsa_key.json as the host path will be asked while running

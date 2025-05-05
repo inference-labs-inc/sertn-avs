@@ -613,6 +613,55 @@
   },
   {
     "type": "function",
+    "name": "tasks",
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "operatorModelId_",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "inputs_",
+        "type": "bytes",
+        "internalType": "bytes"
+      },
+      {
+        "name": "poc_",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "startTime_",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "startingBlock_",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "proveOnResponse_",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "user_",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "tokenToStrategy",
     "inputs": [
       {
@@ -814,9 +863,9 @@
       },
       {
         "name": "taskId_",
-        "type": "bytes",
+        "type": "bytes32",
         "indexed": true,
-        "internalType": "bytes"
+        "internalType": "bytes32"
       }
     ],
     "anonymous": false

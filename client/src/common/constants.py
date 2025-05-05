@@ -3,6 +3,14 @@ import json
 
 CLIENT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 ROOT_DIR = os.path.abspath(os.path.join(CLIENT_PATH, ".."))
+MODELS_DATA_DIR = os.path.join(CLIENT_PATH, "src", "models", "models_data")
+TEMP_FOLDER = os.path.join(CLIENT_PATH, "src", "models", "temp")
+
+if not os.path.exists(MODELS_DATA_DIR):
+    os.makedirs(MODELS_DATA_DIR)
+
+if not os.path.exists(TEMP_FOLDER):
+    os.makedirs(TEMP_FOLDER)
 
 # contracts addresses:
 with open(
@@ -20,3 +28,15 @@ with open(
         deployment_info["eth_strategy_0"],
         deployment_info["eth_strategy_1"],
     ]
+
+IGNORED_MODEL_HASHES = []
+
+# Queue size limits
+MAX_EVALUATION_ITEMS = 1024
+
+# Default proof size when we're unable to determine the actual size
+DEFAULT_PROOF_SIZE = 5000
+# Size in percent of the sample to be used for the maximum score median
+MAXIMUM_SCORE_MEDIAN_SAMPLE = 0.05
+# The maximum timespan allowed for miners to process through a circuit
+CIRCUIT_TIMEOUT_SECONDS = 60

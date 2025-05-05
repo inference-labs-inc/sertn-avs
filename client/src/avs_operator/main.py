@@ -1,19 +1,34 @@
+import json
 import os
 import time
+from importlib import import_module
 from typing import Optional
 
 import requests
-from web3 import Web3
-from tqdm import tqdm
+from eth_abi import decode, encode
 from eth_account import Account
-from eth_account.datastructures import SignedTransaction
-from eth_abi import encode
+from eth_account.datastructures import SignedMessage, SignedTransaction
+from eth_account.messages import encode_defunct
+from tqdm import tqdm
+from web3 import Web3
 
 from common.console import console, styles
-from common.eth import EthereumClient, load_ecdsa_private_key
 from common.constants import (
     ETH_STRATEGY_ADDRESSES,
 )
+from common.eth import EthereumClient, load_ecdsa_private_key
+from models.utils import parse_input
+
+task_schema = [
+    # ISertnServiceManagerTypes.Task structure
+    "uint256",  # operatorModelId_
+    "bytes",  # inputs_
+    "uint256",  # poc_
+    "uint256",  # startTime_
+    "uint32",  # startingBlock_
+    "bool",  # proveOnResponse_
+    "address",  # operator_
+]
 
 
 def run_operator(config: dict) -> None:
@@ -25,6 +40,10 @@ def run_operator(config: dict) -> None:
         task_operator.register()
         pbar.update(100)
     task_operator.start()
+
+
+def relative_file_path(file_path: str):
+    return os.path.join(os.path.dirname(__file__), file_path)
 
 
 class TaskOperator:
@@ -123,11 +142,11 @@ class TaskOperator:
             }
         )
 
-        try:
-            # Simulate the transaction
-            self.eth_client.w3.eth.call(tx)
-        except Exception as e:
-            print(f"Transaction simulation failed: {e}")
+        # try:
+        #     # Simulate the transaction
+        #     self.eth_client.w3.eth.call(tx)
+        # except Exception as e:
+        #     print(f"Transaction simulation failed: {e}")
 
         signed_tx: SignedTransaction = self.eth_client.w3.eth.account.sign_transaction(
             tx, private_key=self.private_key
@@ -156,50 +175,83 @@ class TaskOperator:
         )
         while True:
             for event in event_filter.get_new_entries():
-                console.print(f"New task created: {event}", style=styles.op_info)
+                console.print(
+                    f"New task event received. Processing...", style=styles.op_info
+                )
                 self.process_task_event(event)
             time.sleep(3)
 
     def process_task_event(self, event):
-        task_id = event["args"]["taskIndex"]
+        task_id_bytes: bytes = event["args"]["taskId_"]
+        task_id_hex: str = task_id_bytes.hex()
+        operator_address: bytes = event["args"]["opAddr_"]
 
-        model_id: int = event["args"]["task"]["modelId_"]
-        inputs: bytes = event["args"]["task"]["inputs_"]
+        task = self.eth_client.task_manager.functions.tasks(task_id_bytes).call()
+
+        operator_model_id: int = task[0]
+        inputs: bytes = task[1]
         # XXX: WTF is poc? Proof of computation value? What to do with it?
-        poc: int = event["args"]["task"]["poc_"]
-        proveOnResponse: bool = event["args"]["task"]["proveOnResponse_"]
+        poc: int = task[2]
+        start_time: int = task[3]
+        starting_block: int = task[4]
+        prove_on_response: bool = task[5]
 
-        ##################################
-        # TODO: Actual work here........
+        if operator_address != self.operator_address:
+            console.print(
+                f"Operator address {operator_address} does not match "
+                f"the operator address {self.operator_address}, skipping...",
+                style=styles.debug,
+            )
+            return
+
+        formatted_input = parse_input([inputs.decode()])
+
+        model_path = f"models.model_{operator_model_id + 1}"
+        model_module = import_module(model_path)
+        Model = getattr(model_module, "Model")
+        model = Model()
+        model.eval()
+        answer = float(model(formatted_input)[0])
+
         output: bytes = "".encode()
-        prove: Optional[bytes] = None
-        if proveOnResponse:
-            prove = "".encode()
-        ##################################
+        prove: Optional[bytes] = "".encode()
+        if prove_on_response:
+            prove = "".encode()  # TODO: generate proof
 
-        encoded = encode(["uint32", "bytes", "uint256"], [task_id, output, model_id])
-        hash_bytes = Web3.keccak(encoded)
-        signature = self.bls_key_pair.sign_message(msg_bytes=hash_bytes).to_json()
+        encoded = encode(
+            ["uint32", "bytes", "uint256", "address"],
+            [starting_block, output, operator_model_id, self.operator_address],
+        )
+        message = encode_defunct(primitive=encoded)
+        signed_message: SignedMessage = Account.sign_message(
+            message, private_key=self.private_key
+        )
+        signature = signed_message.signature.hex()
+
         console.print(
-            f"Signature generated, task id: {task_id}, model: {model_id}, "
+            f"Signature generated, block: {starting_block}, model: {operator_model_id}, "
+            f"Signature generated, block: {starting_block}, model: {operator_model_id}, "
+            f"output length: {len(output)} signature: {signature}",
             f"output length: {len(output)} signature: {signature}",
             style=styles.debug,
         )
         # logger.info("operator data id", self.operator_id.hex())
         data = {
-            "task_id": task_id,
-            "inputs": inputs,
-            "output": output,
-            "prove": prove,
-            "model_id": model_id,
+            "task_id": task_id_bytes.hex(),
+            "operator_model_id": operator_model_id,
+            "inputs": inputs.hex(),
+            "output": output.hex(),
+            "prove": prove.hex(),
+            "start_time": start_time,
+            "starting_block": starting_block,
             "signature": signature,
             "poc": poc,
-            "proveOnResponse": proveOnResponse,
-            "block_number": event["blockNumber"],
-            # "operator_id": "0x" + self.operator_id.hex(),
+            "prove_on_response": prove_on_response,
+            "operator_address": self.operator_address,
         }
         console.print(
-            f"Submitting result for task to aggregator {data}", style=styles.debug
+            f"Submitting result for task to aggregator task ID - {task_id_hex}",
+            style=styles.debug,
         )
         url = f"http://{self.config['aggregator_server_ip_port_address']}/signature"
         requests.post(url, json=data)

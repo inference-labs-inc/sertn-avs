@@ -1,11 +1,13 @@
 import os
 import threading
 import time
+import random
 
 import eth_abi
 import uvicorn
 from eth_account import Account
 from eth_account.datastructures import SignedTransaction
+from eth_account.messages import encode_defunct
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from tqdm import tqdm
@@ -13,6 +15,7 @@ from web3 import Web3
 
 from common.console import console, styles
 from common.eth import EthereumClient, load_ecdsa_private_key
+from models.model_db import models
 
 
 def run_aggregator(config: dict) -> None:
@@ -34,16 +37,17 @@ class SignatureRequest(BaseModel):
     Pydantic model for operator request validation
     """
 
-    task_id: int
-    block_number: int
-    # operator_id: str
-    signature: dict
-    inputs: bytes
-    output: bytes
-    prove: bytes
-    model_id: int
+    task_id: str  # hex encoded bytes
+    starting_block: int
+    start_time: int
+    signature: str
+    inputs: str
+    output: str
+    prove: str
+    operator_model_id: int
     poc: int
-    proveOnResponse: bool
+    prove_on_response: bool
+    operator_address: str
 
 
 def hasher(task: SignatureRequest) -> bytes:
@@ -78,16 +82,33 @@ class Aggregator:
         @self.app.post("/signature")
         async def submit_signature(data: SignatureRequest):
             try:
-                # Signature class from eigensdk...
-                # signature = Signature(data.signature["X"], data.signature["Y"])
+                encoded = eth_abi.encode(
+                    ["uint32", "bytes", "uint256", "address"],
+                    [
+                        data.starting_block,
+                        bytes.fromhex(data.output),
+                        data.operator_model_id,
+                        data.operator_address,
+                    ],
+                )
+                message = encode_defunct(primitive=encoded)
+                recovered_address = Account.recover_message(
+                    message, signature=bytes.fromhex(data.signature)
+                )
+                if recovered_address != data.operator_address:
+                    console.print(
+                        f"Signature verification failed: {recovered_address} != {data.operator_address}",
+                        style=styles.error,
+                    )
+                    raise HTTPException(
+                        status_code=400, detail="Signature verification failed"
+                    )
+
                 task_index = data.task_id
                 console.print(
                     f"Received signature for task {task_index}", style=styles.agg_info
                 )
-                # TODO: check if the signature is valid somehow
-                # self.bls_aggregation_service.process_new_signature(
-                #     task_index, data, signature, data.operator_id
-                # )
+                # TODO: task completed, store the result
                 return "true"
             except Exception as e:
                 console.print(f"Submitting signature failed: {e}", style=styles.error)
@@ -110,14 +131,17 @@ class Aggregator:
         )
         self.server_thread.start()
 
-    def send_new_task(self, i):
-        # TODO: here we send input data to the task
+    def send_new_task(self, i) -> bytes:
+        # create some generic input data
+        inputs = " ".join(str(random.randint(1, 10**77)) for _ in range(5))
+        # model_id = random.choice(list(models.keys()))
+        model_id = 0
+
         # Define the _task struct, the dict should correspond to the struct in the contract
         # here: `contracts/src/ISertnServiceManager.sol` -> `ISertnServiceManagerTypes.Task`
         task = {
-            "operatorModelId_": 0,  # uint256 - Replace with the actual model ID
-            # TODO: INPUT DATA here:
-            "inputs_": "".encode(),  # bytes - actual input data
+            "operatorModelId_": model_id,  # uint256
+            "inputs_": inputs.encode(),  # bytes - actual input data
             "poc_": 100,  # uint256 - Proof of computation value (WTF is this?)
             "startTime_": 0,  # uint256 - Will be set in the contract
             "startingBlock_": 0,  # uint256 - Will be set in the contract
@@ -125,6 +149,7 @@ class Aggregator:
             "user_": self.aggregator_address,  # address TODO: what address should be here?
         }
 
+        # XXX: Approve funds for the task?
         tx = self.eth_client.task_manager.functions.sendTask(task).build_transaction(
             {
                 "from": self.aggregator_address,
@@ -153,23 +178,16 @@ class Aggregator:
             console.print("Failed to send new task", style=styles.error)
             return
 
-        event = self.task_manager.events.NewTaskCreated().process_log(
-            receipt["logs"][0]
+        event = self.eth_client.task_manager.events.NewTask().process_log(
+            receipt["logs"][1]
         )
 
-        task_index = event["args"]["taskIndex"]
+        task_index = event["args"]["taskId_"]
         console.print(
             f"Successfully sent the new task {task_index}", style=styles.agg_info
         )
-        # TODO: ???
-        # self.bls_aggregation_service.initialize_new_task(
-        #     task_index=task_index,
-        #     task_created_block=receipt["blockNumber"],
-        #     quorum_numbers=nums_to_bytes([0]),
-        #     quorum_threshold_percentages=[100],
-        #     time_to_expiry=60000,
-        # )
-        return event["args"]["taskIndex"]
+
+        return task_index
 
     def start_sending_new_tasks(self):
         i = 0

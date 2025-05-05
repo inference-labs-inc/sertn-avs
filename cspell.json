@@ -8,9 +8,11 @@
         "blsagg",
         "CHAINID",
         "chainio",
+        "CIRCOM",
         "dotenv",
         "eigenlayer",
         "eigensdk",
+        "ezkl",
         "hexstr",
         "holesky",
         "keccak",
@@ -25,7 +27,8 @@
         "Sertn",
         "Slashable",
         "tupple",
-        "venv"
+        "venv",
+        "ZKML"
     ],
     "ignoreWords": [],
     "import": []

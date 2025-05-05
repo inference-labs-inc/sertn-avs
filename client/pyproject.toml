@@ -5,30 +5,28 @@ description = "Sertn AVS Client"
 authors = []
 requires-python = ">=3.10,<3.13"
 dependencies = [
-    "typer>=0.9.0",
-    "rich>=13.7.0",
-    "tqdm>=4.66.2",
-    "pydantic>=2.6.3",
-    "web3>=6.15.1",
-    "pyyaml>=6.0.2",
-    "eth-account>=0.13.5",
-    "fastapi>=0.115.12",
-    "uvicorn>=0.34.0",
+  "typer>=0.9.0",
+  "rich>=13.7.0",
+  "tqdm>=4.66.2",
+  "pydantic>=2.6.3",
+  "web3>=6.15.1",
+  "pyyaml>=6.0.2",
+  "eth-account>=0.13.5",
+  "fastapi>=0.115.12",
+  "uvicorn>=0.34.0",
+  "packaging>=24.2",
+  "torch==2.4.1",
 ]
 
 [project.optional-dependencies]
-test = [
-    "pytest>=8.0.0",
-    "pytest-asyncio>=0.23.5",
-    "pytest-cov>=4.1.0"
-]
+test = ["pytest>=8.0.0", "pytest-asyncio>=0.23.5", "pytest-cov>=4.1.0"]
 
 [build-system]
 requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = { "" = "src" }
 packages = ["common", "avs_operator", "aggregator"]
 
 [tool.ruff]
@@ -42,3 +40,11 @@ pythonpath = ["src"]
 
 [project.scripts]
 sertn = "main:app"
+
+[tool.uv.sources]
+torch = { index = "pytorch" }
+
+[[tool.uv.index]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

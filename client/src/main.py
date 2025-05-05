@@ -34,7 +34,7 @@ def start(
 
     try:
         with open(config, "r") as f:
-            config_dict = config = yaml.load(f, Loader=yaml.BaseLoader)
+            config_dict = yaml.load(f, Loader=yaml.BaseLoader)
     except Exception as e:
         console.print(
             f"Error loading config file. Please check the path and format.",
