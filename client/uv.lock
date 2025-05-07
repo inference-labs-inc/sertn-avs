@@ -546,6 +546,20 @@ wheels = [
 ]
 
 [[package]]
+name = "ezkl"
+version = "19.0.7"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a0/5c/ca7372cbebb42e7b9abaed3d72e20d300a9b62e448ee84ca79c25e6b8fc8/ezkl-19.0.7-cp37-abi3-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:bb06c9cc9be222dccdb79792b0b8ad60c3d83c911332c9c4c8355f30e46d99ec", size = 22402480 },
+    { url = "https://files.pythonhosted.org/packages/f2/f3/2e89ebe2c9e95bc55c131e2e5ebbd8136c7e41df1d91a2c324c3be4770de/ezkl-19.0.7-cp37-abi3-macosx_10_12_x86_64.whl", hash = "sha256:e0a17c46a44aa94c6178c2c8417ac0e1dc0999db4364ffbced474986e8c6144c", size = 11875843 },
+    { url = "https://files.pythonhosted.org/packages/05/81/8801c479c09c81e3644ffd56d6f33e40f62c30fd88028ad5ed68e7954061/ezkl-19.0.7-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5fcddc679bb316fab1227621bf66c780a8dae78babf15f235a27ea37ca600546", size = 14301103 },
+    { url = "https://files.pythonhosted.org/packages/87/79/cad6eb032d2a052309569cfc95973204696fc64b555548220324125fd53d/ezkl-19.0.7-cp37-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:9456f75dfcc7127a3dae1df98e9145651cf4b559224aa78c3e73d03f25164b06", size = 13967182 },
+    { url = "https://files.pythonhosted.org/packages/0f/39/f8c8292fa09eaf1ac226e631fdd7a82be104e9b98593fbea4acb50d2152c/ezkl-19.0.7-cp37-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:97e0a842ec1b6ef8402dca6a0721dcbc9c4815476f746bced42be1662bdc8cec", size = 14498696 },
+    { url = "https://files.pythonhosted.org/packages/60/10/1f2d629edd1264df9b1e24e59ae0bc034962ee2b0864778f99ae455cacc0/ezkl-19.0.7-cp37-abi3-win32.whl", hash = "sha256:a8b2f4fb876dbec7151262d89691c2afe18c4448df09e258b5b75f2d73dc7e54", size = 10681841 },
+    { url = "https://files.pythonhosted.org/packages/db/cc/3c4d5c130fe80327dcb1c5e0c85bca3237c8a34dc5bec2696d6971726e6f/ezkl-19.0.7-cp37-abi3-win_amd64.whl", hash = "sha256:07cdc57dccff139d1904dbed2aadece70c15e2e83283121a58646de066d9f1b5", size = 12041099 },
+]
+
+[[package]]
 name = "fastapi"
 version = "0.115.12"
 source = { registry = "https://pypi.org/simple" }
@@ -1212,6 +1226,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "eth-account" },
+    { name = "ezkl" },
     { name = "fastapi" },
     { name = "packaging" },
     { name = "pydantic" },
@@ -1235,6 +1250,7 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "eth-account", specifier = ">=0.13.5" },
+    { name = "ezkl", specifier = "==19.0.7" },
     { name = "fastapi", specifier = ">=0.115.12" },
     { name = "packaging", specifier = ">=24.2" },
     { name = "pydantic", specifier = ">=2.6.3" },

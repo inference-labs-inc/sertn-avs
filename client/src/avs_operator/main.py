@@ -12,12 +12,11 @@ from eth_account.messages import encode_defunct
 from tqdm import tqdm
 from web3 import Web3
 
+from avs_operator.utils import parse_input
 from common.console import console, styles
-from common.constants import (
-    ETH_STRATEGY_ADDRESSES,
-)
+from common.constants import ETH_STRATEGY_ADDRESSES, PROOFS_FOLDER
 from common.eth import EthereumClient, load_ecdsa_private_key
-from models.utils import parse_input
+from models.proof.ezkl_handler import EZKLHandler
 
 task_schema = [
     # ISertnServiceManagerTypes.Task structure
@@ -188,7 +187,7 @@ class TaskOperator:
 
         task = self.eth_client.task_manager.functions.tasks(task_id_bytes).call()
 
-        operator_model_id: int = task[0]
+        operator_model_id: str = task[0]
         inputs: bytes = task[1]
         # XXX: WTF is poc? Proof of computation value? What to do with it?
         poc: int = task[2]
@@ -213,10 +212,21 @@ class TaskOperator:
         model.eval()
         answer = float(model(formatted_input)[0])
 
-        output: bytes = "".encode()
+        output: bytes = f"{answer}".encode()
+
+        proof_generator = EZKLHandler(
+            # TODO: use the model path from the task
+            model_id="96a1315ab963a5a906fb9c7515f60ba386d58310c0ad47bb1049f2dc9b2bdd64",
+            task_id=task_id_hex,
+            inputs=[float(i) for i in inputs.decode().split(" ")],
+        )
+        # just save input data to the file
+        proof_generator.gen_input_file()
+
         prove: Optional[bytes] = "".encode()
         if prove_on_response:
-            prove = "".encode()  # TODO: generate proof
+            # generate proof
+            prove = json.dumps(proof_generator.gen_proof()).encode()
 
         encoded = encode(
             ["uint32", "bytes", "uint256", "address"],

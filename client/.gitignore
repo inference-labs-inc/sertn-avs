@@ -27,4 +27,5 @@ htmlcov/
 .venv/
 venv/
 ENV/
-src/models/models_data/
+src/models/generated_proofs/
+

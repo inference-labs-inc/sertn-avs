@@ -5,12 +5,12 @@ CLIENT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."
 ROOT_DIR = os.path.abspath(os.path.join(CLIENT_PATH, ".."))
 MODELS_DATA_DIR = os.path.join(CLIENT_PATH, "src", "models", "models_data")
 TEMP_FOLDER = os.path.join(CLIENT_PATH, "src", "models", "temp")
+PROOFS_FOLDER = os.path.join(CLIENT_PATH, "src", "models", "generated_proofs")
+MODELS_FOLDER = os.path.join(CLIENT_PATH, "src", "models", "models")
 
-if not os.path.exists(MODELS_DATA_DIR):
-    os.makedirs(MODELS_DATA_DIR)
-
-if not os.path.exists(TEMP_FOLDER):
-    os.makedirs(TEMP_FOLDER)
+os.makedirs(MODELS_DATA_DIR, exist_ok=True)
+os.makedirs(TEMP_FOLDER, exist_ok=True)
+os.makedirs(PROOFS_FOLDER, exist_ok=True)
 
 # contracts addresses:
 with open(

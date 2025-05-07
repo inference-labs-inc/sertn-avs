@@ -16,6 +16,7 @@ dependencies = [
   "uvicorn>=0.34.0",
   "packaging>=24.2",
   "torch==2.4.1",
+  "ezkl==19.0.7",
 ]
 
 [project.optional-dependencies]

@@ -15,7 +15,6 @@ from web3 import Web3
 
 from common.console import console, styles
 from common.eth import EthereumClient, load_ecdsa_private_key
-from models.model_db import models
 
 
 def run_aggregator(config: dict) -> None:
@@ -133,7 +132,7 @@ class Aggregator:
 
     def send_new_task(self, i) -> bytes:
         # create some generic input data
-        inputs = " ".join(str(random.randint(1, 10**77)) for _ in range(5))
+        inputs = " ".join(str(random.uniform(0.0, 0.85)) for _ in range(5))
         # model_id = random.choice(list(models.keys()))
         model_id = 0
 
@@ -194,7 +193,7 @@ class Aggregator:
         while True:
             console.print("Sending new task", style=styles.debug)
             self.send_new_task(i)
-            time.sleep(10)
+            time.sleep(60)
             i += 1
 
     # NOTE: `RespondToTask` function is not implemented in the contract
