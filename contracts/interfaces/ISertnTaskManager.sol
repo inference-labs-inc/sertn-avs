@@ -5,23 +5,41 @@ interface ISertnTaskManager {
     /// @notice Thrown when the model id is invalid
     error InvalidModelId();
 
+    /// @notice Thrown when not called by an aggregator
+    error NotAggregator();
+
+    /// @notice Thrown when not called by an operator
+    error NotOperator();
+
+    /// @notice Thrown when the task does not exist
+    error TaskDoesNotExist();
+
+    /// @notice Thrown when a non-operator attempts to submit a task
+    error NotAssignedToTask();
+
+    /// @notice Thrown when the task state is incorrect
+    error TaskStateIncorrect(TaskState expected);
+
     /// @notice Emitted when a task is created
-    event TaskCreated(bytes32 indexed taskId, address indexed user);
+    event TaskCreated(uint256 indexed taskId, address indexed user);
 
     /// @notice Emitted when a task is assigned to an operator
-    event TaskAssigned(bytes32 indexed taskId, address indexed operator);
+    event TaskAssigned(uint256 indexed taskId, address indexed operator);
 
     /// @notice Emitted when a task is completed by an operator
-    event TaskCompleted(bytes32 indexed taskId, address indexed operator);
+    event TaskCompleted(uint256 indexed taskId, address indexed operator);
 
     /// @notice Emitted when a task is challenged by a user
-    event TaskChallenged(bytes32 indexed taskId, address indexed user);
+    event TaskChallenged(uint256 indexed taskId, address indexed user);
+
+    /// @notice Emitted when a proof is submitted for a task
+    event ProofSubmitted(uint256 indexed taskId, bytes proof);
 
     /// @notice Emitted when a task is rejected and the operator is slashed
-    event TaskRejected(bytes32 indexed taskId, address indexed operator);
+    event TaskRejected(uint256 indexed taskId, address indexed operator);
 
     /// @notice Emitted when a task is resolved and the operator is rewarded
-    event TaskResolved(bytes32 indexed taskId, address indexed operator);
+    event TaskResolved(uint256 indexed taskId, address indexed operator);
 
     /**
      * @notice The task struct
@@ -42,6 +60,9 @@ interface ISertnTaskManager {
         address user;
         uint256 nonce;
         address operator;
+        TaskState state;
+        bytes output;
+        uint256 fee;
     }
 
     /**
@@ -70,21 +91,21 @@ interface ISertnTaskManager {
 
     /**
      * @notice Submit a task to the task manager
-     * @param _taskId The task id
-     * @param _proof The proof of completion
+     * @param taskId The task id
+     * @param output The output of the task
      */
-    function submitTask(bytes32 _taskId, bytes memory _proof) external;
+    function submitTaskOutput(uint256 taskId, bytes calldata output) external;
 
     /**
      * @notice Challenge a task
-     * @param _taskId The task id
+     * @param taskId The task id
      */
-    function challengeTask(bytes32 _taskId) external;
+    function challengeTask(uint256 taskId) external;
 
     /**
      * @notice Submit a task response to the task manager
-     * @param _taskId The task id
-     * @param _proof The proof of completion
+     * @param taskId The task id
+     * @param proof The proof of completion
      */
-    function submitTaskResponse(bytes32 _taskId, bytes memory _proof) external;
+    function submitProofForTask(uint256 taskId, bytes calldata proof) external;
 }
