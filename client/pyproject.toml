@@ -17,6 +17,7 @@ dependencies = [
   "packaging>=24.2",
   "torch==2.4.1",
   "ezkl==19.0.7",
+  "onnxruntime>=1.21.1",
 ]
 
 [project.optional-dependencies]

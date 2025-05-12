@@ -28,4 +28,4 @@ htmlcov/
 venv/
 ENV/
 src/models/generated_proofs/
-
+*.pk

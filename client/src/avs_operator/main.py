@@ -17,6 +17,7 @@ from common.console import console, styles
 from common.constants import ETH_STRATEGY_ADDRESSES, PROOFS_FOLDER
 from common.eth import EthereumClient, load_ecdsa_private_key
 from models.proof.ezkl_handler import EZKLHandler
+from models.onnx_run import run_onnx
 
 task_schema = [
     # ISertnServiceManagerTypes.Task structure
@@ -203,34 +204,30 @@ class TaskOperator:
             )
             return
 
-        formatted_input = parse_input([inputs.decode()])
-
-        model_path = f"models.model_{operator_model_id + 1}"
-        model_module = import_module(model_path)
-        Model = getattr(model_module, "Model")
-        model = Model()
-        model.eval()
-        answer = float(model(formatted_input)[0])
-
-        output: bytes = f"{answer}".encode()
+        input_data = [float(i) for i in inputs.decode().split(" ")]
+        output = run_onnx(
+            model_id=operator_model_id,
+            input_data=input_data,
+        )
 
         proof_generator = EZKLHandler(
-            # TODO: use the model path from the task
-            model_id="96a1315ab963a5a906fb9c7515f60ba386d58310c0ad47bb1049f2dc9b2bdd64",
+            model_id=operator_model_id,
             task_id=task_id_hex,
-            inputs=[float(i) for i in inputs.decode().split(" ")],
+            inputs=input_data,
         )
         # just save input data to the file
         proof_generator.gen_input_file()
 
-        prove: Optional[bytes] = "".encode()
+        prove: Optional[bytes]
         if prove_on_response:
             # generate proof
             prove = json.dumps(proof_generator.gen_proof()).encode()
 
+        output_bytes: bytes = json.dumps(output).encode()
+
         encoded = encode(
             ["uint32", "bytes", "uint256", "address"],
-            [starting_block, output, operator_model_id, self.operator_address],
+            [starting_block, output_bytes, operator_model_id, self.operator_address],
         )
         message = encode_defunct(primitive=encoded)
         signed_message: SignedMessage = Account.sign_message(
@@ -250,7 +247,7 @@ class TaskOperator:
             "task_id": task_id_bytes.hex(),
             "operator_model_id": operator_model_id,
             "inputs": inputs.hex(),
-            "output": output.hex(),
+            "output": output_bytes.hex(),
             "prove": prove.hex(),
             "start_time": start_time,
             "starting_block": starting_block,

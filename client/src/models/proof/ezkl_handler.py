@@ -38,10 +38,10 @@ class EZKLHandler:
         self.settings_path = os.path.join(model_path, "settings.json")
         self.settings = json.load(open(self.settings_path, "r", encoding="utf-8"))
 
-        proof_dir = os.path.join(PROOFS_FOLDER, task_id)
-        self.input_path = os.path.join(proof_dir, "inputs.json")
-        self.witness_path = os.path.join(proof_dir, "witness.json")
-        self.proof_filepath = os.path.join(proof_dir, "proof.json")
+        self.proof_dir = os.path.join(PROOFS_FOLDER, task_id)
+        self.input_path = os.path.join(self.proof_dir, "inputs.json")
+        self.witness_path = os.path.join(self.proof_dir, "witness.json")
+        self.proof_filepath = os.path.join(self.proof_dir, "proof.json")
 
     def gen_input_file(self):
         console.print("Generating input file", style=styles.op_info)
@@ -136,7 +136,7 @@ class EZKLHandler:
                 check=True,
                 capture_output=True,
                 text=True,
-                timeout=60,
+                timeout=600,
             )
             return "verified: true" in result.stdout
         except subprocess.TimeoutExpired:
