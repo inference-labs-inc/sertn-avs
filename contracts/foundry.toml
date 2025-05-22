@@ -9,7 +9,8 @@ via-ir = true
 remappings = [
   "@openzeppelin/=lib/openzeppelin-contracts/",
   "@openzeppelin-upgradeable/=lib/openzeppelin-contracts-upgradeable/",
-  "@eigenlayer/=lib/eigenlayer-contracts/src/",
+  "@eigenlayer/contracts/=lib/eigenlayer-contracts/src/contracts/",
+  "@eigenlayer/test/=lib/eigenlayer-contracts/src/test/",
   "forge-std/=lib/forge-std/src/",
 ]
 

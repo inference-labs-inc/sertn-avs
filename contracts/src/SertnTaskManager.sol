@@ -145,6 +145,9 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         if (task.state != TaskState.CHALLENGED) {
             revert TaskStateIncorrect(TaskState.CHALLENGED);
         }
+        // TODO: Solidity hashes bytes fields longer than 32 bytes in events
+        //       so if the proof is longer than 32 bytes, nobody will be able to
+        //       verify it.
         emit ProofSubmitted(taskId, proof);
     }
 

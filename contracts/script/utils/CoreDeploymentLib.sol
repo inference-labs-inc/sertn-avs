@@ -147,8 +147,6 @@ library CoreDeploymentLib {
             )
         );
 
-        string memory _strategyVersion = "";
-
         address strategyManagerImpl = address(
             new StrategyManager(
                 IDelegationManager(result.delegationManager),
@@ -209,9 +207,9 @@ library CoreDeploymentLib {
             )
         );
 
-        address eigenPodBeaconImpl = address(
-            new UpgradeableBeacon(eigenPodImpl)
-        );
+        // address eigenPodBeaconImpl = address(
+        //     new UpgradeableBeacon(eigenPodImpl)
+        // );
 
         address baseStrategyImpl = address(
             new StrategyBase(
@@ -221,9 +219,9 @@ library CoreDeploymentLib {
             )
         );
 
-        address pauserRegistryImpl = address(
-            new PauserRegistry(new address[](0), proxyAdmin)
-        );
+        // address pauserRegistryImpl = address(
+        //     new PauserRegistry(new address[](0), proxyAdmin)
+        // );
 
         address permissionControllerImpl = address(
             new PermissionController(configData.version)
