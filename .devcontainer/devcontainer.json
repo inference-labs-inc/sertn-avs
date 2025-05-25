@@ -33,7 +33,8 @@
         "tamasfe.even-better-toml",
         "ms-toolsai.jupyter",
         "eamodio.gitlens",
-        "nomicfoundation.hardhat-solidity"
+        "nomicfoundation.hardhat-solidity",
+        "aaron-bond.better-comments"
       ]
     }
   },

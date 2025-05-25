@@ -29,8 +29,7 @@ import {ECDSAUpgradeable} from "@openzeppelin-upgrades/contracts/utils/cryptogra
 import {MockVerifier} from "./MockVerifier.sol";
 import {MockVerifier2} from "./MockVerifier2.sol";
 import {ModelRegistry} from "../src/ModelRegistry.sol";
-import {SertnRegistrar} from "../src/SertnRegistrar.sol";
-import {AVS} from "@eigenlayer/test/integration/users/AVS.t.sol";
+import {MockAVSRegistrar} from "./RegistrarMock.sol";
 
 contract AVSSetup2 is Test {
     struct Operator {
@@ -50,7 +49,8 @@ contract AVSSetup2 is Test {
     AVSOwner internal owner;
     User internal user;
 
-    OperatorSet internal opSet;
+    OperatorSet internal opSet; // address avs; uint32 id;
+    uint32[] opSetIds;
 
     // SertnDeploymentLib.DeploymentData internal sertnDeployment;
     CoreDeploymentLib.DeploymentData internal coreDeployment;
@@ -60,8 +60,6 @@ contract AVSSetup2 is Test {
     IStrategy[] _ethStrategies;
     IStrategy _serStrategy;
     IStrategy[] strategies;
-
-    uint32[] opSetIds;
 
     ERC20Mock public ethToken1;
     ERC20Mock public ethToken2;
@@ -95,8 +93,9 @@ contract AVSSetup2 is Test {
 
         vm.startPrank(owner.key.addr);
         console.log("Deploying AVS as sertnRegistrar");
-        AVS sertnRegistrar = new AVS("Test AVS");
-        SertnServiceManager sertnServiceManager = new SertnServiceManager();
+        MockAVSRegistrar sertnRegistrar = new MockAVSRegistrar();
+        console.log("Deployed AVS as sertnRegistrar");
+        sertnServiceManager = new SertnServiceManager();
         sertnServiceManager.initialize(
             coreDeployment.rewardsCoordinator,
             coreDeployment.delegationManager,
@@ -105,24 +104,24 @@ contract AVSSetup2 is Test {
             strategies,
             ""
         );
+
         // // sertnRegistrar.initialize(address(sertnServiceManager));
-        // modelRegistry = new ModelRegistry();
-        // sertnTaskManager = new SertnTaskManager();
-        // sertnTaskManager.initialize(
-        //     coreDeployment.rewardsCoordinator,
-        //     coreDeployment.delegationManager,
-        //     coreDeployment.allocationManager,
-        //     address(sertnServiceManager),
-        //     address(modelRegistry)
-        // );
+        modelRegistry = new ModelRegistry();
+        sertnTaskManager = new SertnTaskManager();
+        sertnTaskManager.initialize(
+            coreDeployment.rewardsCoordinator,
+            coreDeployment.delegationManager,
+            coreDeployment.allocationManager,
+            address(sertnServiceManager),
+            address(modelRegistry)
+        );
         // // console.log(sertnServiceManager.owner(), owner.key.addr);
-        // sertnServiceManager.updateTaskManager(address(sertnTaskManager));
+        sertnServiceManager.updateTaskManager(address(sertnTaskManager));
         // sertnServiceManager.updateModelRegistry(address(modelRegistry));
         // mockVerifier = new MockVerifier();
         // mockVerifier2 = new MockVerifier2();
-        // vm.stopPrank();
+        vm.stopPrank();
         // labelContracts(coreDeployment);
-        // opSetIds.push(0);
     }
 
     function initStrategiest() internal {
@@ -226,9 +225,6 @@ contract AVSSetup2 is Test {
         IAllocationManager allocationManager = IAllocationManager(
             coreDeployment.allocationManager
         );
-        ISertnServiceManager sm = ISertnServiceManager(
-            address(sertnServiceManager)
-        );
         bytes32[] memory _computeUnitNames = new bytes32[](1);
         _computeUnitNames[0] = bytes32("model1");
         uint256[] memory _computeUnits = new uint256[](1);
@@ -240,10 +236,10 @@ contract AVSSetup2 is Test {
             _computeUnitNames,
             _computeUnits
         );
-        IAllocationManagerTypes.RegisterParams
-            memory registerParams = IAllocationManagerTypes.RegisterParams({
-                avs: address(sm),
-                operatorSetIds: opSetIds,
+        IAllocationManagerTypes.RegisterParams memory registerParams = IAllocationManagerTypes
+            .RegisterParams({
+                avs: address(sertnServiceManager),
+                operatorSetIds: opSetIds, // [0]
                 data: _data
             });
         vm.startPrank(operator.key.addr);
@@ -286,67 +282,83 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
     function setUp() public virtual override {
         console.log("AVSSetup2 setUp");
         super.setUp();
+
         /// Setting to internal state for convenience
-        // delegationManager = IDelegationManager(
-        //     coreDeployment.delegationManager
-        // );
-        // allocationManager = AllocationManager(coreDeployment.allocationManager);
-        // permissionController = IPermissionController(
-        //     coreDeployment.permissionController
-        // );
+        delegationManager = IDelegationManager(
+            coreDeployment.delegationManager
+        );
+        allocationManager = AllocationManager(coreDeployment.allocationManager);
+        permissionController = IPermissionController(
+            coreDeployment.permissionController
+        );
 
-        // opSet = OperatorSet({avs: address(sertnServiceManager), id: 0});
+        opSet = OperatorSet({avs: address(sertnServiceManager), id: 0});
+        opSetIds.push(0);
 
-        // while (operators.length < OPERATOR_COUNT) {
-        //     createAndAddOperator();
-        // }
+        while (operators.length < OPERATOR_COUNT) {
+            createAndAddOperator();
+        }
 
-        // uint64[] memory _newMags = new uint64[](3);
-        // _newMags[0] = 1 ether;
-        // _newMags[1] = 1 ether;
-        // _newMags[2] = 1 ether;
+        // WTF is this?
+        uint64[] memory _newMags = new uint64[](3);
+        _newMags[0] = 1 ether;
+        _newMags[1] = 1 ether;
+        _newMags[2] = 1 ether;
 
-        // IAllocationManagerTypes.AllocateParams[]
-        //     memory allocateParams = new IAllocationManagerTypes.AllocateParams[](
-        //         1
-        //     );
-        // allocateParams[0] = IAllocationManagerTypes.AllocateParams({
-        //     operatorSet: opSet,
-        //     strategies: strategies,
-        //     newMagnitudes: _newMags
-        // });
+        IAllocationManagerTypes.AllocateParams[]
+            memory allocateParams = new IAllocationManagerTypes.AllocateParams[](
+                1
+            );
+        allocateParams[0] = IAllocationManagerTypes.AllocateParams({
+            operatorSet: opSet,
+            strategies: strategies,
+            newMagnitudes: _newMags
+        });
 
-        // address[] memory _operatorKeys = new address[](OPERATOR_COUNT);
-        // for (uint8 i = 0; i < OPERATOR_COUNT; i++) {
-        //     _operatorKeys[i] = operators[i].key.addr;
-        // }
+        address[] memory _operatorKeys = new address[](OPERATOR_COUNT);
+        for (uint8 i = 0; i < OPERATOR_COUNT; i++) {
+            _operatorKeys[i] = operators[i].key.addr;
+        }
 
-        // for (uint256 i = 0; i < OPERATOR_COUNT; i++) {
-        //     mintMockTokens(operators[i], INITIAL_BALANCE);
-        //     depositTokenIntoStrategy(
-        //         operators[i],
-        //         address(ethToken1),
-        //         DEPOSIT_AMOUNT
-        //     );
-        //     depositTokenIntoStrategy(
-        //         operators[i],
-        //         address(ethToken2),
-        //         DEPOSIT_AMOUNT
-        //     );
-        //     depositTokenIntoStrategy(
-        //         operators[i],
-        //         address(serToken),
-        //         DEPOSIT_AMOUNT
-        //     );
-        //     registerAsOperator(operators[i]);
-        //     registerAsOperatorToAVS(operators[i]);
-        //     vm.startPrank(_operatorKeys[i]);
-        //     allocationManager.modifyAllocations(
-        //         _operatorKeys[i],
-        //         allocateParams
-        //     );
-        //     vm.stopPrank();
-        // }
+        // TODO: We need to deploy the strategies before we can allocate them
+        for (uint256 i = 0; i < OPERATOR_COUNT; i++) {
+            console.log("Minting tokens...");
+            mintMockTokens(operators[i], INITIAL_BALANCE);
+            console.log("Depositing tokens into strategy 1...");
+            depositTokenIntoStrategy(
+                operators[i],
+                address(ethToken1),
+                DEPOSIT_AMOUNT
+            );
+            console.log("Depositing tokens into strategy 2...");
+            depositTokenIntoStrategy(
+                operators[i],
+                address(ethToken2),
+                DEPOSIT_AMOUNT
+            );
+            console.log("Depositing tokens into strategy 3...");
+            depositTokenIntoStrategy(
+                operators[i],
+                address(serToken),
+                DEPOSIT_AMOUNT
+            );
+            console.log("Registering as operator...");
+            registerAsOperator(operators[i]);
+            console.log("Registering as operator to AVS...");
+            registerAsOperatorToAVS(operators[i]);
+            vm.startPrank(_operatorKeys[i]);
+            console.log("Set allocation delay to 1 block...");
+            allocationManager.setAllocationDelay(operators[i].key.addr, 1);
+            vm.roll(block.number + 1);
+            console.log("Set allocation...");
+            //////////////////////////////////////////////////////////////////////////////////
+            allocationManager.modifyAllocations(
+                _operatorKeys[i], // operator address
+                allocateParams //
+            );
+            console.log("Operator allocated");
+            vm.stopPrank();
+        }
     }
 
     function test_sendTask() public {
@@ -359,14 +371,14 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
             proof: 1e2,
             user: user.key.addr,
             nonce: 0,
-            operator: address(0),
+            operator: operators[0].key.addr,
             state: ISertnTaskManager.TaskState.CREATED,
             output: bytes(""),
             fee: 1e2
         });
         console.log("Task created");
         uint256 taskNonce = _sendTask(user.key.addr, task);
-        //     _respondToTask1(operators[0].key.addr, taskId, false, bytes(""), false);
+        // _respondToTask1(operators[0].key.addr, taskId, false, bytes(""), false);
         //     _checkTaskResponse(user.key.addr, taskId);
         //     _slashTask(taskId);
         //     vm.roll(block.number + 100);
@@ -464,6 +476,11 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         address _user,
         ISertnTaskManager.Task memory task
     ) internal returns (uint256 _taskNonce) {
+        // make user an aggregator
+        vm.startPrank(owner.key.addr);
+        sertnServiceManager.addAggregator(_user);
+        vm.stopPrank();
+
         vm.startPrank(_user);
         console.log("Minting tokens");
 

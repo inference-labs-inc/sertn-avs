@@ -117,18 +117,15 @@ contract SertnServiceManager is
         string memory _avsMetadata
     ) internal {
         allocationManager.updateAVSMetadataURI(address(this), _avsMetadata);
-        allocationManager.createOperatorSets(
-            address(this),
-            abi.decode(
-                abi.encode(
-                    IAllocationManagerTypes.CreateSetParams({
-                        operatorSetId: 0,
-                        strategies: _strategies
-                    })
-                ),
-                (IAllocationManagerTypes.CreateSetParams[])
-            )
-        );
+
+        // prepare the params for creating operator sets:
+        IAllocationManagerTypes.CreateSetParams[]
+            memory params = new IAllocationManagerTypes.CreateSetParams[](1);
+        params[0] = IAllocationManagerTypes.CreateSetParams({
+            operatorSetId: 0,
+            strategies: _strategies
+        });
+        allocationManager.createOperatorSets(address(this), params);
         allocationManager.setAVSRegistrar(address(this), sertnRegistrar);
     }
 
