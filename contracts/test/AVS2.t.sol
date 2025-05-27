@@ -363,6 +363,7 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
 
     function test_sendTask() public {
         vm.roll(1e9);
+        vm.warp(86400 * 3);
         user = User({key: vm.createWallet("user_wallet")});
         ISertnTaskManager.Task memory task = ISertnTaskManager.Task({
             startBlock: 0,
@@ -378,7 +379,10 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         });
         console.log("Task created");
         uint256 taskNonce = _sendTask(user.key.addr, task);
-        // _respondToTask1(operators[0].key.addr, taskId, false, bytes(""), false);
+
+        console.log("Task sent with nonce: %s", taskNonce);
+        // vm.roll(block.number + 12);
+        _respondToTask(operators[0].key.addr, task.nonce);
         //     _checkTaskResponse(user.key.addr, taskId);
         //     _slashTask(taskId);
         //     vm.roll(block.number + 100);
@@ -507,26 +511,34 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         return _taskNonce;
     }
 
-    function _respondToTask1(
-        address operator,
-        bytes memory _taskId,
-        bool _verification,
-        bytes memory _proof,
-        bool _alreadyVerified
-    ) internal {
+    function _respondToTask(address operator, uint256 _taskId) internal {
         vm.startPrank(operator);
+        console.log("Responding to task with id: %s", _taskId);
+        sertnTaskManager.submitTaskOutput(_taskId, bytes("hello world"));
+
+        console.log("Task response submitted");
+
         // ISertnServiceManager.Operator memory _operator = abi.decode(
         //     sertnServiceManager.opInfo(operator),
         //     (ISertnServiceManager.Operator)
         // );
-        // require(_inBytesArray(_operator.openTasks_, _taskId), "Not open task");
+        console.log(
+            "Task state: %s",
+            sertnTaskManager.getTask(_taskId).state ==
+                ISertnTaskManager.TaskState.COMPLETED
+        );
+        require(
+            sertnTaskManager.getTask(_taskId).state ==
+                ISertnTaskManager.TaskState.COMPLETED,
+            "Not completed task"
+        );
         // ISertnServiceManager.TaskResponse
         //     memory _taskResponse = ISertnServiceManager.TaskResponse({
         //         taskId_: _taskId,
         //         output_: bytes("hello world"),
         //         proven_: _alreadyVerified
         //     });
-        // sertnTaskManager.submitTask(_taskResponse, _verification, _proof);
+        // sertnTaskManager.submitTaskOutput(_taskResponse, _verification, _proof);
         vm.stopPrank();
     }
 

@@ -66,23 +66,31 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         IERC20 token = strategy.underlyingToken();
         sertnServiceManager.pullFeeFromUser(task.user, token, task.fee);
         emit TaskCreated(taskNonce, task.user);
+        tasks[task.nonce].state = TaskState.ASSIGNED;
         emit TaskAssigned(taskNonce, task.operator);
     }
 
-    function submitTaskOutput(uint256 taskId, bytes calldata output) external {
-        Task memory task = tasks[taskId];
+    function getTask(uint256 taskId) external view returns (Task memory) {
         if (taskId > taskNonce) {
             revert TaskDoesNotExist();
         }
+        return tasks[taskId];
+    }
+
+    function submitTaskOutput(uint256 taskId, bytes calldata output) external {
+        if (taskId > taskNonce) {
+            revert TaskDoesNotExist();
+        }
+        Task memory task = tasks[taskId];
         if (task.operator != msg.sender) {
             revert NotAssignedToTask();
         }
         if (task.state != TaskState.ASSIGNED) {
-            revert TaskStateIncorrect(TaskState.ASSIGNED);
+            revert TaskStateIncorrect(task.state);
         }
 
         task.output = output;
-        task.state = TaskState.COMPLETED;
+        tasks[taskId].state = TaskState.COMPLETED;
         emit TaskCompleted(taskId, task.operator);
 
         OperatorSet memory operatorSet = allocationManager.getAllocatedSets(

@@ -229,10 +229,29 @@ contract SertnServiceManager is
                 strategiesAndMultipliers: strategiesAndMultipliers,
                 token: _token,
                 operatorRewards: operatorRewards,
-                startTimestamp: uint32(block.timestamp),
-                duration: 12,
+                // TODO: I'm not sure how to figure out params below
+                //       so they just picked up to have tests running :-P
+                //       values here must be compatible with the constraints
+                //       of the rewards coordinator
+                // @see "@eigenlayer/contracts/core/RewardsCoordinator.sol" - _validateCommonRewardsSubmission method
+                startTimestamp: rewardsCoordinator
+                    .CALCULATION_INTERVAL_SECONDS(), // uint32(block.timestamp),
+                duration: rewardsCoordinator.CALCULATION_INTERVAL_SECONDS(), // 12
                 description: "Compensation for task completed"
             });
+
+        // Approve the rewards coordinator to spend the fee
+        for (uint256 i = 0; i < submissions.length; i++) {
+            uint256 _rewards = 0;
+            for (
+                uint256 j = 0;
+                j < submissions[i].operatorRewards.length;
+                j++
+            ) {
+                _rewards += submissions[i].operatorRewards[j].amount;
+            }
+            submissions[i].token.approve(address(rewardsCoordinator), _rewards);
+        }
 
         rewardsCoordinator.createOperatorDirectedAVSRewardsSubmission(
             address(this),
