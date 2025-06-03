@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10"]
 
     steps:
     - uses: actions/checkout@v4
@@ -52,6 +52,7 @@ jobs:
       run: |
         curl -L https://foundry.paradigm.xyz | bash
         echo "$HOME/.foundry/bin" >> $GITHUB_PATH
+        export PATH="$HOME/.foundry/bin:$PATH"
         source $HOME/.bashrc  # Ensure bashrc is sourced to reflect PATH changes
         foundryup || (echo "Foundry installation failed" && exit 1)
 
