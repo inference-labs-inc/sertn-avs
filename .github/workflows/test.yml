@@ -52,9 +52,10 @@ jobs:
       run: |
         curl -L https://foundry.paradigm.xyz | bash
         echo "$HOME/.foundry/bin" >> $GITHUB_PATH
-        foundryup
+        source $HOME/.bashrc  # Ensure bashrc is sourced to reflect PATH changes
+        foundryup || (echo "Foundry installation failed" && exit 1)
 
     - name: Run foundry
-      working-directory: ./contracts
+      working-directory: ./contracts/test
       run: |
-        foundry test --no-compile --no-verify
+        forge test
