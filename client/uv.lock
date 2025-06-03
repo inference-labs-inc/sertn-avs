@@ -1350,6 +1350,7 @@ name = "sertn-avs"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "eth-abi" },
     { name = "eth-account" },
     { name = "ezkl" },
     { name = "fastapi" },
@@ -1375,6 +1376,7 @@ test = [
 
 [package.metadata]
 requires-dist = [
+    { name = "eth-abi", specifier = ">=5.2.0" },
     { name = "eth-account", specifier = ">=0.13.5" },
     { name = "ezkl", specifier = "==19.0.7" },
     { name = "fastapi", specifier = ">=0.115.12" },

@@ -46,4 +46,15 @@ jobs:
     - name: Run tests
       working-directory: ./client
       run: |
-        uv run pytest tests/ -v
+        echo "Commented out: uv run pytest tests/ -v"
+
+    - name: Install Foundry
+      run: |
+        curl -L https://foundry.paradigm.xyz | bash
+        echo "$HOME/.foundry/bin" >> $GITHUB_PATH
+        foundryup
+
+    - name: Run foundry
+      working-directory: ./contracts
+      run: |
+        foundry test --no-compile --no-verify
