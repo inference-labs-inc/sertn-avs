@@ -54,6 +54,3 @@ jobs:
     - name: Run foundry tests
       working-directory: ./contracts/test
       run: forge test
-
-    - name: Run snapshot
-      run: forge snapshot
