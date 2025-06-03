@@ -57,6 +57,9 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
     }
 
     function sendTask(Task memory task) external onlyAggregators {
+        // check if the task is valid
+        if (modelRegistry.modelVerifier(task.modelId) == address(0))
+            revert InvalidModelId();
         tasks[taskNonce] = task;
         taskNonce++;
         IStrategy strategy = allocationManager.getAllocatedStrategies(
@@ -89,7 +92,7 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
             revert TaskStateIncorrect(task.state);
         }
 
-        task.output = output;
+        tasks[taskId].output = output;
         tasks[taskId].state = TaskState.COMPLETED;
         emit TaskCompleted(taskId, task.operator);
 
@@ -138,7 +141,7 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         if (task.state != TaskState.COMPLETED) {
             revert TaskStateIncorrect(TaskState.COMPLETED);
         }
-        task.state = TaskState.CHALLENGED;
+        tasks[taskId].state = TaskState.CHALLENGED;
         emit TaskChallenged(taskId, task.user);
     }
 

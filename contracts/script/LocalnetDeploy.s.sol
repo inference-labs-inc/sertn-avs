@@ -5,7 +5,7 @@ import {Script} from "forge-std/Script.sol";
 import {SertnServiceManager} from "../src/SertnServiceManager.sol";
 import {CoreDeploymentLib} from "./utils/CoreDeploymentLib.sol";
 import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
-import {ERC20Mock} from "../test/ERC20Mock.sol";
+import {ERC20Mock} from "../test/mockContracts/ERC20Mock.sol";
 import {IERC20, StrategyFactory} from "@eigenlayer/contracts/strategies/StrategyFactory.sol";
 import {IStrategy} from "eigenlayer-contracts/src/contracts/interfaces/IStrategy.sol";
 import {Test, console2} from "forge-std/Test.sol";

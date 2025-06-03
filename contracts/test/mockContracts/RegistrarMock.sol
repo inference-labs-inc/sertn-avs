@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.12;
 
-import {ISertnRegistrar} from "../interfaces/ISertnRegistrar.sol";
+import {ISertnRegistrar} from "../../interfaces/ISertnRegistrar.sol";
 
 contract MockAVSRegistrar is ISertnRegistrar {
     event OperatorRegistered(

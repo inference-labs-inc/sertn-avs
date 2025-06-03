@@ -53,7 +53,7 @@ interface ISertnTaskManager {
      * @param operator The operator who is assigned to the task
      */
     struct Task {
-        uint32 startBlock;
+        uint256 startBlock;
         uint256 modelId;
         bytes inputs;
         uint256 proof;

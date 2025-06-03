@@ -9,8 +9,8 @@ import {IModelRegistry} from "../interfaces/IModelRegistry.sol";
  * @notice ModelRegistry is a contract that stores models for the Sertn network.
  */
 contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
-    // Current model index
-    uint256 public modelIndex;
+    // Current model index (starts at 1 to avoid zero-indexing issues)
+    uint256 public modelIndex = 1;
 
     // modelVerifier => modelId
     mapping(address => uint256) public modelVerifiers;
@@ -26,6 +26,7 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
 
     function initialize() public initializer {
         __Ownable_init();
+        modelIndex = 1; // Ensure we start at 1
     }
 
     /// @inheritdoc IModelRegistry
@@ -34,7 +35,7 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
         VerificationStrategy _verificationStrategy,
         string memory _modelURI,
         uint256 _computeCost
-    ) external onlyOwner {
+    ) external onlyOwner returns (uint256 modelId) {
         // Validation checks for model verifier
         if (_modelVerifier == address(0)) revert InvalidModelVerifier();
         if (modelVerifiers[_modelVerifier] != 0)
@@ -54,6 +55,7 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
             _modelURI,
             _computeCost
         );
+        modelId = modelIndex;
         // Increment model index
         modelIndex++;
     }
@@ -76,5 +78,30 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
         if (modelId >= modelIndex) revert ModelDoesNotExist();
         computeCost[modelId] = _computeCost;
         emit ComputeCostUpdated(modelId, _computeCost);
+    }
+
+    /// @inheritdoc IModelRegistry
+    function updateModelVerifier(
+        uint256 modelId,
+        address _modelVerifier
+    ) external onlyOwner {
+        if (modelId >= modelIndex) revert ModelDoesNotExist();
+        if (_modelVerifier == address(0)) revert InvalidModelVerifier();
+        if (modelVerifiers[_modelVerifier] != 0)
+            revert ModelAlreadyExists(modelVerifiers[_modelVerifier]);
+        // Update the verifier
+        modelVerifiers[_modelVerifier] = modelId;
+        modelVerifier[modelId] = _modelVerifier;
+        emit ModelVerifierUpdated(modelId, _modelVerifier);
+    }
+
+    /// @inheritdoc IModelRegistry
+    function updateVerificationStrategy(
+        uint256 modelId,
+        VerificationStrategy _verificationStrategy
+    ) external onlyOwner {
+        if (modelId >= modelIndex) revert ModelDoesNotExist();
+        verificationStrategy[modelId] = _verificationStrategy;
+        emit VerificationStrategyUpdated(modelId, _verificationStrategy);
     }
 }

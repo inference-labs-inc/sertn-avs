@@ -42,6 +42,26 @@ interface IModelRegistry {
     );
 
     /**
+     * @notice The event emitted when a model verifier is updated
+     * @param modelId The id of the model
+     * @param modelVerifier The address of the model verifier
+     */
+    event ModelVerifierUpdated(
+        uint256 indexed modelId,
+        address indexed modelVerifier
+    );
+
+    /**
+     * @notice The event emitted when a verification strategy is updated
+     * @param modelId The id of the model
+     * @param verificationStrategy The new verification strategy of the model
+     */
+    event VerificationStrategyUpdated(
+        uint256 indexed modelId,
+        VerificationStrategy indexed verificationStrategy
+    );
+
+    /**
      * @notice The error emitted when a model already exists
      * @param modelId The id of the model
      */
@@ -66,7 +86,7 @@ interface IModelRegistry {
         VerificationStrategy verificationStrategy,
         string memory modelURI,
         uint256 computeCost
-    ) external;
+    ) external returns (uint256 modelId);
 
     /**
      * @notice The function to update the URI of a model
@@ -81,4 +101,24 @@ interface IModelRegistry {
      * @param computeCost The new compute cost of the model
      */
     function updateComputeCost(uint256 modelId, uint256 computeCost) external;
+
+    /**
+     * @notice The function to update the model verifier of a model
+     * @param modelId The id of the model
+     * @param modelVerifier The new address of the model verifier
+     */
+    function updateModelVerifier(
+        uint256 modelId,
+        address modelVerifier
+    ) external;
+
+    /**
+     * @notice The function to update the verification strategy of a model
+     * @param modelId The id of the model
+     * @param verificationStrategy The new verification strategy of the model
+     */
+    function updateVerificationStrategy(
+        uint256 modelId,
+        VerificationStrategy verificationStrategy
+    ) external;
 }

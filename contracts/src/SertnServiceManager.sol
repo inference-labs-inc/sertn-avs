@@ -83,6 +83,7 @@ contract SertnServiceManager is
         __ReentrancyGuard_init();
         // Set the deployer as an aggregator
         isAggregator[msg.sender] = true;
+        aggregators.push(msg.sender);
 
         allocationManager = IAllocationManager(_allocationManager);
         delegationManager = IDelegationManager(_delegationManager);
@@ -164,6 +165,7 @@ contract SertnServiceManager is
                 aggregators.pop();
             }
         }
+        isAggregator[_aggregator] = false;
     }
 
     /// @inheritdoc ISertnServiceManager
