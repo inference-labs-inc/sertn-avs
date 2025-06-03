@@ -49,14 +49,11 @@ jobs:
         echo "Commented out: uv run pytest tests/ -v"
 
     - name: Install Foundry
-      run: |
-        curl -L https://foundry.paradigm.xyz | bash
-        echo "$HOME/.foundry/bin" >> $GITHUB_PATH
-        export PATH="$HOME/.foundry/bin:$PATH"
-        source $HOME/.bashrc  # Ensure bashrc is sourced to reflect PATH changes
-        foundryup || (echo "Foundry installation failed" && exit 1)
+      uses: foundry-rs/foundry-toolchain@v1
 
-    - name: Run foundry
+    - name: Run foundry tests
       working-directory: ./contracts/test
-      run: |
-        forge test
+      run: forge test
+
+    - name: Run snapshot
+      run: forge snapshot
