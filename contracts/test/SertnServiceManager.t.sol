@@ -28,7 +28,7 @@ contract MockRewardsCoordinator {
         address avs,
         IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[]
             memory submissions
-    ) external {
+    ) external view {
         // Mock implementation - just check allowances
         for (uint256 i = 0; i < submissions.length; i++) {
             uint256 totalAmount = 0;
@@ -128,7 +128,7 @@ contract SertnServiceManagerTest is Test {
         vm.stopPrank();
     }
 
-    function test_initialize() public {
+    function test_initialize() public view {
         assertEq(
             address(serviceManager.allocationManager()),
             address(mockAllocationManager)

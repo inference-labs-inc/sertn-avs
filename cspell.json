@@ -21,6 +21,7 @@
         "inheritdoc",
         "keccak",
         "Localnet",
+        "Offchain",
         "operatorsinfo",
         "pbar",
         "pycache",

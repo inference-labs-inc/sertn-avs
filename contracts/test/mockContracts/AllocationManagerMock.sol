@@ -29,8 +29,8 @@ contract MockAllocationManager {
 
     function createOperatorSets(
         address avs,
-        IAllocationManagerTypes.CreateSetParams[] memory params
-    ) external {
+        IAllocationManagerTypes.CreateSetParams[] memory // params
+    ) external pure {
         // Mock implementation
         console.log("Mock createOperatorSets called for AVS:", avs);
     }

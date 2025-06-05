@@ -20,6 +20,12 @@ interface ISertnTaskManager {
     /// @notice Thrown when the task state is incorrect
     error TaskStateIncorrect(TaskState expected);
 
+    /// @notice Thrown when the proof is invalid
+    error InvalidProof(uint256 taskId, bytes32 proofHash);
+
+    /// @notice Thrown when the task model does not imply a verification, but a proof is submitted
+    error InvalidVerificationStrategy(uint256 taskId);
+
     /// @notice Emitted when a task is created
     event TaskCreated(uint256 indexed taskId, address indexed user);
 
@@ -33,7 +39,7 @@ interface ISertnTaskManager {
     event TaskChallenged(uint256 indexed taskId, address indexed user);
 
     /// @notice Emitted when a proof is submitted for a task
-    event ProofSubmitted(uint256 indexed taskId, bytes proof);
+    event ProofSubmitted(uint256 indexed taskId, bytes32 proofHash);
 
     /// @notice Emitted when a task is rejected and the operator is slashed
     event TaskRejected(uint256 indexed taskId, address indexed operator);

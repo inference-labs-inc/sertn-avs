@@ -189,12 +189,11 @@ contract SertnTaskManagerTest is Test {
         vm.prank(operator);
         taskManager.submitTaskOutput(0, output);
 
-        ISertnTaskManager.Task memory completedTask = taskManager.getTask(0);
         assertEq(
-            uint8(completedTask.state),
+            uint8(taskManager.getTask(0).state),
             uint8(ISertnTaskManager.TaskState.COMPLETED)
         );
-        assertEq(completedTask.output, output);
+        assertEq(taskManager.getTask(0).output, output);
     }
 
     function test_submitTaskOutput_revertTaskDoesNotExist() public {
@@ -275,13 +274,18 @@ contract SertnTaskManagerTest is Test {
         vm.prank(aggregator);
         taskManager.challengeTask(0);
 
-        bytes memory proof = "test proof";
+        bytes memory proof = bytes("1");
 
         vm.expectEmit(true, false, false, true);
-        emit ISertnTaskManager.ProofSubmitted(0, proof);
+        emit ISertnTaskManager.ProofSubmitted(0, keccak256(proof));
 
         vm.prank(operator);
         taskManager.submitProofForTask(0, proof);
+
+        assertEq(
+            uint8(taskManager.getTask(0).state),
+            uint8(ISertnTaskManager.TaskState.RESOLVED)
+        );
     }
 
     function test_submitProofForTask_revertTaskDoesNotExist() public {
@@ -343,6 +347,11 @@ contract SertnTaskManagerTest is Test {
 
         vm.prank(aggregator);
         taskManager.resolveTask(0, true);
+
+        assertEq(
+            uint8(taskManager.getTask(0).state),
+            uint8(ISertnTaskManager.TaskState.RESOLVED)
+        );
     }
 
     function test_resolveTask_reject() public {
@@ -362,6 +371,11 @@ contract SertnTaskManagerTest is Test {
 
         vm.prank(aggregator);
         taskManager.resolveTask(0, false);
+
+        assertEq(
+            uint8(taskManager.getTask(0).state),
+            uint8(ISertnTaskManager.TaskState.REJECTED)
+        );
     }
 
     function test_resolveTask_revertNotAggregator() public {

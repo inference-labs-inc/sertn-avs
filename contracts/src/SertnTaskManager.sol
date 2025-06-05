@@ -10,6 +10,7 @@ import {ISertnServiceManager} from "../interfaces/ISertnServiceManager.sol";
 import {ISertnTaskManager} from "../interfaces/ISertnTaskManager.sol";
 import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
 import {IVerifier} from "../interfaces/IVerifier.sol";
+import {IModelRegistry} from "../interfaces/IModelRegistry.sol";
 import {ModelRegistry} from "./ModelRegistry.sol";
 import {OwnableUpgradeable} from "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
@@ -145,27 +146,7 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         emit TaskChallenged(taskId, task.user);
     }
 
-    function submitProofForTask(uint256 taskId, bytes calldata proof) external {
-        if (taskId > taskNonce) {
-            revert TaskDoesNotExist();
-        }
-        Task memory task = tasks[taskId];
-        if (task.operator != msg.sender) {
-            revert NotAssignedToTask();
-        }
-        if (task.state != TaskState.CHALLENGED) {
-            revert TaskStateIncorrect(TaskState.CHALLENGED);
-        }
-        // TODO: Solidity hashes bytes fields longer than 32 bytes in events
-        //       so if the proof is longer than 32 bytes, nobody will be able to
-        //       verify it.
-        emit ProofSubmitted(taskId, proof);
-    }
-
-    function resolveTask(
-        uint256 taskId,
-        bool success
-    ) external onlyAggregators {
+    function _resolveTask(uint256 taskId, bool success) internal {
         if (taskId > taskNonce) {
             revert TaskDoesNotExist();
         }
@@ -189,7 +170,7 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
                 strategy,
                 token
             );
-            task.state = TaskState.RESOLVED;
+            tasks[taskId].state = TaskState.RESOLVED;
             emit TaskResolved(taskId, task.operator);
         } else {
             sertnServiceManager.slashOperator(
@@ -198,8 +179,61 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
                 operatorSet.id,
                 strategy
             );
-            task.state = TaskState.REJECTED;
+            tasks[taskId].state = TaskState.REJECTED;
             emit TaskRejected(taskId, task.operator);
+        }
+    }
+
+    function resolveTask(uint256 taskId, bool success) public onlyAggregators {
+        if (taskId > taskNonce) {
+            revert TaskDoesNotExist();
+        }
+        Task memory task = tasks[taskId];
+        if (task.state != TaskState.CHALLENGED) {
+            revert TaskStateIncorrect(TaskState.CHALLENGED);
+        }
+        _resolveTask(taskId, success);
+    }
+
+    function submitProofForTask(uint256 taskId, bytes calldata proof) external {
+        if (taskId > taskNonce) {
+            revert TaskDoesNotExist();
+        }
+        Task memory task = tasks[taskId];
+        if (task.operator != msg.sender) {
+            revert NotAssignedToTask();
+        }
+        if (task.state != TaskState.CHALLENGED) {
+            revert TaskStateIncorrect(TaskState.CHALLENGED);
+        }
+
+        // Verify the proof using the model verifier
+        IVerifier verifier = IVerifier(
+            modelRegistry.modelVerifier(task.modelId)
+        );
+
+        bytes32 proofHash = keccak256(proof);
+        if (
+            modelRegistry.verificationStrategy(task.modelId) ==
+            IModelRegistry.VerificationStrategy.Onchain
+        ) {
+            // On-chain verification
+            if (verifier.verifyProof(proof)) {} else {
+                revert InvalidProof(taskId, proofHash);
+            }
+            emit ProofSubmitted(taskId, proofHash);
+            _resolveTask(taskId, true);
+        } else if (
+            modelRegistry.verificationStrategy(task.modelId) ==
+            IModelRegistry.VerificationStrategy.Offchain
+        ) {
+            // Off-chain verification
+            // The proof is expected to be verified off-chain by the aggregator
+            // Operator must submit the proof to the aggregator
+            // Here we just emit an event with the proof hash
+            emit ProofSubmitted(taskId, proofHash);
+        } else {
+            revert InvalidVerificationStrategy(taskId);
         }
     }
 }

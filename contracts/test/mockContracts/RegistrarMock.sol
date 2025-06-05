@@ -33,7 +33,7 @@ contract MockAVSRegistrar is ISertnRegistrar {
         emit OperatorDeregistered(operator, avsIdentifier, operatorSetIds);
     }
 
-    function supportsAVS(address avs) external view returns (bool) {
+    function supportsAVS(address) external pure returns (bool) {
         // For the mock, we assume all AVS are supported
         return true;
     }

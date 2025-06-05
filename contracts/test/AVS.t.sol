@@ -651,10 +651,6 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         }
         vm.startPrank(owner.key.addr);
         console.log(
-            // OperatorSet memory operatorSet,
-            // address[] memory operators,
-            // IStrategy[] memory strategies,
-            // uint32 futureBlock
             allocationManager.getMinimumSlashableStake(
                 opSet,
                 _operatorKeys,
@@ -703,7 +699,7 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
 
     function _getLatestTaskId(
         address operator
-    ) internal returns (bytes memory) {
+    ) internal pure returns (bytes memory) {
         // ISertnServiceManager.Operator memory _operator = abi.decode(
         //     sertnServiceManager.opInfo(operator),
         //     (ISertnServiceManager.Operator)
