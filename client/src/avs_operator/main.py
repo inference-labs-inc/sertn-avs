@@ -37,7 +37,7 @@ def run_operator(config: dict) -> None:
     with tqdm(total=100, desc="Initializing operator") as pbar:
         task_operator = TaskOperator(config)
         pbar.update(25)
-        task_operator.register()
+        # task_operator.register()
         pbar.update(100)
     task_operator.start()
 
@@ -167,10 +167,10 @@ class TaskOperator:
         )
 
     def start(self):
-        console.print("Checking Operator registration...", style=styles.op_info)
-        self.register()
+        # console.print("Checking Operator registration...", style=styles.op_info)
+        # self.register()
         console.print("Starting Operator...", style=styles.op_info)
-        event_filter = self.eth_client.task_manager.events.NewTask.create_filter(
+        event_filter = self.eth_client.task_manager.events.TaskCreated.create_filter(
             from_block="latest"
         )
         while True:

@@ -134,18 +134,26 @@ class Aggregator:
         # create some generic input data
         inputs = " ".join(str(random.uniform(0.0, 0.85)) for _ in range(5))
         # model_id = random.choice(list(models.keys()))
-        model_id = 0
+        model_id = 1
+
+        # DelegationManager.operatorShares
 
         # Define the _task struct, the dict should correspond to the struct in the contract
         # here: `contracts/src/ISertnServiceManager.sol` -> `ISertnServiceManagerTypes.Task`
+        # (uint256,uint256,bytes,uint256,address,uint256,address,uint8,bytes,uint256)
+        # (35, 0, b'', b'', '0xa0Ee7A142d267C1f36714E4a8F75612F20a79720', 0, '0x', 0, b'', 100)
         task = {
-            "operatorModelId_": model_id,  # uint256
-            "inputs_": inputs.encode(),  # bytes - actual input data
-            "poc_": 100,  # uint256 - Proof of computation value (WTF is this?)
-            "startTime_": 0,  # uint256 - Will be set in the contract
-            "startingBlock_": 0,  # uint256 - Will be set in the contract
-            "proveOnResponse_": True,  # bool - Whether the task is a proof of stake task
-            "user_": self.aggregator_address,  # address TODO: what address should be here?
+            "startBlock": self.eth_client.w3.eth.block_number,  # uint256 - Current block number
+            "modelId": model_id,  # uint256
+            "inputs": inputs.encode(),  # bytes - actual input data
+            "proof": 0,  # uint256 - Proof of computation, empty for now (integer?)
+            "user": self.aggregator_address,  # address TODO: what address should be here?
+            "nonce": i,  # uint256 - Nonce for the task, can be any number
+            # TODO: get operator addresses from the DelegationManager
+            "operator": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",  # TODO: address - Operator address, can be empty for now
+            "state": 0,  # uint8 - Task state, 0 for `TaskState.Created`
+            "output": b"",  # bytes - Output of the task, empty for now
+            "fee": 100,  # uint256 - Fee for the task, can be any number
         }
 
         # XXX: Approve funds for the task?

@@ -85,10 +85,7 @@ contract AVSSetup2 is Test {
             1337
         ); // TODO: Fix this to correct path
         console.log("Config read");
-        coreDeployment = CoreDeploymentLib.deployContracts(
-            proxyAdmin,
-            coreConfigData
-        );
+        coreDeployment = CoreDeploymentLib.deployContracts(proxyAdmin, coreConfigData);
         console.log("CoreDeploymentLib deployed");
 
         initStrategiest();
@@ -155,20 +152,14 @@ contract AVSSetup2 is Test {
             return tokenToStrategy[token];
         }
         console.log("Creating strategy");
-        StrategyFactory strategyFactory = StrategyFactory(
-            coreDeployment.strategyFactory
-        );
+        StrategyFactory strategyFactory = StrategyFactory(coreDeployment.strategyFactory);
         console.log("StrategyFactory created");
-        IStrategy newStrategy = strategyFactory.deployNewStrategy(
-            IERC20(token)
-        );
+        IStrategy newStrategy = strategyFactory.deployNewStrategy(IERC20(token));
         tokenToStrategy[token] = newStrategy;
         return newStrategy;
     }
 
-    function labelContracts(
-        CoreDeploymentLib.DeploymentData memory coreDeployment
-    ) internal {
+    function labelContracts(CoreDeploymentLib.DeploymentData memory coreDeployment) internal {
         vm.label(coreDeployment.delegationManager, "DelegationManager");
         vm.label(coreDeployment.allocationManager, "AllocationManager");
         vm.label(coreDeployment.strategyManager, "StrategyManager");
@@ -196,32 +187,24 @@ contract AVSSetup2 is Test {
     ) internal returns (uint256) {
         IStrategy strategy = IStrategy(tokenToStrategy[token]);
         require(address(strategy) != address(0), "Strategy was not found");
-        IStrategyManager strategyManager = IStrategyManager(
-            coreDeployment.strategyManager
-        );
+        IStrategyManager strategyManager = IStrategyManager(coreDeployment.strategyManager);
 
         vm.startPrank(operator.key.addr);
         ethToken1.approve(address(strategyManager), amount);
         ethToken2.approve(address(strategyManager), amount);
         serToken.approve(address(strategyManager), amount);
 
-        uint256 shares = strategyManager.depositIntoStrategy(
-            strategy,
-            IERC20(token),
-            amount
-        );
+        uint256 shares = strategyManager.depositIntoStrategy(strategy, IERC20(token), amount);
         vm.stopPrank();
 
         return shares;
     }
 
     function registerAsOperator(Operator memory operator) internal {
-        IDelegationManager delegationManager = IDelegationManager(
-            coreDeployment.delegationManager
-        );
+        IDelegationManager delegationManager = IDelegationManager(coreDeployment.delegationManager);
 
-        IDelegationManagerTypes.OperatorDetails
-            memory operatorDetails = IDelegationManagerTypes.OperatorDetails({
+        IDelegationManagerTypes.OperatorDetails memory operatorDetails = IDelegationManagerTypes
+            .OperatorDetails({
                 __deprecated_earningsReceiver: operator.key.addr,
                 delegationApprover: address(0),
                 __deprecated_stakerOptOutWindowBlocks: 0
@@ -232,9 +215,7 @@ contract AVSSetup2 is Test {
     }
 
     function registerAsOperatorToAVS(Operator memory operator) internal {
-        IAllocationManager allocationManager = IAllocationManager(
-            coreDeployment.allocationManager
-        );
+        IAllocationManager allocationManager = IAllocationManager(coreDeployment.allocationManager);
         bytes32[] memory _computeUnitNames = new bytes32[](1);
         _computeUnitNames[0] = bytes32("model1");
         uint256[] memory _computeUnits = new uint256[](1);
@@ -253,10 +234,7 @@ contract AVSSetup2 is Test {
                 data: _data
             });
         vm.startPrank(operator.key.addr);
-        allocationManager.registerForOperatorSets(
-            operator.key.addr,
-            registerParams
-        );
+        allocationManager.registerForOperatorSets(operator.key.addr, registerParams);
         vm.stopPrank();
     }
 
@@ -268,10 +246,7 @@ contract AVSSetup2 is Test {
             string.concat("signing", vm.toString(operators.length))
         );
 
-        Operator memory newOperator = Operator({
-            key: operatorKey,
-            signingKey: signingKey
-        });
+        Operator memory newOperator = Operator({key: operatorKey, signingKey: signingKey});
 
         operators.push(newOperator);
         return newOperator;
@@ -294,13 +269,9 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         super.setUp();
 
         /// Setting to internal state for convenience
-        delegationManager = IDelegationManager(
-            coreDeployment.delegationManager
-        );
+        delegationManager = IDelegationManager(coreDeployment.delegationManager);
         allocationManager = AllocationManager(coreDeployment.allocationManager);
-        permissionController = IPermissionController(
-            coreDeployment.permissionController
-        );
+        permissionController = IPermissionController(coreDeployment.permissionController);
 
         opSet = OperatorSet({avs: address(sertnServiceManager), id: 0});
         opSetIds.push(0);
@@ -316,9 +287,7 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         _newMags[2] = 1 ether;
 
         IAllocationManagerTypes.AllocateParams[]
-            memory allocateParams = new IAllocationManagerTypes.AllocateParams[](
-                1
-            );
+            memory allocateParams = new IAllocationManagerTypes.AllocateParams[](1);
         allocateParams[0] = IAllocationManagerTypes.AllocateParams({
             operatorSet: opSet,
             strategies: strategies,
@@ -335,23 +304,11 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
             console.log("Minting tokens...");
             mintMockTokens(operators[i], INITIAL_BALANCE);
             console.log("Depositing tokens into strategy 1...");
-            depositTokenIntoStrategy(
-                operators[i],
-                address(ethToken1),
-                DEPOSIT_AMOUNT
-            );
+            depositTokenIntoStrategy(operators[i], address(ethToken1), DEPOSIT_AMOUNT);
             console.log("Depositing tokens into strategy 2...");
-            depositTokenIntoStrategy(
-                operators[i],
-                address(ethToken2),
-                DEPOSIT_AMOUNT
-            );
+            depositTokenIntoStrategy(operators[i], address(ethToken2), DEPOSIT_AMOUNT);
             console.log("Depositing tokens into strategy 3...");
-            depositTokenIntoStrategy(
-                operators[i],
-                address(serToken),
-                DEPOSIT_AMOUNT
-            );
+            depositTokenIntoStrategy(operators[i], address(serToken), DEPOSIT_AMOUNT);
             console.log("Registering as operator...");
             registerAsOperator(operators[i]);
             console.log("Registering as operator to AVS...");
@@ -435,8 +392,7 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         _respondToTask(operators[0].key.addr, task.nonce);
         string memory output = _checkTaskResponse(user.key.addr, taskNonce);
         require(
-            keccak256(abi.encodePacked(output)) ==
-                keccak256(abi.encodePacked("dummy output")),
+            keccak256(abi.encodePacked(output)) == keccak256(abi.encodePacked("dummy output")),
             "Task output is incorrect"
         );
         _slashTask(task.nonce);
@@ -591,12 +547,10 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         // );
         console.log(
             "Task state: %s",
-            sertnTaskManager.getTask(_taskId).state ==
-                ISertnTaskManager.TaskState.COMPLETED
+            sertnTaskManager.getTask(_taskId).state == ISertnTaskManager.TaskState.COMPLETED
         );
         require(
-            sertnTaskManager.getTask(_taskId).state ==
-                ISertnTaskManager.TaskState.COMPLETED,
+            sertnTaskManager.getTask(_taskId).state == ISertnTaskManager.TaskState.COMPLETED,
             "Not completed task"
         );
         // ISertnServiceManager.TaskResponse
@@ -697,9 +651,7 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         vm.stopPrank();
     }
 
-    function _getLatestTaskId(
-        address operator
-    ) internal pure returns (bytes memory) {
+    function _getLatestTaskId(address operator) internal pure returns (bytes memory) {
         // ISertnServiceManager.Operator memory _operator = abi.decode(
         //     sertnServiceManager.opInfo(operator),
         //     (ISertnServiceManager.Operator)
@@ -715,10 +667,7 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
     ) internal pure returns (bool) {
         bytes32 elementHash = keccak256(_byteElement);
         for (uint256 i = 0; i < _byteArray.length; i++) {
-            if (
-                _byteArray[i].length > 0 &&
-                elementHash == keccak256(_byteArray[i])
-            ) {
+            if (_byteArray[i].length > 0 && elementHash == keccak256(_byteArray[i])) {
                 return true;
             }
         }

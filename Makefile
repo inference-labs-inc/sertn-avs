@@ -39,6 +39,10 @@ deploy-sertn-contracts:
 	@chmod +x ./contracts/anvil/deploy-sertn.sh
 	./contracts/anvil/deploy-sertn.sh
 
+init-local-workers:  # init operator and aggregator for local testing
+	@chmod +x ./contracts/anvil/init-local-workers.sh
+	./contracts/anvil/init-local-workers.sh
+
 add-operator-model:
 	pwd # TODO: ...
 

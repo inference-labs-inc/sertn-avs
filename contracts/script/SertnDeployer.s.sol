@@ -55,10 +55,7 @@ contract SertnDeployer is Script, Test {
         deployer = vm.rememberKey(vm.envUint("PRIVATE_KEY"));
         vm.label(deployer, "Deployer");
 
-        coreDeployment = CoreDeploymentLib.readDeploymentJson(
-            "deployments/core/",
-            block.chainid
-        );
+        coreDeployment = CoreDeploymentLib.readDeploymentJson("deployments/core/", block.chainid);
     }
 
     function run() external {
@@ -116,10 +113,11 @@ contract SertnDeployer is Script, Test {
             "sertnTaskManager",
             address(sertnTaskManager)
         );
+        json = vm.serializeAddress("SertnDeployment", "sertnRegistrar", address(sertnRegistrar));
         json = vm.serializeAddress(
             "SertnDeployment",
-            "sertnRegistrar",
-            address(sertnRegistrar)
+            "rewardsCoordinator",
+            address(coreDeployment.rewardsCoordinator)
         );
         for (uint256 i = 0; i < strategies.length; i++) {
             json = vm.serializeAddress(
@@ -140,13 +138,9 @@ contract SertnDeployer is Script, Test {
         vm.stopBroadcast();
     }
 
-    function addStrategy(address token) public returns (IStrategy) {
-        StrategyFactory strategyFactory = StrategyFactory(
-            coreDeployment.strategyFactory
-        );
-        IStrategy newStrategy = strategyFactory.deployNewStrategy(
-            IERC20(token)
-        );
+    function addStrategy(address _token) public returns (IStrategy) {
+        StrategyFactory strategyFactory = StrategyFactory(coreDeployment.strategyFactory);
+        IStrategy newStrategy = strategyFactory.deployNewStrategy(IERC20(_token));
         return newStrategy;
     }
 }
