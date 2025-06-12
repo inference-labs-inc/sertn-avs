@@ -28,8 +28,10 @@ build-contracts: ## builds all contracts and generates ABIs
 	cd contracts && forge inspect SertnServiceManager abi --json > ../abis/SertnServiceManager.abi.json
 	cd contracts && forge inspect StrategyBase abi --json > ../abis/StrategyBase.abi.json
 	cd contracts && forge inspect ERC20Mock abi --json > ../abis/ERC20Mock.abi.json
+	cd contracts && forge inspect ERC20 abi --json > ../abis/ERC20.abi.json
 	cd contracts && forge inspect DelegationManager abi --json > ../abis/DelegationManager.abi.json
 	cd contracts && forge inspect StrategyManager abi --json > ../abis/StrategyManager.abi.json
+	cd contracts && forge inspect AllocationManager abi --json > ../abis/AllocationManager.abi.json
 
 deploy-eigenlayer-contracts:
 	@chmod +x ./contracts/anvil/deploy-el.sh

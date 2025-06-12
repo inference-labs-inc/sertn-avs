@@ -59,8 +59,7 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
 
     function sendTask(Task memory task) external onlyAggregators {
         // check if the task is valid
-        if (modelRegistry.modelVerifier(task.modelId) == address(0))
-            revert InvalidModelId();
+        if (modelRegistry.modelVerifier(task.modelId) == address(0)) revert InvalidModelId();
         tasks[taskNonce] = task;
         taskNonce++;
         IStrategy strategy = allocationManager.getAllocatedStrategies(
@@ -69,9 +68,10 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         )[0];
         IERC20 token = strategy.underlyingToken();
         sertnServiceManager.pullFeeFromUser(task.user, token, task.fee);
-        emit TaskCreated(taskNonce, task.user);
+
+        emit TaskCreated(task.nonce, task.user);
         tasks[task.nonce].state = TaskState.ASSIGNED;
-        emit TaskAssigned(taskNonce, task.operator);
+        emit TaskAssigned(task.nonce, task.operator);
     }
 
     function getTask(uint256 taskId) external view returns (Task memory) {
@@ -97,21 +97,13 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         tasks[taskId].state = TaskState.COMPLETED;
         emit TaskCompleted(taskId, task.operator);
 
-        OperatorSet memory operatorSet = allocationManager.getAllocatedSets(
-            task.operator
-        )[0];
-        IStrategy strategy = allocationManager.getAllocatedStrategies(
-            task.operator,
-            operatorSet
-        )[0];
+        OperatorSet memory operatorSet = allocationManager.getAllocatedSets(task.operator)[0];
+        IStrategy strategy = allocationManager.getAllocatedStrategies(task.operator, operatorSet)[
+            0
+        ];
         IERC20 token = strategy.underlyingToken();
 
-        sertnServiceManager.taskCompleted(
-            task.operator,
-            task.fee,
-            strategy,
-            token
-        );
+        sertnServiceManager.taskCompleted(task.operator, task.fee, strategy, token);
     }
 
     function challengeTask(uint256 taskId) external onlyAggregators {
@@ -120,24 +112,14 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
             revert TaskDoesNotExist();
         }
         // TODO: configurable timeout
-        if (
-            task.state != TaskState.COMPLETED &&
-            task.startBlock + 300 > block.number
-        ) {
-            OperatorSet memory operatorSet = allocationManager.getAllocatedSets(
-                task.operator
-            )[0];
+        if (task.state != TaskState.COMPLETED && task.startBlock + 300 > block.number) {
+            OperatorSet memory operatorSet = allocationManager.getAllocatedSets(task.operator)[0];
             IStrategy strategy = allocationManager.getAllocatedStrategies(
                 task.operator,
                 operatorSet
             )[0];
 
-            sertnServiceManager.slashOperator(
-                task.operator,
-                task.fee,
-                operatorSet.id,
-                strategy
-            );
+            sertnServiceManager.slashOperator(task.operator, task.fee, operatorSet.id, strategy);
         }
         if (task.state != TaskState.COMPLETED) {
             revert TaskStateIncorrect(TaskState.COMPLETED);
@@ -154,31 +136,18 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         if (task.state != TaskState.CHALLENGED) {
             revert TaskStateIncorrect(TaskState.CHALLENGED);
         }
-        OperatorSet memory operatorSet = allocationManager.getAllocatedSets(
-            task.operator
-        )[0];
-        IStrategy strategy = allocationManager.getAllocatedStrategies(
-            task.operator,
-            operatorSet
-        )[0];
+        OperatorSet memory operatorSet = allocationManager.getAllocatedSets(task.operator)[0];
+        IStrategy strategy = allocationManager.getAllocatedStrategies(task.operator, operatorSet)[
+            0
+        ];
         IERC20 token = strategy.underlyingToken();
 
         if (success) {
-            sertnServiceManager.taskCompleted(
-                task.operator,
-                task.fee,
-                strategy,
-                token
-            );
+            sertnServiceManager.taskCompleted(task.operator, task.fee, strategy, token);
             tasks[taskId].state = TaskState.RESOLVED;
             emit TaskResolved(taskId, task.operator);
         } else {
-            sertnServiceManager.slashOperator(
-                task.operator,
-                task.fee,
-                operatorSet.id,
-                strategy
-            );
+            sertnServiceManager.slashOperator(task.operator, task.fee, operatorSet.id, strategy);
             tasks[taskId].state = TaskState.REJECTED;
             emit TaskRejected(taskId, task.operator);
         }
@@ -208,9 +177,7 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         }
 
         // Verify the proof using the model verifier
-        IVerifier verifier = IVerifier(
-            modelRegistry.modelVerifier(task.modelId)
-        );
+        IVerifier verifier = IVerifier(modelRegistry.modelVerifier(task.modelId));
 
         bytes32 proofHash = keccak256(proof);
         if (

@@ -31,6 +31,11 @@
         "name": "_MIN_WITHDRAWAL_DELAY",
         "type": "uint32",
         "internalType": "uint32"
+      },
+      {
+        "name": "_version",
+        "type": "string",
+        "internalType": "string"
       }
     ],
     "stateMutability": "nonpayable"
@@ -73,34 +78,6 @@
       }
     ],
     "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "burnOperatorShares",
-    "inputs": [
-      {
-        "name": "operator",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "strategy",
-        "type": "address",
-        "internalType": "contract IStrategy"
-      },
-      {
-        "name": "prevMaxMagnitude",
-        "type": "uint64",
-        "internalType": "uint64"
-      },
-      {
-        "name": "newMaxMagnitude",
-        "type": "uint64",
-        "internalType": "uint64"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -400,7 +377,7 @@
       {
         "name": "approverSignatureAndExpiry",
         "type": "tuple",
-        "internalType": "struct ISignatureUtils.SignatureWithExpiry",
+        "internalType": "struct ISignatureUtilsMixinTypes.SignatureWithExpiry",
         "components": [
           {
             "name": "signature",
@@ -619,7 +596,7 @@
     ],
     "outputs": [
       {
-        "name": "",
+        "name": "withdrawal",
         "type": "tuple",
         "internalType": "struct IDelegationManagerTypes.Withdrawal",
         "components": [
@@ -659,6 +636,11 @@
             "internalType": "uint256[]"
           }
         ]
+      },
+      {
+        "name": "shares",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
       }
     ],
     "stateMutability": "view"
@@ -1083,6 +1065,62 @@
   },
   {
     "type": "function",
+    "name": "queuedWithdrawals",
+    "inputs": [
+      {
+        "name": "withdrawalRoot",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "withdrawal",
+        "type": "tuple",
+        "internalType": "struct IDelegationManagerTypes.Withdrawal",
+        "components": [
+          {
+            "name": "staker",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "delegatedTo",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "withdrawer",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "nonce",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "startBlock",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "strategies",
+            "type": "address[]",
+            "internalType": "contract IStrategy[]"
+          },
+          {
+            "name": "scaledShares",
+            "type": "uint256[]",
+            "internalType": "uint256[]"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "redelegate",
     "inputs": [
       {
@@ -1093,7 +1131,7 @@
       {
         "name": "newOperatorApproverSig",
         "type": "tuple",
-        "internalType": "struct ISignatureUtils.SignatureWithExpiry",
+        "internalType": "struct ISignatureUtilsMixinTypes.SignatureWithExpiry",
         "components": [
           {
             "name": "signature",
@@ -1149,6 +1187,34 @@
     "type": "function",
     "name": "renounceOwnership",
     "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "slashOperatorShares",
+    "inputs": [
+      {
+        "name": "operator",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "strategy",
+        "type": "address",
+        "internalType": "contract IStrategy"
+      },
+      {
+        "name": "prevMaxMagnitude",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "newMaxMagnitude",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
     "outputs": [],
     "stateMutability": "nonpayable"
   },
@@ -1227,6 +1293,19 @@
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "version",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "event",
@@ -1325,31 +1404,6 @@
   },
   {
     "type": "event",
-    "name": "OperatorSharesBurned",
-    "inputs": [
-      {
-        "name": "operator",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "strategy",
-        "type": "address",
-        "indexed": false,
-        "internalType": "contract IStrategy"
-      },
-      {
-        "name": "shares",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
     "name": "OperatorSharesDecreased",
     "inputs": [
       {
@@ -1403,6 +1457,31 @@
       },
       {
         "name": "shares",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OperatorSharesSlashed",
+    "inputs": [
+      {
+        "name": "operator",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "strategy",
+        "type": "address",
+        "indexed": false,
+        "internalType": "contract IStrategy"
+      },
+      {
+        "name": "totalSlashedShares",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -1646,6 +1725,11 @@
   },
   {
     "type": "error",
+    "name": "InvalidShortString",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "InvalidSignature",
     "inputs": []
   },
@@ -1703,6 +1787,17 @@
     "type": "error",
     "name": "SignatureExpired",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "StringTooLong",
+    "inputs": [
+      {
+        "name": "str",
+        "type": "string",
+        "internalType": "string"
+      }
+    ]
   },
   {
     "type": "error",

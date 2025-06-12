@@ -99,32 +99,16 @@ contract SertnTaskManagerTest is Test {
 
         IStrategy[] memory strategies = new IStrategy[](1);
         strategies[0] = mockStrategy;
-        mockAllocationManager.setAllocatedStrategies(
-            operator,
-            sets[0],
-            strategies
-        );
+        mockAllocationManager.setAllocatedStrategies(operator, sets[0], strategies);
 
         vm.stopPrank();
     }
 
     function test_initialize() public view {
-        assertEq(
-            address(taskManager.allocationManager()),
-            address(mockAllocationManager)
-        );
-        assertEq(
-            address(taskManager.delegationManager()),
-            address(mockDelegationManager)
-        );
-        assertEq(
-            address(taskManager.rewardsCoordinator()),
-            address(mockRewardsCoordinator)
-        );
-        assertEq(
-            address(taskManager.sertnServiceManager()),
-            address(mockServiceManager)
-        );
+        assertEq(address(taskManager.allocationManager()), address(mockAllocationManager));
+        assertEq(address(taskManager.delegationManager()), address(mockDelegationManager));
+        assertEq(address(taskManager.rewardsCoordinator()), address(mockRewardsCoordinator));
+        assertEq(address(taskManager.sertnServiceManager()), address(mockServiceManager));
         assertEq(address(taskManager.modelRegistry()), address(modelRegistry));
         assertEq(taskManager.taskNonce(), 0);
     }
@@ -133,10 +117,10 @@ contract SertnTaskManagerTest is Test {
         ISertnTaskManager.Task memory task = _createValidTask();
 
         vm.expectEmit(true, true, false, true);
-        emit ISertnTaskManager.TaskCreated(1, user);
+        emit ISertnTaskManager.TaskCreated(0, user);
 
         vm.expectEmit(true, true, false, true);
-        emit ISertnTaskManager.TaskAssigned(1, operator);
+        emit ISertnTaskManager.TaskAssigned(0, operator);
 
         vm.prank(aggregator);
         taskManager.sendTask(task);
@@ -144,10 +128,7 @@ contract SertnTaskManagerTest is Test {
         assertEq(taskManager.taskNonce(), 1);
 
         ISertnTaskManager.Task memory storedTask = taskManager.getTask(0);
-        assertEq(
-            uint8(storedTask.state),
-            uint8(ISertnTaskManager.TaskState.ASSIGNED)
-        );
+        assertEq(uint8(storedTask.state), uint8(ISertnTaskManager.TaskState.ASSIGNED));
         assertEq(storedTask.operator, operator);
         assertEq(storedTask.user, user);
         assertEq(storedTask.modelId, modelId);
@@ -189,10 +170,7 @@ contract SertnTaskManagerTest is Test {
         vm.prank(operator);
         taskManager.submitTaskOutput(0, output);
 
-        assertEq(
-            uint8(taskManager.getTask(0).state),
-            uint8(ISertnTaskManager.TaskState.COMPLETED)
-        );
+        assertEq(uint8(taskManager.getTask(0).state), uint8(ISertnTaskManager.TaskState.COMPLETED));
         assertEq(taskManager.getTask(0).output, output);
     }
 
@@ -282,10 +260,7 @@ contract SertnTaskManagerTest is Test {
         vm.prank(operator);
         taskManager.submitProofForTask(0, proof);
 
-        assertEq(
-            uint8(taskManager.getTask(0).state),
-            uint8(ISertnTaskManager.TaskState.RESOLVED)
-        );
+        assertEq(uint8(taskManager.getTask(0).state), uint8(ISertnTaskManager.TaskState.RESOLVED));
     }
 
     function test_submitProofForTask_revertTaskDoesNotExist() public {
@@ -348,10 +323,7 @@ contract SertnTaskManagerTest is Test {
         vm.prank(aggregator);
         taskManager.resolveTask(0, true);
 
-        assertEq(
-            uint8(taskManager.getTask(0).state),
-            uint8(ISertnTaskManager.TaskState.RESOLVED)
-        );
+        assertEq(uint8(taskManager.getTask(0).state), uint8(ISertnTaskManager.TaskState.RESOLVED));
     }
 
     function test_resolveTask_reject() public {
@@ -372,10 +344,7 @@ contract SertnTaskManagerTest is Test {
         vm.prank(aggregator);
         taskManager.resolveTask(0, false);
 
-        assertEq(
-            uint8(taskManager.getTask(0).state),
-            uint8(ISertnTaskManager.TaskState.REJECTED)
-        );
+        assertEq(uint8(taskManager.getTask(0).state), uint8(ISertnTaskManager.TaskState.REJECTED));
     }
 
     function test_resolveTask_revertNotAggregator() public {
@@ -421,11 +390,7 @@ contract SertnTaskManagerTest is Test {
     }
 
     // Helper function to create a valid task
-    function _createValidTask()
-        internal
-        view
-        returns (ISertnTaskManager.Task memory)
-    {
+    function _createValidTask() internal view returns (ISertnTaskManager.Task memory) {
         return
             ISertnTaskManager.Task({
                 startBlock: block.number,

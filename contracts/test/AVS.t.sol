@@ -378,10 +378,10 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         vm.startPrank(user.key.addr);
 
         vm.expectEmit(true, true, false, true);
-        emit ISertnTaskManager.TaskCreated(1, task.user);
+        emit ISertnTaskManager.TaskCreated(0, task.user);
 
         vm.expectEmit(true, true, false, true);
-        emit ISertnTaskManager.TaskAssigned(1, task.operator);
+        emit ISertnTaskManager.TaskAssigned(0, task.operator);
 
         sertnTaskManager.sendTask(task);
         uint256 taskNonce = sertnTaskManager.taskNonce() - 1;

@@ -36,7 +36,7 @@ contract InitLocalEnvScript is Script {
 
     CoreDeploymentLib.DeploymentData coreDeployment;
 
-    uint256 constant AMOUNT = 1e9; // 1 AVS token (adjusted for decimals)
+    uint256 constant AMOUNT = 1 ether;
 
     // Contract instances
     SertnServiceManager serviceManager;
@@ -178,6 +178,10 @@ contract InitLocalEnvScript is Script {
             "Approved tokens. Allowance:",
             stakingToken.allowance(operatorAddress, address(strategyManager))
         );
+
+        console.log("Minting tokens for the aggregator...");
+        // TODO: actually mint tokens for some end user, which requests tasks, but for now we use aggregator
+        stakingTokenMock.mint(aggregatorAddress, AMOUNT * 1000);
     }
 
     function _depositIntoStrategy() internal {
@@ -217,9 +221,9 @@ contract InitLocalEnvScript is Script {
         console.log("Allocate tokens to the operator...");
 
         uint64[] memory _newMags = new uint64[](3);
-        _newMags[0] = 1 ether;
-        _newMags[1] = 1 ether;
-        _newMags[2] = 1 ether;
+        _newMags[0] = uint64(AMOUNT);
+        _newMags[1] = uint64(AMOUNT);
+        _newMags[2] = uint64(AMOUNT);
 
         OperatorSet memory opSet = OperatorSet({avs: address(serviceManager), id: 0});
 

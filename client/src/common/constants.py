@@ -19,6 +19,7 @@ with open(
     deployment_info = json.load(f)
     TASK_MANAGER_ADDRESS = deployment_info["sertnTaskManager"]
     SERVICE_MANAGER_ADDRESS = deployment_info["sertnServiceManager"]
+    ALLOCATION_MANAGER_ADDRESS = deployment_info["allocationManager"]
     STRATEGIES_ADDRESSES = [
         deployment_info["strategy_0"],
         deployment_info["strategy_1"],

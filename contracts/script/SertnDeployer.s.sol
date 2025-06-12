@@ -103,6 +103,7 @@ contract SertnDeployer is Script, Test {
         sertnServiceManager.updateTaskManager(address(sertnTaskManager));
         sertnServiceManager.updateModelRegistry(address(modelRegistry));
 
+        // save some contracts addresses to the deployment json
         string memory json = vm.serializeAddress(
             "SertnDeployment",
             "sertnServiceManager",
@@ -118,6 +119,11 @@ contract SertnDeployer is Script, Test {
             "SertnDeployment",
             "rewardsCoordinator",
             address(coreDeployment.rewardsCoordinator)
+        );
+        json = vm.serializeAddress(
+            "SertnDeployment",
+            "allocationManager",
+            address(coreDeployment.allocationManager)
         );
         for (uint256 i = 0; i < strategies.length; i++) {
             json = vm.serializeAddress(

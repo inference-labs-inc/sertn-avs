@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from tqdm import tqdm
 from web3 import Web3
 
+from common.abis import STRATEGY_ABI, ERC20_ABI
 from common.console import console, styles
 from common.eth import EthereumClient, load_ecdsa_private_key
 
@@ -136,25 +137,78 @@ class Aggregator:
         # model_id = random.choice(list(models.keys()))
         model_id = 1
 
-        # DelegationManager.operatorShares
-
         # Define the _task struct, the dict should correspond to the struct in the contract
-        # here: `contracts/src/ISertnServiceManager.sol` -> `ISertnServiceManagerTypes.Task`
-        # (uint256,uint256,bytes,uint256,address,uint256,address,uint8,bytes,uint256)
-        # (35, 0, b'', b'', '0xa0Ee7A142d267C1f36714E4a8F75612F20a79720', 0, '0x', 0, b'', 100)
         task = {
             "startBlock": self.eth_client.w3.eth.block_number,  # uint256 - Current block number
             "modelId": model_id,  # uint256
             "inputs": inputs.encode(),  # bytes - actual input data
             "proof": 0,  # uint256 - Proof of computation, empty for now (integer?)
-            "user": self.aggregator_address,  # address TODO: what address should be here?
+            "user": self.aggregator_address,  # TODO: replace with actual end user address
             "nonce": i,  # uint256 - Nonce for the task, can be any number
             # TODO: get operator addresses from the DelegationManager
             "operator": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",  # TODO: address - Operator address, can be empty for now
             "state": 0,  # uint8 - Task state, 0 for `TaskState.Created`
             "output": b"",  # bytes - Output of the task, empty for now
-            "fee": 100,  # uint256 - Fee for the task, can be any number
+            "fee": 1,  # uint256 - Fee for the task, can be any number
         }
+
+        # TODO: some user sends the task, he needs to approve the funds for the task
+        # OKAY, For now, we will use the aggregator address as the user
+        """
+        IStrategy strategy = allocationManager.getAllocatedStrategies(
+            task.operator,
+            allocationManager.getAllocatedSets(task.operator)[0]
+        )[0];
+        console.log("Got strategy %s for operator %s", address(strategy), task.operator);
+        IERC20 token = strategy.underlyingToken();
+        """
+
+        # allocated_sets = self.eth_client.allocation_manager.functions.getAllocatedSets(
+        #     task["operator"]
+        # ).call()
+        # print(
+        #     f"Got {len(allocated_sets)} allocated sets for operator {task['operator']}"
+        # )
+        # strategy = self.eth_client.w3.eth.contract(
+        #     address=allocated_sets[0][0],
+        #     abi=STRATEGY_ABI,
+        # )
+        # print(f"Got strategy {strategy.address} for operator {task['operator']}")
+        # token_address = strategy.functions.underlyingToken().call()
+        # print(f"Got token {token_address} for strategy {strategy.address}")
+        token = self.eth_client.w3.eth.contract(
+            # TODO: get the token address from the strategy
+            address="0x998abeb3E57409262aE5b751f60747921B33613E",  # token_address,
+            abi=ERC20_ABI,
+        )
+        print(f"Approving funds for the task - {task['fee']} tokens")
+        tx = token.functions.approve(
+            self.eth_client.service_manager.address,  # Approve the task manager to spend tokens
+            # TODO: check is the fee correct after converting to wei
+            Web3.to_wei(task["fee"], "ether"),  # Approve the fee amount
+        ).build_transaction(
+            {
+                "from": self.aggregator_address,
+                "gas": 2000000,
+                "gasPrice": Web3.to_wei("20", "gwei"),
+                "nonce": self.eth_client.w3.eth.get_transaction_count(
+                    self.aggregator_address
+                ),
+                "chainId": self.eth_client.w3.eth.chain_id,
+            }
+        )
+        signed_tx: SignedTransaction = self.eth_client.w3.eth.account.sign_transaction(
+            tx, private_key=self.private_key
+        )
+        tx_hash = self.eth_client.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+        receipt = self.eth_client.w3.eth.wait_for_transaction_receipt(tx_hash)
+        if receipt.status != 1:
+            console.print("Failed to approve funds for the task", style=styles.error)
+            return
+        console.print(
+            f"Successfully approved {task['fee']} tokens for the task",
+            style=styles.agg_info,
+        )
 
         # XXX: Approve funds for the task?
         tx = self.eth_client.task_manager.functions.sendTask(task).build_transaction(
@@ -185,11 +239,14 @@ class Aggregator:
             console.print("Failed to send new task", style=styles.error)
             return
 
-        event = self.eth_client.task_manager.events.NewTask().process_log(
-            receipt["logs"][1]
+        console.print(f"New task sent!", style=styles.agg_info)
+
+        # also `TaskCreated` event is emitted, do we need it?
+        event = self.eth_client.task_manager.events.TaskAssigned().process_log(
+            receipt["logs"][-1]
         )
 
-        task_index = event["args"]["taskId_"]
+        task_index = event["args"]["taskId"]
         console.print(
             f"Successfully sent the new task {task_index}", style=styles.agg_info
         )
