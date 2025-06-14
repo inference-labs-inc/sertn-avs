@@ -114,6 +114,8 @@ contract SertnTaskManagerTest is Test {
     }
 
     function test_sendTask_success() public {
+        assertEq(taskManager.getPendingTasksIds().length, 0);
+
         ISertnTaskManager.Task memory task = _createValidTask();
 
         vm.expectEmit(true, true, false, true);
@@ -126,6 +128,10 @@ contract SertnTaskManagerTest is Test {
         taskManager.sendTask(task);
 
         assertEq(taskManager.taskNonce(), 1);
+        // check the task ID has been added to the pending list
+        uint256[] memory expected_ids = new uint256[](1);
+        expected_ids[0] = 0;
+        assertEq(taskManager.getPendingTasksIds(), expected_ids);
 
         ISertnTaskManager.Task memory storedTask = taskManager.getTask(0);
         assertEq(uint8(storedTask.state), uint8(ISertnTaskManager.TaskState.ASSIGNED));
@@ -222,7 +228,7 @@ contract SertnTaskManagerTest is Test {
         taskManager.submitTaskOutput(0, "output");
 
         vm.expectEmit(true, true, false, true);
-        emit ISertnTaskManager.TaskChallenged(0, user);
+        emit ISertnTaskManager.TaskChallenged(0, aggregator);
 
         vm.prank(aggregator);
         taskManager.challengeTask(0);
@@ -317,11 +323,19 @@ contract SertnTaskManagerTest is Test {
         vm.prank(aggregator);
         taskManager.challengeTask(0);
 
+        // check the task ID sill in the pending list
+        uint256[] memory expected_ids = new uint256[](1);
+        expected_ids[0] = 0;
+        assertEq(taskManager.getPendingTasksIds(), expected_ids);
+
         vm.expectEmit(true, true, false, true);
         emit ISertnTaskManager.TaskResolved(0, operator);
 
         vm.prank(aggregator);
         taskManager.resolveTask(0, true);
+
+        // check the task ID is not in the pending list anymore
+        assertEq(taskManager.getPendingTasksIds().length, 0);
 
         assertEq(uint8(taskManager.getTask(0).state), uint8(ISertnTaskManager.TaskState.RESOLVED));
     }
@@ -338,6 +352,11 @@ contract SertnTaskManagerTest is Test {
         vm.prank(aggregator);
         taskManager.challengeTask(0);
 
+        // check the task ID sill in the pending list
+        uint256[] memory expected_ids = new uint256[](1);
+        expected_ids[0] = 0;
+        assertEq(taskManager.getPendingTasksIds(), expected_ids);
+
         vm.expectEmit(true, true, false, true);
         emit ISertnTaskManager.TaskRejected(0, operator);
 
@@ -345,6 +364,9 @@ contract SertnTaskManagerTest is Test {
         taskManager.resolveTask(0, false);
 
         assertEq(uint8(taskManager.getTask(0).state), uint8(ISertnTaskManager.TaskState.REJECTED));
+
+        // check the task ID is not in the pending list anymore
+        assertEq(taskManager.getPendingTasksIds().length, 0);
     }
 
     function test_resolveTask_revertNotAggregator() public {
@@ -368,7 +390,7 @@ contract SertnTaskManagerTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(
                 ISertnTaskManager.TaskStateIncorrect.selector,
-                ISertnTaskManager.TaskState.CHALLENGED
+                ISertnTaskManager.TaskState.ASSIGNED
             )
         );
         vm.prank(aggregator);
@@ -396,7 +418,7 @@ contract SertnTaskManagerTest is Test {
                 startBlock: block.number,
                 modelId: modelId,
                 inputs: "test inputs",
-                proof: 100,
+                proofHash: "",
                 user: user,
                 nonce: 0,
                 operator: operator,

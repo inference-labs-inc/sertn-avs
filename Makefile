@@ -32,6 +32,7 @@ build-contracts: ## builds all contracts and generates ABIs
 	cd contracts && forge inspect DelegationManager abi --json > ../abis/DelegationManager.abi.json
 	cd contracts && forge inspect StrategyManager abi --json > ../abis/StrategyManager.abi.json
 	cd contracts && forge inspect AllocationManager abi --json > ../abis/AllocationManager.abi.json
+	cd contracts && forge inspect ModelRegistry abi --json > ../abis/ModelRegistry.abi.json
 
 deploy-eigenlayer-contracts:
 	@chmod +x ./contracts/anvil/deploy-el.sh

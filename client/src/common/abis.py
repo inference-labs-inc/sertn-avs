@@ -24,3 +24,5 @@ DELEGATION_MANAGER_ABI = load_abi("DelegationManager.abi.json")
 STRATEGY_MANAGER_ABI = load_abi("StrategyManager.abi.json")
 
 ALLOCATION_MANAGER_ABI = load_abi("AllocationManager.abi.json")
+
+MODEL_REGISTRY_ABI = load_abi("ModelRegistry.abi.json")

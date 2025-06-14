@@ -31,7 +31,7 @@ class EZKLHandler:
     def __init__(self, model_id: str, task_id: str, inputs: Optional[list[float]]):
         self.input_data = inputs
 
-        model_path = os.path.join(MODELS_FOLDER, f"model_{model_id}")
+        model_path = os.path.join(MODELS_FOLDER, f"{model_id}")
         self.compiled_model_path = os.path.join(model_path, "model.compiled")
         self.pk_path = os.path.join(model_path, "test.pk")
         self.vk_path = os.path.join(model_path, "vk.key")

@@ -4,6 +4,7 @@ pragma solidity ^0.8.29;
 interface IModelRegistry {
     /**
      * @notice The strategy used to verify the model
+     * XXX: changing this struct, don't forget to take care of `client/src/common/contract_constants.py`
      */
     enum VerificationStrategy {
         None,
@@ -36,20 +37,14 @@ interface IModelRegistry {
      * @param modelId The id of the model
      * @param computeCost The new compute cost of the model
      */
-    event ComputeCostUpdated(
-        uint256 indexed modelId,
-        uint256 indexed computeCost
-    );
+    event ComputeCostUpdated(uint256 indexed modelId, uint256 indexed computeCost);
 
     /**
      * @notice The event emitted when a model verifier is updated
      * @param modelId The id of the model
      * @param modelVerifier The address of the model verifier
      */
-    event ModelVerifierUpdated(
-        uint256 indexed modelId,
-        address indexed modelVerifier
-    );
+    event ModelVerifierUpdated(uint256 indexed modelId, address indexed modelVerifier);
 
     /**
      * @notice The event emitted when a verification strategy is updated
@@ -107,10 +102,7 @@ interface IModelRegistry {
      * @param modelId The id of the model
      * @param modelVerifier The new address of the model verifier
      */
-    function updateModelVerifier(
-        uint256 modelId,
-        address modelVerifier
-    ) external;
+    function updateModelVerifier(uint256 modelId, address modelVerifier) external;
 
     /**
      * @notice The function to update the verification strategy of a model

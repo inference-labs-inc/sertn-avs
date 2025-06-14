@@ -249,7 +249,7 @@ contract InitLocalEnvScript is Script {
         uint256 modelId = serviceManager.modelRegistry().createNewModel(
             address(mockVerifier),
             IModelRegistry.VerificationStrategy.Offchain,
-            "model1",
+            "model_0",
             1000 // Example compute cost
         );
         console.log("Model created with ID:", modelId);

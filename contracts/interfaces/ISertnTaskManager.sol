@@ -49,6 +49,7 @@ interface ISertnTaskManager {
 
     /**
      * @notice The task struct
+     * XXX: changing this struct, don't forget to take care of `client/src/common/contract_constants.py`
      * @param startBlock The block number when the task was created
      * @param modelId The model id
      * @param inputs The inputs to the model
@@ -62,7 +63,7 @@ interface ISertnTaskManager {
         uint256 startBlock;
         uint256 modelId;
         bytes inputs;
-        uint256 proof;
+        bytes32 proofHash;
         address user;
         uint256 nonce;
         address operator;
@@ -73,6 +74,7 @@ interface ISertnTaskManager {
 
     /**
      * @notice The task state enum
+     * XXX: changing this enum, don't forget to take care of `client/src/common/contract_constants.py`
      * @param CREATED Task has been created and is waiting to be assigned to an operator
      * @param ASSIGNED Task has been assigned to an operator
      * @param COMPLETED Task has been completed by an operator
