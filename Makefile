@@ -28,8 +28,11 @@ build-contracts: ## builds all contracts and generates ABIs
 	cd contracts && forge inspect SertnServiceManager abi --json > ../abis/SertnServiceManager.abi.json
 	cd contracts && forge inspect StrategyBase abi --json > ../abis/StrategyBase.abi.json
 	cd contracts && forge inspect ERC20Mock abi --json > ../abis/ERC20Mock.abi.json
+	cd contracts && forge inspect ERC20 abi --json > ../abis/ERC20.abi.json
 	cd contracts && forge inspect DelegationManager abi --json > ../abis/DelegationManager.abi.json
 	cd contracts && forge inspect StrategyManager abi --json > ../abis/StrategyManager.abi.json
+	cd contracts && forge inspect AllocationManager abi --json > ../abis/AllocationManager.abi.json
+	cd contracts && forge inspect ModelRegistry abi --json > ../abis/ModelRegistry.abi.json
 
 deploy-eigenlayer-contracts:
 	@chmod +x ./contracts/anvil/deploy-el.sh
@@ -38,6 +41,10 @@ deploy-eigenlayer-contracts:
 deploy-sertn-contracts:
 	@chmod +x ./contracts/anvil/deploy-sertn.sh
 	./contracts/anvil/deploy-sertn.sh
+
+init-local-workers:  # init operator and aggregator for local testing
+	@chmod +x ./contracts/anvil/init-local-workers.sh
+	./contracts/anvil/init-local-workers.sh
 
 add-operator-model:
 	pwd # TODO: ...

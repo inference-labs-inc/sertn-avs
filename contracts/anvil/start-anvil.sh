@@ -14,5 +14,6 @@ if [ $RUN_ANVIL_IN_BACKGROUND = true ]; then
   echo "Anvil started with PID $ANVIL_PID"
 else
   # Start Anvil in foreground
+  echo "Starting Anvil with state dump in foreground"
   anvil --dump-state "$STATE_FILE" --host 0.0.0.0 --port $RPC_PORT --base-fee 0 --gas-price 0 -vvv
 fi
