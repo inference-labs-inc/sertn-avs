@@ -382,6 +382,11 @@
         "name": "_token",
         "type": "address",
         "internalType": "contract IERC20"
+      },
+      {
+        "name": "_startTimestamp",
+        "type": "uint32",
+        "internalType": "uint32"
       }
     ],
     "outputs": [],

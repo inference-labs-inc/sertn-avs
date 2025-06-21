@@ -28,11 +28,7 @@ interface ISertnServiceManager {
      * @param _user The address of the user to pull fee from
      * @param _fee The amount of fee to pull
      */
-    function pullFeeFromUser(
-        address _user,
-        IERC20 _token,
-        uint256 _fee
-    ) external;
+    function pullFeeFromUser(address _user, IERC20 _token, uint256 _fee) external;
 
     /**
      * @notice Update the model registry
@@ -45,10 +41,7 @@ interface ISertnServiceManager {
      * @param _strategies The strategies to add
      * @param _operatorSetId The operator set id to add the strategies to
      */
-    function addStrategies(
-        IStrategy[] memory _strategies,
-        uint32 _operatorSetId
-    ) external;
+    function addStrategies(IStrategy[] memory _strategies, uint32 _operatorSetId) external;
 
     /**
      * @notice Add an aggregator to the service manager
@@ -69,7 +62,8 @@ interface ISertnServiceManager {
         address _operator,
         uint256 _fee,
         IStrategy _strategy,
-        IERC20 _token
+        IERC20 _token,
+        uint32 _startTimestamp
     ) external;
 
     /**

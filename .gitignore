@@ -58,3 +58,4 @@ out/
 *.mythril.json
 broadcast/
 cache/
+anvil.log

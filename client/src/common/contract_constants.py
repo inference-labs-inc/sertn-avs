@@ -8,15 +8,16 @@ class TaskStructMap(IntEnum):
     """
 
     START_BLOCK = 0
-    MODEL_ID = 1
-    INPUTS = 2
-    PROOF_HASH = 3
-    USER = 4
-    NONCE = 5
-    OPERATOR = 6
-    STATE = 7
-    OUTPUT = 8
-    FEE = 9
+    START_TIME = 1
+    MODEL_ID = 2
+    INPUTS = 3
+    PROOF_HASH = 4
+    USER = 5
+    NONCE = 6
+    OPERATOR = 7
+    STATE = 8
+    OUTPUT = 9
+    FEE = 10
 
 
 class TaskStateMap(IntEnum):

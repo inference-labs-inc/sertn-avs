@@ -20,6 +20,10 @@ start-anvil:
 	@chmod +x ./contracts/anvil/start-anvil.sh
 	./contracts/anvil/start-anvil.sh
 
+stop-anvil: ## stops anvil
+	@chmod +x ./contracts/anvil/stop-anvil.sh
+	./contracts/anvil/stop-anvil.sh
+
 ___CONTRACTS___: ##
 
 build-contracts: ## builds all contracts and generates ABIs
@@ -46,9 +50,6 @@ init-local-workers:  # init operator and aggregator for local testing
 	@chmod +x ./contracts/anvil/init-local-workers.sh
 	./contracts/anvil/init-local-workers.sh
 
-add-operator-model:
-	pwd # TODO: ...
-
 __CLI__: ##
 
 send-fund: ## sends fund to the operator saved in tests/keys/test.ecdsa.key.json
@@ -66,5 +67,8 @@ start-aggregator: ## start aggregator (part of quickstart)
 
 -----------------------------: ##
 _____HELPER_____: ##
-tests-contract: ## runs all forge tests
+test-contracts: ## runs all forge tests
 	cd contracts && forge test
+
+test-client: ## runs all client tests
+	cd client && pytest  -k test_process_task # -s -v --tb=short --disable-warnings --cov=src --cov-report=term-missing

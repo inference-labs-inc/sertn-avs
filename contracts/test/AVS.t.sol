@@ -334,6 +334,7 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         user = User({key: vm.createWallet("user_wallet")});
         ISertnTaskManager.Task memory task = ISertnTaskManager.Task({
             startBlock: 0,
+            startTimestamp: uint32(block.timestamp),
             modelId: 999, // Wrong model ID
             inputs: bytes(""),
             proofHash: "",
@@ -361,6 +362,7 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         user = User({key: vm.createWallet("user_wallet")});
         ISertnTaskManager.Task memory task = ISertnTaskManager.Task({
             startBlock: 0,
+            startTimestamp: uint32(block.timestamp),
             modelId: modelId,
             inputs: bytes(""),
             proofHash: "",

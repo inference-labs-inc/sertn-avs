@@ -416,6 +416,7 @@ contract SertnTaskManagerTest is Test {
         return
             ISertnTaskManager.Task({
                 startBlock: block.number,
+                startTimestamp: uint32(block.timestamp),
                 modelId: modelId,
                 inputs: "test inputs",
                 proofHash: "",

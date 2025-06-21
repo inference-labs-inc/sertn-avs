@@ -24,7 +24,7 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
     // queue of tasks that are waiting to be challenged
     bytes[] public slashingQueue;
     // nonce for tasks to ensure uniqueness
-    uint256 public taskNonce;
+    uint256 public taskNonce = 1;
     // Mapping from taskId to Task struct
     mapping(uint256 => Task) public tasks;
     // all assigned tasks IDs, which are not resolved and not rejected
@@ -59,11 +59,13 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         rewardsCoordinator = IRewardsCoordinator(_rewardsCoordinator);
         sertnServiceManager = ISertnServiceManager(_sertnServiceManager);
         modelRegistry = ModelRegistry(_modelRegistry);
+        taskNonce = 1; // Start task nonce at 1 to avoid zero-indexing issues
     }
 
     function sendTask(Task memory task) external onlyAggregators {
         // check if the task is valid
         if (modelRegistry.modelVerifier(task.modelId) == address(0)) revert InvalidModelId();
+        task.startTimestamp = uint32(block.timestamp);
         tasks[taskNonce] = task;
         taskNonce++;
         IStrategy strategy = allocationManager.getAllocatedStrategies(
@@ -107,8 +109,13 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
             0
         ];
         IERC20 token = strategy.underlyingToken();
-
-        sertnServiceManager.taskCompleted(task.operator, task.fee, strategy, token);
+        sertnServiceManager.taskCompleted(
+            task.operator,
+            task.fee,
+            strategy,
+            token,
+            task.startTimestamp
+        );
     }
 
     function challengeTask(uint256 taskId) external onlyAggregators {
@@ -152,7 +159,13 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         IERC20 token = strategy.underlyingToken();
 
         if (success) {
-            sertnServiceManager.taskCompleted(task.operator, task.fee, strategy, token);
+            sertnServiceManager.taskCompleted(
+                task.operator,
+                task.fee,
+                strategy,
+                token,
+                task.startTimestamp
+            );
             tasks[taskId].state = TaskState.RESOLVED;
             emit TaskResolved(taskId, task.operator);
         } else {

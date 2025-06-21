@@ -16,7 +16,7 @@ def run_onnx(model_id: str, input_data: list[float]) -> list[float]:
         np.ndarray: The output of the model as a NumPy array.
     """
     # Path to the ONNX model
-    model_path = os.path.join(MODELS_FOLDER, f"{model_id}", "network.onnx")
+    model_path = os.path.join(MODELS_FOLDER, model_id, "network.onnx")
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"Model file not found: {model_path}")
 

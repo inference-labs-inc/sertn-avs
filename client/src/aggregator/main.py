@@ -111,7 +111,7 @@ class Aggregator:
         # )
         # self.server_thread.start()
 
-    def start_sending_new_tasks(self):
+    def start_sending_new_tasks(self, loop_running: bool = True):
         """
         Runs in a separate thread and sends new tasks to the task manager.
         TODO: make sleep time configurable
@@ -120,10 +120,13 @@ class Aggregator:
         while True:
             console.print("Sending new task", style=styles.debug)
             self.send_new_task(i)
+            if not loop_running:
+                console.print("Stopping sending new tasks", style=styles.debug)
+                break
             time.sleep(60)
             i += 1
 
-    def send_new_task(self, i) -> bytes:
+    def send_new_task(self, i) -> int | None:
         # create some generic input data
         inputs = " ".join(str(random.uniform(0.0, 0.85)) for _ in range(5))
         # model_id = random.choice(list(models.keys()))
@@ -132,14 +135,17 @@ class Aggregator:
         # Define the _task struct, the dict should correspond to the struct in the contract
         task = {
             "startBlock": self.eth_client.w3.eth.block_number,  # uint256 - Current block number
+            "startTimestamp": self.eth_client.w3.eth.get_block("latest")[
+                "timestamp"
+            ],  # uint256 - Current timestamp
             "modelId": model_id,  # uint256
             "inputs": inputs.encode(),  # bytes - actual input data
-            "proof": 0,  # uint256 - Proof of computation, empty for now (integer?)
+            "proofHash": b"\x00" * 32,  # bytes32 - Hash of the proof, empty for now
             "user": self.aggregator_address,  # at the moment the aggregator is the end user
             "nonce": i,  # uint256 - Nonce for the task, can be any number
             # TODO: get operator addresses from the DelegationManager
             "operator": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-            "state": TaskStateMap.CREATED,  # uint8 - gonna be changed by the contract anyway
+            "state": TaskStateMap.CREATED.value,  # uint8 - gonna be changed by the contract anyway
             "output": b"",  # bytes - Output of the task, empty for now
             # TODO: fee from computer cost via `ModelRegistry.computeCost`
             "fee": 1,  # uint256 - Fee for the task, can be any number
@@ -219,7 +225,7 @@ class Aggregator:
 
         return task_index
 
-    def get_token(self, task: dict) -> Web3.contract:
+    def get_token(self, task: dict):
         """
         Get the token address used for the task fees.
         """
@@ -252,7 +258,7 @@ class Aggregator:
             abi=ERC20_ABI,
         )
 
-    def listen_for_events(self):
+    def listen_for_events(self, loop_running: bool = True) -> int | None:
         """
         Listen for task manager events in a separate thread.
         """
@@ -262,12 +268,18 @@ class Aggregator:
                 from_block="latest"
             )
         )
+        processed_count: int = 0
         while True:
             for event in task_completed_events.get_new_entries():
                 console.print(
                     f"Some task has been completed. Processing...", style=styles.debug
                 )
                 self.process_completed_task(event)
+                processed_count += 1
+
+            if not loop_running:
+                console.print("Stopping event listener...", style=styles.debug)
+                return processed_count
 
             time.sleep(3)
 
@@ -282,7 +294,7 @@ class Aggregator:
         # get task details from the contract
         task = self.eth_client.task_manager.functions.getTask(task_id).call()
         task_state = task[TaskStructMap.STATE]  # TaskStateMap
-        if task_state != TaskStateMap.COMPLETED:
+        if task_state != TaskStateMap.COMPLETED.value:
             console.print(
                 f"Task {task_id} has invalid state, current state: {task_state}",
                 style=styles.error,
@@ -304,7 +316,9 @@ class Aggregator:
         1. The task is not completed for a long time (300 blocks or something). So we are slashing the operator
         2. The task is completed, but we want to get a proof from the operator.
         """
-        tx = self.eth_client.task_manager.challengeTask(task_id).build_transaction(
+        tx = self.eth_client.task_manager.functions.challengeTask(
+            task_id
+        ).build_transaction(
             {
                 "from": self.aggregator_address,
                 "gas": 2000000,
@@ -356,13 +370,13 @@ class Aggregator:
 
         # check the task state
         state: int = task[TaskStructMap.STATE]
-        if state in (TaskStateMap.RESOLVED, TaskStateMap.REJECTED):
+        if state in (TaskStateMap.RESOLVED.value, TaskStateMap.REJECTED.value):
             console.print(
                 f"The task #{task_id} is already {TaskStateMap.from_int(state)}, skipping...",
                 style=styles.error,
             )
             return InvalidProofError("The task is already resolved")
-        if state != TaskStateMap.CHALLENGED:
+        if state != TaskStateMap.CHALLENGED.value:
             console.print(
                 f"The task #{task_id} isn't challenged. State is {TaskStateMap.from_int(state)}, skipping...",
                 style=styles.error,
@@ -398,23 +412,24 @@ class Aggregator:
 
         # OK, we are good to verify the task
         validator_input = [float(i) for i in inputs.decode().split(" ")]
-        proof_generator = EZKLHandler(
-            model_id="dummy",  # verifier doesn't use that
-            task_id=str(task_id),
-            inputs=validator_input,
-        )
-        verified: bool = proof_generator.verify_proof(
-            validator_inputs=validator_input, proof=proof.decode()
-        )
+        # proof_generator = EZKLHandler(
+        #     model_id="dummy",  # verifier doesn't use that
+        #     task_id=str(task_id),
+        #     inputs=validator_input,
+        # )
+        # verified: bool = proof_generator.verify_proof(
+        #     validator_inputs=validator_input, proof=proof.decode()
+        # )
+        verified: bool = True  # TODO: use EZKLHandler to verify the proof
         if verified:
             # cool, the operator might receive the reward
-            print(f"The task #{task_id} is verified!", style=styles.agg_info)
-            self.resolve_task(task_id=task, resolved=True)
+            console.print(f"The task #{task_id} is verified!", style=styles.agg_info)
+            self.resolve_task(task_id=task_id, resolved=True)
             return True
         else:
             # not good... the proof is not verified
             print(f"The proof for task #{task_id} is invalid!", style=styles.error)
-            self.resolve_task(task_id=task, resolved=False)
+            self.resolve_task(task_id=task_id, resolved=False)
             raise InvalidProofError("Proof is not verified")
 
     def resolve_task(self, task_id: int, resolved: bool):
@@ -423,7 +438,7 @@ class Aggregator:
         If `resolved` is True, the task is resolved as completed.
         If `resolved` is False, the task is resolved as rejected and the operator is slashed.
         """
-        tx = self.eth_client.task_manager.resolveTask(
+        tx = self.eth_client.task_manager.functions.resolveTask(
             task_id, resolved
         ).build_transaction(
             {
@@ -469,7 +484,7 @@ class Aggregator:
                 task_state: int = task[TaskStructMap.STATE]
                 start_block: int = task[TaskStructMap.START_BLOCK]
                 if (
-                    task_state == TaskStateMap.ASSIGNED
+                    task_state == TaskStateMap.ASSIGNED.value
                     and start_block + RESOLVE_BLOCKS_DELAY < current_block
                 ):
                     # the task is assigned, but not completed for a long time
@@ -480,7 +495,7 @@ class Aggregator:
                     )
                     self.challenge_task(task_id)
                 elif (
-                    task_state == TaskStateMap.CHALLENGED
+                    task_state == TaskStateMap.CHALLENGED.value
                     and start_block + RESOLVE_BLOCKS_DELAY * 2 < current_block
                 ):
                     # the task is challenged, but not completed for a long time

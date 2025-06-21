@@ -61,6 +61,7 @@ interface ISertnTaskManager {
      */
     struct Task {
         uint256 startBlock;
+        uint32 startTimestamp;
         uint256 modelId;
         bytes inputs;
         bytes32 proofHash;

@@ -26,22 +26,16 @@ contract MockRewardsCoordinator {
 
     function createOperatorDirectedAVSRewardsSubmission(
         address avs,
-        IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[]
-            memory submissions
+        IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[] memory submissions
     ) external view {
         // Mock implementation - just check allowances
         for (uint256 i = 0; i < submissions.length; i++) {
             uint256 totalAmount = 0;
-            for (
-                uint256 j = 0;
-                j < submissions[i].operatorRewards.length;
-                j++
-            ) {
+            for (uint256 j = 0; j < submissions[i].operatorRewards.length; j++) {
                 totalAmount += submissions[i].operatorRewards[j].amount;
             }
             require(
-                submissions[i].token.allowance(msg.sender, address(this)) >=
-                    totalAmount,
+                submissions[i].token.allowance(msg.sender, address(this)) >= totalAmount,
                 "Insufficient allowance"
             );
         }
@@ -129,30 +123,12 @@ contract SertnServiceManagerTest is Test {
     }
 
     function test_initialize() public view {
-        assertEq(
-            address(serviceManager.allocationManager()),
-            address(mockAllocationManager)
-        );
-        assertEq(
-            address(serviceManager.delegationManager()),
-            address(mockDelegationManager)
-        );
-        assertEq(
-            address(serviceManager.rewardsCoordinator()),
-            address(mockRewardsCoordinator)
-        );
-        assertEq(
-            address(serviceManager.sertnTaskManager()),
-            address(mockTaskManager)
-        );
-        assertEq(
-            address(serviceManager.modelRegistry()),
-            address(modelRegistry)
-        );
-        assertEq(
-            address(serviceManager.sertnRegistrar()),
-            address(mockRegistrar)
-        );
+        assertEq(address(serviceManager.allocationManager()), address(mockAllocationManager));
+        assertEq(address(serviceManager.delegationManager()), address(mockDelegationManager));
+        assertEq(address(serviceManager.rewardsCoordinator()), address(mockRewardsCoordinator));
+        assertEq(address(serviceManager.sertnTaskManager()), address(mockTaskManager));
+        assertEq(address(serviceManager.modelRegistry()), address(modelRegistry));
+        assertEq(address(serviceManager.sertnRegistrar()), address(mockRegistrar));
 
         // Check that owner is automatically added as aggregator
         assertTrue(serviceManager.isAggregator(owner));
@@ -296,11 +272,7 @@ contract SertnServiceManagerTest is Test {
 
         // Test: Pull fee from user
         vm.prank(address(mockTaskManager));
-        serviceManager.pullFeeFromUser(
-            user,
-            IERC20(address(mockToken1)),
-            feeAmount
-        );
+        serviceManager.pullFeeFromUser(user, IERC20(address(mockToken1)), feeAmount);
 
         // Verify: Tokens transferred to service manager
         assertEq(mockToken1.balanceOf(address(serviceManager)), feeAmount);
@@ -331,7 +303,8 @@ contract SertnServiceManagerTest is Test {
             operator,
             feeAmount,
             IStrategy(address(mockStrategy1)),
-            IERC20(address(mockToken1))
+            IERC20(address(mockToken1)),
+            12345 // start Timestamp (mocked)
         );
 
         // No revert means success
@@ -344,7 +317,8 @@ contract SertnServiceManagerTest is Test {
             operator,
             1000,
             IStrategy(address(mockStrategy1)),
-            IERC20(address(mockToken1))
+            IERC20(address(mockToken1)),
+            12345 // start Timestamp (mocked)
         );
     }
 
@@ -364,12 +338,7 @@ contract SertnServiceManagerTest is Test {
     function test_slashOperator_revertNotTaskManager() public {
         vm.expectRevert(ISertnServiceManager.NotTaskManager.selector);
         vm.prank(aggregator1);
-        serviceManager.slashOperator(
-            operator,
-            1000,
-            0,
-            IStrategy(address(mockStrategy1))
-        );
+        serviceManager.slashOperator(operator, 1000, 0, IStrategy(address(mockStrategy1)));
     }
 
     function test_aggregatorManagement_comprehensive() public {
@@ -427,10 +396,7 @@ contract SertnServiceManagerTest is Test {
 
         // Verify model exists
         assertEq(modelRegistry.modelURI(modelId), "test_model");
-        assertEq(
-            address(serviceManager.modelRegistry()),
-            address(modelRegistry)
-        );
+        assertEq(address(serviceManager.modelRegistry()), address(modelRegistry));
 
         vm.stopPrank();
     }
@@ -457,11 +423,7 @@ contract SertnServiceManagerTest is Test {
         mockToken1.approve(address(serviceManager), feeAmount);
 
         vm.prank(address(mockTaskManager));
-        serviceManager.pullFeeFromUser(
-            user,
-            IERC20(address(mockToken1)),
-            feeAmount
-        );
+        serviceManager.pullFeeFromUser(user, IERC20(address(mockToken1)), feeAmount);
 
         // Workflow: Task completed, rewards distributed
         vm.prank(address(mockTaskManager));
@@ -469,7 +431,8 @@ contract SertnServiceManagerTest is Test {
             operator,
             feeAmount,
             IStrategy(address(mockStrategy1)),
-            IERC20(address(mockToken1))
+            IERC20(address(mockToken1)),
+            12345 // start Timestamp (mocked)
         );
 
         // Verify final state

@@ -40,6 +40,19 @@
   },
   {
     "type": "function",
+    "name": "getPendingTasksIds",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "getTask",
     "inputs": [
       {
@@ -60,6 +73,11 @@
             "internalType": "uint256"
           },
           {
+            "name": "startTimestamp",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
             "name": "modelId",
             "type": "uint256",
             "internalType": "uint256"
@@ -70,9 +88,9 @@
             "internalType": "bytes"
           },
           {
-            "name": "proof",
-            "type": "uint256",
-            "internalType": "uint256"
+            "name": "proofHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
           },
           {
             "name": "user",
@@ -240,6 +258,11 @@
             "internalType": "uint256"
           },
           {
+            "name": "startTimestamp",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
             "name": "modelId",
             "type": "uint256",
             "internalType": "uint256"
@@ -250,9 +273,9 @@
             "internalType": "bytes"
           },
           {
-            "name": "proof",
-            "type": "uint256",
-            "internalType": "uint256"
+            "name": "proofHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
           },
           {
             "name": "user",
@@ -401,6 +424,11 @@
         "internalType": "uint256"
       },
       {
+        "name": "startTimestamp",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
         "name": "modelId",
         "type": "uint256",
         "internalType": "uint256"
@@ -411,9 +439,9 @@
         "internalType": "bytes"
       },
       {
-        "name": "proof",
-        "type": "uint256",
-        "internalType": "uint256"
+        "name": "proofHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
       },
       {
         "name": "user",

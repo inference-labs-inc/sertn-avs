@@ -42,11 +42,9 @@ contract SertnServiceManager is
     // The number of nodes that a given operator has
     mapping(address => uint256) public operatorNodeCount;
     // Compute units for a given operator-node
-    mapping(address => mapping(uint256 => uint256))
-        public operatorNodeComputeUnits;
+    mapping(address => mapping(uint256 => uint256)) public operatorNodeComputeUnits;
     // Which models a given operator node supports
-    mapping(address => mapping(uint256 => mapping(uint256 => bool)))
-        public operatorNodeModelIds;
+    mapping(address => mapping(uint256 => mapping(uint256 => bool))) public operatorNodeModelIds;
 
     // List of aggregators
     address[] public aggregators;
@@ -113,10 +111,7 @@ contract SertnServiceManager is
      * @param _strategies The strategies to register
      * @param _avsMetadata The AVS metadata to register
      */
-    function _registerToEigen(
-        IStrategy[] memory _strategies,
-        string memory _avsMetadata
-    ) internal {
+    function _registerToEigen(IStrategy[] memory _strategies, string memory _avsMetadata) internal {
         allocationManager.updateAVSMetadataURI(address(this), _avsMetadata);
 
         // prepare the params for creating operator sets:
@@ -135,11 +130,7 @@ contract SertnServiceManager is
         IStrategy[] memory _strategies,
         uint32 operatorSetId
     ) external onlyOwner {
-        allocationManager.addStrategiesToOperatorSet(
-            address(this),
-            operatorSetId,
-            _strategies
-        );
+        allocationManager.addStrategiesToOperatorSet(address(this), operatorSetId, _strategies);
     }
 
     /// @inheritdoc ISertnServiceManager
@@ -204,19 +195,20 @@ contract SertnServiceManager is
         address _operator,
         uint256 _fee,
         IStrategy _strategy,
-        IERC20 _token
+        IERC20 _token,
+        uint32 _startTimestamp
     ) external onlyTaskManager nonReentrant {
         IRewardsCoordinatorTypes.StrategyAndMultiplier[]
             memory strategiesAndMultipliers = new IRewardsCoordinatorTypes.StrategyAndMultiplier[](
                 1
             );
-        strategiesAndMultipliers[0] = IRewardsCoordinatorTypes
-            .StrategyAndMultiplier({strategy: _strategy, multiplier: 1});
+        strategiesAndMultipliers[0] = IRewardsCoordinatorTypes.StrategyAndMultiplier({
+            strategy: _strategy,
+            multiplier: 1
+        });
 
         IRewardsCoordinatorTypes.OperatorReward[]
-            memory operatorRewards = new IRewardsCoordinatorTypes.OperatorReward[](
-                1
-            );
+            memory operatorRewards = new IRewardsCoordinatorTypes.OperatorReward[](1);
         operatorRewards[0] = IRewardsCoordinatorTypes.OperatorReward({
             operator: _operator,
             amount: _fee
@@ -226,38 +218,30 @@ contract SertnServiceManager is
             memory submissions = new IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[](
                 1
             );
-        submissions[0] = IRewardsCoordinatorTypes
-            .OperatorDirectedRewardsSubmission({
-                strategiesAndMultipliers: strategiesAndMultipliers,
-                token: _token,
-                operatorRewards: operatorRewards,
-                // TODO: I'm not sure how to figure out params below
-                //       so they just picked up to have tests running :-P
-                //       values here must be compatible with the constraints
-                //       of the rewards coordinator
-                // @see "@eigenlayer/contracts/core/RewardsCoordinator.sol" - _validateCommonRewardsSubmission method
-                startTimestamp: rewardsCoordinator
-                    .CALCULATION_INTERVAL_SECONDS(), // uint32(block.timestamp),
-                duration: rewardsCoordinator.CALCULATION_INTERVAL_SECONDS(), // 12
-                description: "Compensation for task completed"
-            });
+
+        submissions[0] = IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission({
+            strategiesAndMultipliers: strategiesAndMultipliers,
+            token: _token,
+            operatorRewards: operatorRewards,
+            // TODO: I'm not sure how to figure out params below
+            //       so they just picked up to have tests running :-P
+            //       values here must be compatible with the constraints
+            //       of the rewards coordinator
+            // @see "@eigenlayer/contracts/core/RewardsCoordinator.sol" - _validateCommonRewardsSubmission method
+            startTimestamp: _startTimestamp, // uint32(block.timestamp),
+            duration: rewardsCoordinator.CALCULATION_INTERVAL_SECONDS(), // 12
+            description: "Compensation for task completed"
+        });
 
         // Approve the rewards coordinator to spend the fee
         for (uint256 i = 0; i < submissions.length; i++) {
             uint256 _rewards = 0;
-            for (
-                uint256 j = 0;
-                j < submissions[i].operatorRewards.length;
-                j++
-            ) {
+            for (uint256 j = 0; j < submissions[i].operatorRewards.length; j++) {
                 _rewards += submissions[i].operatorRewards[j].amount;
             }
             submissions[i].token.approve(address(rewardsCoordinator), _rewards);
         }
-
-        rewardsCoordinator.createOperatorDirectedAVSRewardsSubmission(
-            address(this),
-            submissions
-        );
+        // TODO: this line should not be call after each task completion, but rather once in a while
+        // rewardsCoordinator.createOperatorDirectedAVSRewardsSubmission(address(this), submissions);
     }
 }
