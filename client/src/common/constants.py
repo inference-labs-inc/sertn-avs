@@ -19,6 +19,7 @@ with open(
     deployment_info = json.load(f)
     TASK_MANAGER_ADDRESS = deployment_info["sertnTaskManager"]
     SERVICE_MANAGER_ADDRESS = deployment_info["sertnServiceManager"]
+    ALLOCATION_MANAGER_ADDRESS = deployment_info["allocationManager"]
     STRATEGIES_ADDRESSES = [
         deployment_info["strategy_0"],
         deployment_info["strategy_1"],
@@ -33,6 +34,14 @@ IGNORED_MODEL_HASHES = []
 
 # Queue size limits
 MAX_EVALUATION_ITEMS = 1024
+
+# the aggregator requests a proof for some responses randomly,
+# the probability of that is configurable, but here we have a default value
+DEFAULT_PROOF_REQUEST_PROBABILITY = 0.4
+
+# how many blocks are we going to wait for an operator response before rejecting the task?
+# TODO: share this constant with contracts (we need that there too)
+RESOLVE_BLOCKS_DELAY = 300
 
 # Default proof size when we're unable to determine the actual size
 DEFAULT_PROOF_SIZE = 5000

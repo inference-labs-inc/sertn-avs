@@ -1,32 +1,22 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.29;
 
-import "../interfaces/ISertnServiceManager.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
-import "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-
-import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
+// Sertn
+import {ISertnServiceManager} from "../interfaces/ISertnServiceManager.sol";
+import {ISertnTaskManager} from "../interfaces/ISertnTaskManager.sol";
 import {ISertnRegistrar} from "../interfaces/ISertnRegistrar.sol";
-
-import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
-import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
-import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-
-import {IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
+import {IModelRegistry} from "../interfaces/IModelRegistry.sol";
 import {IVerifier} from "../interfaces/IVerifier.sol";
-import "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
-
-import "@openzeppelin-upgrades/contracts/utils/math/MathUpgradeable.sol";
-
-import "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
-import "@openzeppelin-upgrades/contracts/security/ReentrancyGuardUpgradeable.sol";
-import "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
-import {SertnTaskManager} from "./SertnTaskManager.sol";
-import {ModelRegistry} from "./ModelRegistry.sol";
-
-import {Test, console2 as console} from "forge-std/Test.sol";
+// EigenLayer
+import {IRewardsCoordinator, IRewardsCoordinatorTypes} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
+import {IAllocationManager, IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
+import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
+import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
+// OpenZeppelin
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {OwnableUpgradeable} from "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title Primary entrypoint for procuring services from Sertn.
@@ -35,39 +25,33 @@ import {Test, console2 as console} from "forge-std/Test.sol";
 
 contract SertnServiceManager is
     ISertnServiceManager,
-    SertnServiceManagerStorage,
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable
 {
     IAllocationManager public allocationManager;
     IDelegationManager public delegationManager;
     IRewardsCoordinator public rewardsCoordinator;
-    SertnTaskManager public sertnTaskManager;
+    ISertnTaskManager public sertnTaskManager;
     IModelRegistry public modelRegistry;
     ISertnRegistrar public sertnRegistrar;
-
-    uint256 public PROOF_REQUEST_COST = 100;
-    uint32 public TASK_EXPIRY_BLOCKS = 1e3;
-    uint256 public BOUNTY = 500;
 
     // Operator info
     mapping(address => bytes) public opInfo;
     // Mapping of aggregators
     mapping(address => bool) public isAggregator;
-
-    mapping(bytes => bool) public taskVerified;
-    mapping(bytes => bytes) public taskResponse;
-    mapping(bytes => address) public bountyHunter;
-
     // The number of nodes that a given operator has
     mapping(address => uint256) public operatorNodeCount;
     // Compute units for a given operator-node
-    mapping(address => mapping(uint256 => uint256))
-        public operatorNodeComputeUnits;
+    mapping(address => mapping(uint256 => uint256)) public operatorNodeComputeUnits;
     // Which models a given operator node supports
-    mapping(address => mapping(uint256 => mapping(uint256 => bool)))
-        public operatorNodeModelIds;
+    mapping(address => mapping(uint256 => mapping(uint256 => bool))) public operatorNodeModelIds;
 
+    // List of aggregators
+    address[] public aggregators;
+
+    /**
+     * @notice Modifier to ensure the caller is an aggregator
+     */
     modifier onlyAggregators() {
         if (!isAggregator[msg.sender]) {
             revert NotAggregator();
@@ -75,16 +59,12 @@ contract SertnServiceManager is
         _;
     }
 
+    /**
+     * @notice Modifier to ensure the caller is the task manager
+     */
     modifier onlyTaskManager() {
         if (msg.sender != address(sertnTaskManager)) {
             revert NotTaskManager();
-        }
-        _;
-    }
-
-    modifier onlySertnRegistrar() {
-        if (msg.sender != address(sertnRegistrar)) {
-            revert NotSertnRegistrar();
         }
         _;
     }
@@ -101,6 +81,7 @@ contract SertnServiceManager is
         __ReentrancyGuard_init();
         // Set the deployer as an aggregator
         isAggregator[msg.sender] = true;
+        aggregators.push(msg.sender);
 
         allocationManager = IAllocationManager(_allocationManager);
         delegationManager = IDelegationManager(_delegationManager);
@@ -109,67 +90,53 @@ contract SertnServiceManager is
         _registerToEigen(_strategies, _avsMetadata);
     }
 
+    /// @inheritdoc ISertnServiceManager
     function updateTaskManager(address _sertnTaskManager) external onlyOwner {
         if (_sertnTaskManager == address(0)) {
-            revert InvalidTaskManager();
+            revert ZeroAddress();
         }
-        sertnTaskManager = SertnTaskManager(_sertnTaskManager);
+        sertnTaskManager = ISertnTaskManager(_sertnTaskManager);
     }
 
+    /// @inheritdoc ISertnServiceManager
     function updateModelRegistry(address _modelRegistry) external onlyOwner {
         if (_modelRegistry == address(0)) {
-            revert InvalidModelRegistry();
+            revert ZeroAddress();
         }
         modelRegistry = IModelRegistry(_modelRegistry);
     }
 
-    function _registerToEigen(
-        IStrategy[] memory _strategies,
-        string memory _avsMetadata
-    ) internal {
+    /**
+     * @notice Register the AVS to EigenLayer
+     * @param _strategies The strategies to register
+     * @param _avsMetadata The AVS metadata to register
+     */
+    function _registerToEigen(IStrategy[] memory _strategies, string memory _avsMetadata) internal {
         allocationManager.updateAVSMetadataURI(address(this), _avsMetadata);
+
+        // prepare the params for creating operator sets:
         IAllocationManagerTypes.CreateSetParams[]
-            memory setParams = new IAllocationManagerTypes.CreateSetParams[](1);
-        setParams[0] = IAllocationManagerTypes.CreateSetParams({
+            memory params = new IAllocationManagerTypes.CreateSetParams[](1);
+        params[0] = IAllocationManagerTypes.CreateSetParams({
             operatorSetId: 0,
             strategies: _strategies
         });
-        allocationManager.createOperatorSets(address(this), setParams);
-        allocationManager.setAVSRegistrar(address(sertnRegistrar));
-        _addStrategies(_strategies, false);
+        allocationManager.createOperatorSets(address(this), params);
+        allocationManager.setAVSRegistrar(address(this), sertnRegistrar);
     }
 
-    function _addStrategies(
-        IStrategy[] memory _strategies,
-        bool _newStrategies
-    ) internal {
-        for (uint256 i; i < _strategies.length; ) {
-            tokenToStrategy[
-                address(_strategies[i].underlyingToken())
-            ] = _strategies[i];
-            unchecked {
-                ++i;
-            }
-        }
-        if (_newStrategies) {
-            allocationManager.addStrategiesToOperatorSet(
-                address(this),
-                0,
-                _strategies
-            );
-        }
-    }
-
+    /// @inheritdoc ISertnServiceManager
     function addStrategies(
         IStrategy[] memory _strategies,
-        bool _newStrategies
+        uint32 operatorSetId
     ) external onlyOwner {
-        _addStrategies(_strategies, _newStrategies);
+        allocationManager.addStrategiesToOperatorSet(address(this), operatorSetId, _strategies);
     }
 
+    /// @inheritdoc ISertnServiceManager
     function addAggregator(address _aggregator) external onlyOwner {
         if (_aggregator == address(0)) {
-            revert InvalidAggregator();
+            revert ZeroAddress();
         }
         if (isAggregator[_aggregator]) {
             revert AggregatorAlreadyExists();
@@ -178,22 +145,103 @@ contract SertnServiceManager is
         isAggregator[_aggregator] = true;
     }
 
-    function setTaskResponse(
-        TaskResponse calldata _taskResponse
-    ) external onlyTaskManager {
-        taskResponse[_taskResponse.taskId_] = abi.encode(_taskResponse);
+    /// @inheritdoc ISertnServiceManager
+    function removeAggregator(address _aggregator) external onlyOwner {
+        if (!isAggregator[_aggregator]) {
+            revert NotAggregator();
+        }
+        for (uint256 i = 0; i < aggregators.length; i++) {
+            if (aggregators[i] == _aggregator) {
+                aggregators[i] = aggregators[aggregators.length - 1];
+                aggregators.pop();
+            }
+        }
+        isAggregator[_aggregator] = false;
     }
 
-    function setBountyHunter(
-        bytes calldata _taskId,
-        address _bountyHunter
-    ) external onlyTaskManager {
-        bountyHunter[_taskId] = _bountyHunter;
+    /// @inheritdoc ISertnServiceManager
+    function pullFeeFromUser(
+        address _user,
+        IERC20 _token,
+        uint256 _fee
+    ) external onlyTaskManager nonReentrant {
+        _token.transferFrom(_user, address(this), _fee);
     }
 
-    function getOperatorInfo(
-        address _operator
-    ) public view returns (Operator memory) {
-        return abi.decode(opInfo[_operator], (Operator));
+    /// @inheritdoc ISertnServiceManager
+    function slashOperator(
+        address _operator,
+        uint256 _fee,
+        uint32 _operatorSetId,
+        IStrategy _strategy
+    ) external onlyTaskManager nonReentrant {
+        IStrategy[] memory strategies = new IStrategy[](1);
+        strategies[0] = _strategy;
+        uint256[] memory wadsToSlash = new uint256[](1);
+        wadsToSlash[0] = _fee;
+        allocationManager.slashOperator(
+            address(this),
+            IAllocationManagerTypes.SlashingParams({
+                operator: _operator,
+                operatorSetId: _operatorSetId,
+                strategies: strategies,
+                wadsToSlash: wadsToSlash,
+                description: "Failure to provide a proof or output for a task"
+            })
+        );
+    }
+
+    function taskCompleted(
+        address _operator,
+        uint256 _fee,
+        IStrategy _strategy,
+        IERC20 _token,
+        uint32 _startTimestamp
+    ) external onlyTaskManager nonReentrant {
+        IRewardsCoordinatorTypes.StrategyAndMultiplier[]
+            memory strategiesAndMultipliers = new IRewardsCoordinatorTypes.StrategyAndMultiplier[](
+                1
+            );
+        strategiesAndMultipliers[0] = IRewardsCoordinatorTypes.StrategyAndMultiplier({
+            strategy: _strategy,
+            multiplier: 1
+        });
+
+        IRewardsCoordinatorTypes.OperatorReward[]
+            memory operatorRewards = new IRewardsCoordinatorTypes.OperatorReward[](1);
+        operatorRewards[0] = IRewardsCoordinatorTypes.OperatorReward({
+            operator: _operator,
+            amount: _fee
+        });
+
+        IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[]
+            memory submissions = new IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[](
+                1
+            );
+
+        submissions[0] = IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission({
+            strategiesAndMultipliers: strategiesAndMultipliers,
+            token: _token,
+            operatorRewards: operatorRewards,
+            // TODO: I'm not sure how to figure out params below
+            //       so they just picked up to have tests running :-P
+            //       values here must be compatible with the constraints
+            //       of the rewards coordinator
+            // @see "@eigenlayer/contracts/core/RewardsCoordinator.sol" - _validateCommonRewardsSubmission method
+            startTimestamp: _startTimestamp, // uint32(block.timestamp),
+            duration: rewardsCoordinator.CALCULATION_INTERVAL_SECONDS(), // 12
+            description: "Compensation for task completed"
+        });
+
+        // Approve the rewards coordinator to spend the fee
+        for (uint256 i = 0; i < submissions.length; i++) {
+            uint256 _rewards = 0;
+            for (uint256 j = 0; j < submissions[i].operatorRewards.length; j++) {
+                _rewards += submissions[i].operatorRewards[j].amount;
+            }
+            submissions[i].token.approve(address(rewardsCoordinator), _rewards);
+        }
+        // TODO: this line should not be call after each task completion, but rather once in a while
+        // rewardsCoordinator.createOperatorDirectedAVSRewardsSubmission(address(this), submissions);
     }
 }

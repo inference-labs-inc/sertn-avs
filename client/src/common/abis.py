@@ -17,6 +17,12 @@ STRATEGY_ABI = load_abi("StrategyBase.abi.json")
 
 ERC20_MOCK_ABI = load_abi("ERC20Mock.abi.json")
 
+ERC20_ABI = load_abi("ERC20.abi.json")
+
 DELEGATION_MANAGER_ABI = load_abi("DelegationManager.abi.json")
 
 STRATEGY_MANAGER_ABI = load_abi("StrategyManager.abi.json")
+
+ALLOCATION_MANAGER_ABI = load_abi("AllocationManager.abi.json")
+
+MODEL_REGISTRY_ABI = load_abi("ModelRegistry.abi.json")

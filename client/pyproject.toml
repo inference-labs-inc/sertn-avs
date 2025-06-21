@@ -18,6 +18,7 @@ dependencies = [
   "torch==2.4.1",
   "ezkl==19.0.7",
   "onnxruntime>=1.21.1",
+  "eth-abi>=5.2.0",
 ]
 
 [project.optional-dependencies]
@@ -50,3 +51,10 @@ torch = { index = "pytorch" }
 name = "pytorch"
 url = "https://download.pytorch.org/whl/cpu"
 explicit = true
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=8.3.5",
+    "pytest-mock>=3.14.1",
+]

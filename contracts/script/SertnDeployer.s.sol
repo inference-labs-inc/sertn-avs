@@ -1,13 +1,12 @@
-// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/Test.sol";
-// import {SertnDeploymentLib} from "./utils/SertnDeploymentLib.sol";
+
 import {CoreDeploymentLib} from "./utils/CoreDeploymentLib.sol";
 import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
 import {StrategyBase} from "@eigenlayer/contracts/strategies/StrategyBase.sol";
-import {ERC20Mock} from "../test/ERC20Mock.sol";
+import {ERC20Mock} from "../test/mockContracts/ERC20Mock.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {StrategyFactory} from "@eigenlayer/contracts/strategies/StrategyFactory.sol";
@@ -16,11 +15,11 @@ import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoor
 
 import {SertnServiceManager} from "../src/SertnServiceManager.sol";
 import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
-import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
 
 import {IERC20, StrategyFactory} from "@eigenlayer/contracts/strategies/StrategyFactory.sol";
 import {SertnTaskManager} from "../src/SertnTaskManager.sol";
 import {ModelRegistry} from "../src/ModelRegistry.sol";
+import {SertnRegistrar} from "../src/SertnRegistrar.sol";
 import "forge-std/Test.sol";
 
 contract SertnDeployer is Script, Test {
@@ -33,9 +32,7 @@ contract SertnDeployer is Script, Test {
     address rewardsInitiator;
     IStrategy sertnStrategy;
     CoreDeploymentLib.DeploymentData coreDeployment;
-    // SertnDeploymentLib.DeploymentData sertnDeployment;
-    // SertnDeploymentLib.DeploymentConfigData sertnConfig;
-    // IECDSAStakeRegistryTypes.Quorum internal quorum;
+
     ERC20Mock token;
 
     IStrategy[] _tokenToStrategy;
@@ -52,15 +49,13 @@ contract SertnDeployer is Script, Test {
     SertnServiceManager sertnServiceManager;
     SertnTaskManager sertnTaskManager;
     ModelRegistry modelRegistry;
+    SertnRegistrar sertnRegistrar;
 
     function setUp() public virtual {
         deployer = vm.rememberKey(vm.envUint("PRIVATE_KEY"));
         vm.label(deployer, "Deployer");
 
-        coreDeployment = CoreDeploymentLib.readDeploymentJson(
-            "deployments/core/",
-            block.chainid
-        );
+        coreDeployment = CoreDeploymentLib.readDeploymentJson("deployments/core/", block.chainid);
     }
 
     function run() external {
@@ -79,36 +74,36 @@ contract SertnDeployer is Script, Test {
         _ethStrategies.push(strategy1);
         _ethStrategies.push(strategy2);
 
-        // quorum.strategies.push(IECDSAStakeRegistryTypes.StrategyParams({strategy: strategy, multiplier: 10_000}));
+        sertnServiceManager = new SertnServiceManager();
+        modelRegistry = new ModelRegistry();
+        sertnRegistrar = new SertnRegistrar();
+        sertnTaskManager = new SertnTaskManager();
 
-        // sertnDeployment = SertnDeploymentLib.deployContracts(
-        //     proxyAdmin, coreDeployment, quorum, owner.key.addr, owner.key.addr
-        // );
-        sertnServiceManager = new SertnServiceManager(
+        sertnRegistrar.initialize(address(sertnServiceManager));
+
+        sertnServiceManager.initialize(
             coreDeployment.rewardsCoordinator,
             coreDeployment.delegationManager,
             coreDeployment.allocationManager,
+            address(sertnRegistrar),
             strategies,
             ""
         );
 
-        modelRegistry = new ModelRegistry(address(sertnServiceManager));
+        modelRegistry.initialize();
 
-        sertnTaskManager = new SertnTaskManager(
+        sertnTaskManager.initialize(
             coreDeployment.rewardsCoordinator,
             coreDeployment.delegationManager,
             coreDeployment.allocationManager,
             address(sertnServiceManager),
-            address(modelRegistry),
-            address(serToken)
+            address(modelRegistry)
         );
 
         sertnServiceManager.updateTaskManager(address(sertnTaskManager));
         sertnServiceManager.updateModelRegistry(address(modelRegistry));
 
-        // sertnServiceManager.setTaskManager(address(sertnTaskManager));
-
-        // Save addresses of the contracts to a JSON file:
+        // save some contracts addresses to the deployment json
         string memory json = vm.serializeAddress(
             "SertnDeployment",
             "sertnServiceManager",
@@ -118,6 +113,17 @@ contract SertnDeployer is Script, Test {
             "SertnDeployment",
             "sertnTaskManager",
             address(sertnTaskManager)
+        );
+        json = vm.serializeAddress("SertnDeployment", "sertnRegistrar", address(sertnRegistrar));
+        json = vm.serializeAddress(
+            "SertnDeployment",
+            "rewardsCoordinator",
+            address(coreDeployment.rewardsCoordinator)
+        );
+        json = vm.serializeAddress(
+            "SertnDeployment",
+            "allocationManager",
+            address(coreDeployment.allocationManager)
         );
         for (uint256 i = 0; i < strategies.length; i++) {
             json = vm.serializeAddress(
@@ -136,34 +142,11 @@ contract SertnDeployer is Script, Test {
         vm.writeFile("deployments/sertnDeployment.json", json);
 
         vm.stopBroadcast();
-        // verifyDeployment();
-        // SertnDeploymentLib.writeDeploymentJson(sertnDeployment);
     }
 
-    function addStrategy(address token) public returns (IStrategy) {
-        StrategyFactory strategyFactory = StrategyFactory(
-            coreDeployment.strategyFactory
-        );
-        IStrategy newStrategy = strategyFactory.deployNewStrategy(
-            IERC20(token)
-        );
+    function addStrategy(address _token) public returns (IStrategy) {
+        StrategyFactory strategyFactory = StrategyFactory(coreDeployment.strategyFactory);
+        IStrategy newStrategy = strategyFactory.deployNewStrategy(IERC20(_token));
         return newStrategy;
     }
-
-    //     function verifyDeployment() internal view {y
-
-    //         require(
-    //             sertnDeployment.stakeRegistry != address(0), "StakeRegistry address cannot be zero"
-    //         );
-    //         require(
-    //             sertnDeployment.sertnServiceManager != address(0),
-    //             "SertnServiceManager address cannot be zero"
-    //         );
-    //         require(sertnDeployment.strategy != address(0), "Strategy address cannot be zero");
-    //         require(proxyAdmin != address(0), "ProxyAdmin address cannot be zero");
-    //         require(
-    //             coreDeployment.delegationManager != address(0),
-    //             "DelegationManager address cannot be zero"
-    //         );
-    //     }
 }

@@ -1,88 +1,5 @@
 [
   {
-    "type": "constructor",
-    "inputs": [
-      {
-        "name": "_rewardsCoordinator",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "_delegationManager",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "_allocationManager",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "_strategies",
-        "type": "address[]",
-        "internalType": "contract IStrategy[]"
-      },
-      {
-        "name": "_avsMetadata",
-        "type": "string",
-        "internalType": "string"
-      }
-    ],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "BASE_APPROVAL",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "BOUNTY",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "PROOF_REQUEST_COST",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "TASK_EXPIRY_BLOCKS",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint32",
-        "internalType": "uint32"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
     "type": "function",
     "name": "addAggregator",
     "inputs": [
@@ -90,71 +7,6 @@
         "name": "_aggregator",
         "type": "address",
         "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "addModels",
-    "inputs": [
-      {
-        "name": "_operatorModels",
-        "type": "tuple[]",
-        "internalType": "struct ISertnServiceManagerTypes.OperatorModel[]",
-        "components": [
-          {
-            "name": "operator_",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "modelId_",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "maxBlocks_",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "ethStrategies_",
-            "type": "address[]",
-            "internalType": "contract IStrategy[]"
-          },
-          {
-            "name": "ethShares_",
-            "type": "uint256[]",
-            "internalType": "uint256[]"
-          },
-          {
-            "name": "baseFee_",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "maxSer_",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "computeType_",
-            "type": "bytes32",
-            "internalType": "bytes32"
-          },
-          {
-            "name": "proveOnResponse_",
-            "type": "bool",
-            "internalType": "bool"
-          },
-          {
-            "name": "available_",
-            "type": "bool",
-            "internalType": "bool"
-          }
-        ]
       }
     ],
     "outputs": [],
@@ -170,9 +22,9 @@
         "internalType": "contract IStrategy[]"
       },
       {
-        "name": "_newStrategies",
-        "type": "bool",
-        "internalType": "bool"
+        "name": "operatorSetId",
+        "type": "uint32",
+        "internalType": "uint32"
       }
     ],
     "outputs": [],
@@ -212,49 +64,6 @@
   },
   {
     "type": "function",
-    "name": "bountyHunter",
-    "inputs": [
-      {
-        "name": "",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "computeUnits",
-    "inputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "delegationManager",
     "inputs": [],
     "outputs": [
@@ -268,22 +77,37 @@
   },
   {
     "type": "function",
-    "name": "deregisterOperator",
+    "name": "initialize",
     "inputs": [
       {
-        "name": "operator",
+        "name": "_rewardsCoordinator",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "avs",
+        "name": "_delegationManager",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "operatorSetIds",
-        "type": "uint32[]",
-        "internalType": "uint32[]"
+        "name": "_allocationManager",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_sertnRegistrar",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_strategies",
+        "type": "address[]",
+        "internalType": "contract IStrategy[]"
+      },
+      {
+        "name": "_avsMetadata",
+        "type": "string",
+        "internalType": "string"
       }
     ],
     "outputs": [],
@@ -310,195 +134,13 @@
   },
   {
     "type": "function",
-    "name": "isOperator",
-    "inputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "modelAddresses",
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "modelStorage",
+    "name": "modelRegistry",
     "inputs": [],
     "outputs": [
       {
         "name": "",
         "type": "address",
-        "internalType": "contract ModelStorage"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "modelVerifiers",
-    "inputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "modelsByName",
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "modifyCompute",
-    "inputs": [
-      {
-        "name": "_computeUnitNames",
-        "type": "bytes32[]",
-        "internalType": "bytes32[]"
-      },
-      {
-        "name": "_computeUnits",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "modifyModelParameters",
-    "inputs": [
-      {
-        "name": "_operatorModel",
-        "type": "tuple",
-        "internalType": "struct ISertnServiceManagerTypes.OperatorModel",
-        "components": [
-          {
-            "name": "operator_",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "modelId_",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "maxBlocks_",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "ethStrategies_",
-            "type": "address[]",
-            "internalType": "contract IStrategy[]"
-          },
-          {
-            "name": "ethShares_",
-            "type": "uint256[]",
-            "internalType": "uint256[]"
-          },
-          {
-            "name": "baseFee_",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "maxSer_",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "computeType_",
-            "type": "bytes32",
-            "internalType": "bytes32"
-          },
-          {
-            "name": "proveOnResponse_",
-            "type": "bool",
-            "internalType": "bool"
-          },
-          {
-            "name": "available_",
-            "type": "bool",
-            "internalType": "bool"
-          }
-        ]
-      },
-      {
-        "name": "_operatorModelId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "numOperatorModels",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        "internalType": "contract IModelRegistry"
       }
     ],
     "stateMutability": "view"
@@ -524,44 +166,7 @@
   },
   {
     "type": "function",
-    "name": "opSet",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "avs",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "id",
-        "type": "uint32",
-        "internalType": "uint32"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "operatorModelInfo",
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "operatorSlashingQueue",
+    "name": "operatorNodeComputeUnits",
     "inputs": [
       {
         "name": "",
@@ -577,16 +182,45 @@
     "outputs": [
       {
         "name": "",
-        "type": "bytes",
-        "internalType": "bytes"
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
   },
   {
     "type": "function",
-    "name": "operators",
+    "name": "operatorNodeCount",
     "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "operatorNodeModelIds",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
       {
         "name": "",
         "type": "uint256",
@@ -596,8 +230,8 @@
     "outputs": [
       {
         "name": "",
-        "type": "address",
-        "internalType": "address"
+        "type": "bool",
+        "internalType": "bool"
       }
     ],
     "stateMutability": "view"
@@ -617,24 +251,22 @@
   },
   {
     "type": "function",
-    "name": "pauseOperator",
-    "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "pushToOperatorSlashingQueue",
+    "name": "pullFeeFromUser",
     "inputs": [
       {
-        "name": "_operator",
+        "name": "_user",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "_taskId",
-        "type": "bytes",
-        "internalType": "bytes"
+        "name": "_token",
+        "type": "address",
+        "internalType": "contract IERC20"
+      },
+      {
+        "name": "_fee",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "outputs": [],
@@ -642,40 +274,12 @@
   },
   {
     "type": "function",
-    "name": "pushToSlashingQueue",
+    "name": "removeAggregator",
     "inputs": [
       {
-        "name": "_taskId",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "registerOperator",
-    "inputs": [
-      {
-        "name": "operator",
+        "name": "_aggregator",
         "type": "address",
         "internalType": "address"
-      },
-      {
-        "name": "avs",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "operatorSetIds",
-        "type": "uint32[]",
-        "internalType": "uint32[]"
-      },
-      {
-        "name": "data",
-        "type": "bytes",
-        "internalType": "bytes"
       }
     ],
     "outputs": [],
@@ -703,87 +307,13 @@
   },
   {
     "type": "function",
-    "name": "sendRewards",
-    "inputs": [
-      {
-        "name": "operatorDirectedRewardsSubmissions",
-        "type": "tuple[]",
-        "internalType": "struct IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[]",
-        "components": [
-          {
-            "name": "strategiesAndMultipliers",
-            "type": "tuple[]",
-            "internalType": "struct IRewardsCoordinatorTypes.StrategyAndMultiplier[]",
-            "components": [
-              {
-                "name": "strategy",
-                "type": "address",
-                "internalType": "contract IStrategy"
-              },
-              {
-                "name": "multiplier",
-                "type": "uint96",
-                "internalType": "uint96"
-              }
-            ]
-          },
-          {
-            "name": "token",
-            "type": "address",
-            "internalType": "contract IERC20"
-          },
-          {
-            "name": "operatorRewards",
-            "type": "tuple[]",
-            "internalType": "struct IRewardsCoordinatorTypes.OperatorReward[]",
-            "components": [
-              {
-                "name": "operator",
-                "type": "address",
-                "internalType": "address"
-              },
-              {
-                "name": "amount",
-                "type": "uint256",
-                "internalType": "uint256"
-              }
-            ]
-          },
-          {
-            "name": "startTimestamp",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "duration",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "description",
-            "type": "string",
-            "internalType": "string"
-          }
-        ]
-      },
-      {
-        "name": "_rewardedTasks",
-        "type": "bytes[][]",
-        "internalType": "bytes[][]"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "ser",
+    "name": "sertnRegistrar",
     "inputs": [],
     "outputs": [
       {
         "name": "",
         "type": "address",
-        "internalType": "contract IERC20"
+        "internalType": "contract ISertnRegistrar"
       }
     ],
     "stateMutability": "view"
@@ -796,32 +326,14 @@
       {
         "name": "",
         "type": "address",
-        "internalType": "contract SertnTaskManager"
+        "internalType": "contract ISertnTaskManager"
       }
     ],
     "stateMutability": "view"
   },
   {
     "type": "function",
-    "name": "setBountyHunter",
-    "inputs": [
-      {
-        "name": "_taskId",
-        "type": "bytes",
-        "internalType": "bytes"
-      },
-      {
-        "name": "_bountyHunter",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setComputeUnits",
+    "name": "slashOperator",
     "inputs": [
       {
         "name": "_operator",
@@ -829,179 +341,56 @@
         "internalType": "address"
       },
       {
-        "name": "_computeType",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      },
-      {
-        "name": "increment",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setTaskManagerandModelStorage",
-    "inputs": [
-      {
-        "name": "_sertnTaskManager",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "_modelStorage",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setTaskResponse",
-    "inputs": [
-      {
-        "name": "_taskResponse",
-        "type": "tuple",
-        "internalType": "struct ISertnServiceManagerTypes.TaskResponse",
-        "components": [
-          {
-            "name": "taskId_",
-            "type": "bytes",
-            "internalType": "bytes"
-          },
-          {
-            "name": "output_",
-            "type": "bytes",
-            "internalType": "bytes"
-          },
-          {
-            "name": "proven_",
-            "type": "bool",
-            "internalType": "bool"
-          }
-        ]
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "slashOperator",
-    "inputs": [
-      {
-        "name": "_taskId",
-        "type": "bytes",
-        "internalType": "bytes"
-      },
-      {
-        "name": "_whySlashed",
-        "type": "string",
-        "internalType": "string"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "slashingQueue",
-    "inputs": [
-      {
-        "name": "",
+        "name": "_fee",
         "type": "uint256",
         "internalType": "uint256"
-      }
-    ],
-    "outputs": [
+      },
       {
-        "name": "",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "supportsAVS",
-    "inputs": [
+        "name": "_operatorSetId",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
       {
-        "name": "avs",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "taskResponse",
-    "inputs": [
-      {
-        "name": "",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "taskVerified",
-    "inputs": [
-      {
-        "name": "",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "tokenToStrategy",
-    "inputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
+        "name": "_strategy",
         "type": "address",
         "internalType": "contract IStrategy"
       }
     ],
-    "stateMutability": "view"
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "taskCompleted",
+    "inputs": [
+      {
+        "name": "_operator",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_fee",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_strategy",
+        "type": "address",
+        "internalType": "contract IStrategy"
+      },
+      {
+        "name": "_token",
+        "type": "address",
+        "internalType": "contract IERC20"
+      },
+      {
+        "name": "_startTimestamp",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -1018,71 +407,25 @@
   },
   {
     "type": "function",
-    "name": "unpauseOperator",
-    "inputs": [],
+    "name": "updateModelRegistry",
+    "inputs": [
+      {
+        "name": "_modelRegistry",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
     "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
     "type": "function",
-    "name": "updateOperator",
+    "name": "updateTaskManager",
     "inputs": [
       {
-        "name": "_operator",
+        "name": "_sertnTaskManager",
         "type": "address",
         "internalType": "address"
-      },
-      {
-        "name": "_opInfo",
-        "type": "tuple",
-        "internalType": "struct ISertnServiceManagerTypes.Operator",
-        "components": [
-          {
-            "name": "models_",
-            "type": "uint256[]",
-            "internalType": "uint256[]"
-          },
-          {
-            "name": "computeUnits_",
-            "type": "bytes32[]",
-            "internalType": "bytes32[]"
-          },
-          {
-            "name": "openTasks_",
-            "type": "bytes[]",
-            "internalType": "bytes[]"
-          },
-          {
-            "name": "submittedTasks_",
-            "type": "bytes[]",
-            "internalType": "bytes[]"
-          },
-          {
-            "name": "proofRequests_",
-            "type": "bytes[]",
-            "internalType": "bytes[]"
-          },
-          {
-            "name": "allocatedEth_",
-            "type": "uint256[]",
-            "internalType": "uint256[]"
-          },
-          {
-            "name": "allocatedSer_",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "proofRequestExponents_",
-            "type": "uint256[2]",
-            "internalType": "uint256[2]"
-          },
-          {
-            "name": "pausedBlock_",
-            "type": "uint32",
-            "internalType": "uint32"
-          }
-        ]
       }
     ],
     "outputs": [],
@@ -1097,192 +440,6 @@
         "type": "uint8",
         "indexed": false,
         "internalType": "uint8"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "ModelUpdated",
-    "inputs": [
-      {
-        "name": "modelId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "operatorModel",
-        "type": "tuple",
-        "indexed": false,
-        "internalType": "struct ISertnServiceManagerTypes.OperatorModel",
-        "components": [
-          {
-            "name": "operator_",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "modelId_",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "maxBlocks_",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "ethStrategies_",
-            "type": "address[]",
-            "internalType": "contract IStrategy[]"
-          },
-          {
-            "name": "ethShares_",
-            "type": "uint256[]",
-            "internalType": "uint256[]"
-          },
-          {
-            "name": "baseFee_",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "maxSer_",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "computeType_",
-            "type": "bytes32",
-            "internalType": "bytes32"
-          },
-          {
-            "name": "proveOnResponse_",
-            "type": "bool",
-            "internalType": "bool"
-          },
-          {
-            "name": "available_",
-            "type": "bool",
-            "internalType": "bool"
-          }
-        ]
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "NewModels",
-    "inputs": [
-      {
-        "name": "modelId_",
-        "type": "uint256[]",
-        "indexed": false,
-        "internalType": "uint256[]"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "NewOperator",
-    "inputs": [
-      {
-        "name": "opAddr_",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "NewStrategies",
-    "inputs": [
-      {
-        "name": "newSupportedTokens_",
-        "type": "address[]",
-        "indexed": false,
-        "internalType": "address[]"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "NewTask",
-    "inputs": [
-      {
-        "name": "opAddr_",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "taskId_",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "OpInfoChanged",
-    "inputs": [
-      {
-        "name": "_operator",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "_opInfo",
-        "type": "bytes",
-        "indexed": false,
-        "internalType": "bytes"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "OperatorDeleted",
-    "inputs": [
-      {
-        "name": "_operator",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "opSetIds",
-        "type": "uint32[]",
-        "indexed": false,
-        "internalType": "uint32[]"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "OperatorSlashed",
-    "inputs": [
-      {
-        "name": "operator",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "taskId",
-        "type": "bytes",
-        "indexed": true,
-        "internalType": "bytes"
       }
     ],
     "anonymous": false
@@ -1307,133 +464,8 @@
     "anonymous": false
   },
   {
-    "type": "event",
-    "name": "ProofRequested",
-    "inputs": [
-      {
-        "name": "operator",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "taskId",
-        "type": "bytes",
-        "indexed": true,
-        "internalType": "bytes"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "TaskResponded",
-    "inputs": [
-      {
-        "name": "model",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "taskId",
-        "type": "bytes",
-        "indexed": true,
-        "internalType": "bytes"
-      },
-      {
-        "name": "task",
-        "type": "tuple",
-        "indexed": false,
-        "internalType": "struct ISertnServiceManagerTypes.TaskResponse",
-        "components": [
-          {
-            "name": "taskId_",
-            "type": "bytes",
-            "internalType": "bytes"
-          },
-          {
-            "name": "output_",
-            "type": "bytes",
-            "internalType": "bytes"
-          },
-          {
-            "name": "proven_",
-            "type": "bool",
-            "internalType": "bool"
-          }
-        ]
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "UpForSlashing",
-    "inputs": [
-      {
-        "name": "operator",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "taskId",
-        "type": "bytes",
-        "indexed": true,
-        "internalType": "bytes"
-      }
-    ],
-    "anonymous": false
-  },
-  {
     "type": "error",
     "name": "AggregatorAlreadyExists",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "BountyAlreadySet",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "IncorrectAVS",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "IncorrectOperator",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "IncorrectOperatorSetIds",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "InvalidAggregator",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "InvalidTaskManager",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "MaxBlocksTooLong",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "NoPermission",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "NoProofOnResponse",
     "inputs": []
   },
   {
@@ -1443,57 +475,12 @@
   },
   {
     "type": "error",
-    "name": "NotInSubmittedTasks",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "NotModelId",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "NotOperator",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "NotPausedLongEnough",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "NotRegisteredAggregatorOrOperator",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "NotRegisteredToModel",
-    "inputs": []
-  },
-  {
-    "type": "error",
     "name": "NotTaskManager",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "TaskCouldNotBeSent",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "TaskExpired",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "TaskNotExpired",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "TransferFailed",
+    "name": "ZeroAddress",
     "inputs": []
   }
 ]

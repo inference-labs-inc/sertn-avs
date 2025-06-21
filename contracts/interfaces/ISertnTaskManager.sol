@@ -5,26 +5,51 @@ interface ISertnTaskManager {
     /// @notice Thrown when the model id is invalid
     error InvalidModelId();
 
+    /// @notice Thrown when not called by an aggregator
+    error NotAggregator();
+
+    /// @notice Thrown when not called by an operator
+    error NotOperator();
+
+    /// @notice Thrown when the task does not exist
+    error TaskDoesNotExist();
+
+    /// @notice Thrown when a non-operator attempts to submit a task
+    error NotAssignedToTask();
+
+    /// @notice Thrown when the task state is incorrect
+    error TaskStateIncorrect(TaskState expected);
+
+    /// @notice Thrown when the proof is invalid
+    error InvalidProof(uint256 taskId, bytes32 proofHash);
+
+    /// @notice Thrown when the task model does not imply a verification, but a proof is submitted
+    error InvalidVerificationStrategy(uint256 taskId);
+
     /// @notice Emitted when a task is created
-    event TaskCreated(bytes32 indexed taskId, address indexed user);
+    event TaskCreated(uint256 indexed taskId, address indexed user);
 
     /// @notice Emitted when a task is assigned to an operator
-    event TaskAssigned(bytes32 indexed taskId, address indexed operator);
+    event TaskAssigned(uint256 indexed taskId, address indexed operator);
 
     /// @notice Emitted when a task is completed by an operator
-    event TaskCompleted(bytes32 indexed taskId, address indexed operator);
+    event TaskCompleted(uint256 indexed taskId, address indexed operator);
 
     /// @notice Emitted when a task is challenged by a user
-    event TaskChallenged(bytes32 indexed taskId, address indexed user);
+    event TaskChallenged(uint256 indexed taskId, address indexed user);
+
+    /// @notice Emitted when a proof is submitted for a task
+    event ProofSubmitted(uint256 indexed taskId, bytes32 proofHash);
 
     /// @notice Emitted when a task is rejected and the operator is slashed
-    event TaskRejected(bytes32 indexed taskId, address indexed operator);
+    event TaskRejected(uint256 indexed taskId, address indexed operator);
 
     /// @notice Emitted when a task is resolved and the operator is rewarded
-    event TaskResolved(bytes32 indexed taskId, address indexed operator);
+    event TaskResolved(uint256 indexed taskId, address indexed operator);
 
     /**
      * @notice The task struct
+     * XXX: changing this struct, don't forget to take care of `client/src/common/contract_constants.py`
      * @param startBlock The block number when the task was created
      * @param modelId The model id
      * @param inputs The inputs to the model
@@ -35,17 +60,22 @@ interface ISertnTaskManager {
      * @param operator The operator who is assigned to the task
      */
     struct Task {
-        uint32 startBlock;
+        uint256 startBlock;
+        uint32 startTimestamp;
         uint256 modelId;
         bytes inputs;
-        uint256 proof;
+        bytes32 proofHash;
         address user;
         uint256 nonce;
         address operator;
+        TaskState state;
+        bytes output;
+        uint256 fee;
     }
 
     /**
      * @notice The task state enum
+     * XXX: changing this enum, don't forget to take care of `client/src/common/contract_constants.py`
      * @param CREATED Task has been created and is waiting to be assigned to an operator
      * @param ASSIGNED Task has been assigned to an operator
      * @param COMPLETED Task has been completed by an operator
@@ -70,21 +100,21 @@ interface ISertnTaskManager {
 
     /**
      * @notice Submit a task to the task manager
-     * @param _taskId The task id
-     * @param _proof The proof of completion
+     * @param taskId The task id
+     * @param output The output of the task
      */
-    function submitTask(bytes32 _taskId, bytes memory _proof) external;
+    function submitTaskOutput(uint256 taskId, bytes calldata output) external;
 
     /**
      * @notice Challenge a task
-     * @param _taskId The task id
+     * @param taskId The task id
      */
-    function challengeTask(bytes32 _taskId) external;
+    function challengeTask(uint256 taskId) external;
 
     /**
      * @notice Submit a task response to the task manager
-     * @param _taskId The task id
-     * @param _proof The proof of completion
+     * @param taskId The task id
+     * @param proof The proof of completion
      */
-    function submitTaskResponse(bytes32 _taskId, bytes memory _proof) external;
+    function submitProofForTask(uint256 taskId, bytes calldata proof) external;
 }

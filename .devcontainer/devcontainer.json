@@ -32,12 +32,13 @@
         "ms-python.isort",
         "tamasfe.even-better-toml",
         "ms-toolsai.jupyter",
-        "eamodio.gitlens"
+        "eamodio.gitlens",
+        "nomicfoundation.hardhat-solidity",
+        "aaron-bond.better-comments"
       ]
     }
   },
   // Install ezkl cli, done here instead of the Dockerfile to test new versions without rebuilding the image.
-  // TODO: need that:
   "onCreateCommand": "curl https://raw.githubusercontent.com/zkonduit/ezkl/main/install_ezkl_cli.sh | bash -s v19.0.7",
   "remoteEnv": {
     "PATH": "${containerEnv:PATH}:/home/vscode/.ezkl"
