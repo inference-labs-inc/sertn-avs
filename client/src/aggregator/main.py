@@ -14,7 +14,11 @@ from web3 import Web3
 
 from common.abis import ERC20_ABI, STRATEGY_ABI
 from common.console import console, styles
-from common.constants import DEFAULT_PROOF_REQUEST_PROBABILITY, RESOLVE_BLOCKS_DELAY
+from common.constants import (
+    DEFAULT_PROOF_REQUEST_PROBABILITY,
+    RESOLVE_BLOCKS_DELAY,
+    OPERATOR_SET_ID,
+)
 from common.contract_constants import (
     TaskStateMap,
     TaskStructMap,
@@ -129,8 +133,14 @@ class Aggregator:
     def send_new_task(self, i) -> int | None:
         # create some generic input data
         inputs = " ".join(str(random.uniform(0.0, 0.85)) for _ in range(5))
-        # model_id = random.choice(list(models.keys()))
-        model_id = 1
+
+        model_id = self.get_model_id()
+        operator_address = self.get_random_operator()
+        if operator_address is None:
+            console.print(
+                "No operators found, cannot send a new task", style=styles.error
+            )
+            return None
 
         # Define the _task struct, the dict should correspond to the struct in the contract
         task = {
@@ -143,12 +153,12 @@ class Aggregator:
             "proofHash": b"\x00" * 32,  # bytes32 - Hash of the proof, empty for now
             "user": self.aggregator_address,  # at the moment the aggregator is the end user
             "nonce": i,  # uint256 - Nonce for the task, can be any number
-            # TODO: get operator addresses from the DelegationManager
-            "operator": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+            "operator": operator_address,  # address - Operator address, can be any address
             "state": TaskStateMap.CREATED.value,  # uint8 - gonna be changed by the contract anyway
             "output": b"",  # bytes - Output of the task, empty for now
-            # TODO: fee from computer cost via `ModelRegistry.computeCost`
-            "fee": 1,  # uint256 - Fee for the task, can be any number
+            "fee": self.get_model_cost(
+                model_id
+            ),  # uint256 - Fee for the task, can be any number
         }
 
         token = self.get_token(task)
@@ -224,6 +234,38 @@ class Aggregator:
         )
 
         return task_index
+
+    def get_random_operator(self) -> str | None:
+        """
+        Get a random operator address from the allocation manager.
+        """
+        operators = self.eth_client.allocation_manager.functions.getMembers(
+            {
+                "avs": self.eth_client.service_manager.address,
+                "id": OPERATOR_SET_ID,
+            }
+        ).call()
+        if operators:
+            return random.choice(operators)
+        else:
+            console.print(
+                "No operators found in the allocation manager", style=styles.error
+            )
+            return None
+
+    def get_model_id(self) -> int:
+        """
+        Get a model ID from the model registry.
+        This is just a placeholder function, you might want to implement a more sophisticated logic.
+        """
+        return 1  # TODO: implement a real logic to get a model ID
+
+    def get_model_cost(self, model_id: int) -> int:
+        """
+        Get the compute cost for a model by its ID.
+        This is just a placeholder function, you might want to implement a more sophisticated logic.
+        """
+        return 1  # TODO: cost from computer cost via `ModelRegistry.computeCost`
 
     def get_token(self, task: dict):
         """

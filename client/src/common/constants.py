@@ -49,3 +49,6 @@ DEFAULT_PROOF_SIZE = 5000
 MAXIMUM_SCORE_MEDIAN_SAMPLE = 0.05
 # The maximum timespan allowed for miners to process through a circuit
 CIRCUIT_TIMEOUT_SECONDS = 60
+
+# Operator set ID
+OPERATOR_SET_ID = 0
