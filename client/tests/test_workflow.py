@@ -1,5 +1,6 @@
 import asyncio
 import threading
+import time
 
 import pytest
 import uvicorn
@@ -77,6 +78,7 @@ class TestWorkflow:
             target=self.start_aggregator_server, args=[aggregator]
         )
         aggregator_server.start()
+        time.sleep(5)
 
         # check events by the operator, it should process the challenge and generate proof
         processed_count = operator.listen_for_events(loop_running=False)
