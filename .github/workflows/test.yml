@@ -43,14 +43,34 @@ jobs:
         source .venv/bin/activate
         uv pip install -e ".[test]"
 
-    - name: Run tests
-      working-directory: ./client
-      run: |
-        echo "Commented out: uv run pytest tests/ -v"
-
     - name: Install Foundry
       uses: foundry-rs/foundry-toolchain@v1
+
+    - name: Create .env file
+      working-directory: ./contracts
+      run: cp .env.example .env
+
+    - name: Build contracts
+      run: make build-contracts
 
     - name: Run foundry tests
       working-directory: ./contracts/test
       run: forge test
+
+    - name: Start anvil local blockchain
+      run: make start-anvil-background
+
+    - name: Deploy eigenlayer contracts
+      run: make deploy-eigenlayer-contracts
+
+    - name: Deploy sertn contracts
+      run: make deploy-sertn-contracts
+
+    - name: Init local workers
+      run: make init-local-workers
+
+    - name: Run tests
+      run: make test-client
+
+    - name: Stop anvil local blockchain
+      run: make stop-anvil
