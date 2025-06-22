@@ -339,7 +339,7 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
             inputs: bytes(""),
             proofHash: "",
             user: user.key.addr,
-            nonce: 0,
+            nonce: 1,
             operator: operators[0].key.addr,
             state: ISertnTaskManager.TaskState.CREATED,
             output: bytes(""),
@@ -367,7 +367,7 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
             inputs: bytes(""),
             proofHash: "",
             user: user.key.addr,
-            nonce: 0,
+            nonce: 1,
             operator: operators[0].key.addr,
             state: ISertnTaskManager.TaskState.CREATED,
             output: bytes(""),
@@ -380,10 +380,10 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
         vm.startPrank(user.key.addr);
 
         vm.expectEmit(true, true, false, true);
-        emit ISertnTaskManager.TaskCreated(0, task.user);
+        emit ISertnTaskManager.TaskCreated(1, task.user);
 
         vm.expectEmit(true, true, false, true);
-        emit ISertnTaskManager.TaskAssigned(0, task.operator);
+        emit ISertnTaskManager.TaskAssigned(1, task.operator);
 
         sertnTaskManager.sendTask(task);
         uint256 taskNonce = sertnTaskManager.taskNonce() - 1;

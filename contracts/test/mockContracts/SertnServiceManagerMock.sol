@@ -5,18 +5,8 @@ contract MockSertnServiceManager {
     mapping(address => bool) public aggregators;
 
     event FeesPulled(address user, address token, uint256 amount);
-    event TaskCompleted(
-        address operator,
-        uint256 fee,
-        address strategy,
-        address token
-    );
-    event OperatorSlashed(
-        address operator,
-        uint256 fee,
-        uint32 operatorSetId,
-        address strategy
-    );
+    event TaskCompleted(address operator, uint256 fee, address strategy, address token);
+    event OperatorSlashed(address operator, uint256 fee, uint32 operatorSetId, address strategy);
 
     function addAggregator(address aggregator) external {
         aggregators[aggregator] = true;
@@ -26,11 +16,7 @@ contract MockSertnServiceManager {
         return aggregators[aggregator];
     }
 
-    function pullFeeFromUser(
-        address user,
-        address token,
-        uint256 fee
-    ) external {
+    function pullFeeFromUser(address user, address token, uint256 fee) external {
         emit FeesPulled(user, token, fee);
     }
 
@@ -38,7 +24,8 @@ contract MockSertnServiceManager {
         address operator,
         uint256 fee,
         address strategy,
-        address token
+        address token,
+        uint32
     ) external {
         emit TaskCompleted(operator, fee, strategy, token);
     }

@@ -110,7 +110,7 @@ contract SertnTaskManagerTest is Test {
         assertEq(address(taskManager.rewardsCoordinator()), address(mockRewardsCoordinator));
         assertEq(address(taskManager.sertnServiceManager()), address(mockServiceManager));
         assertEq(address(taskManager.modelRegistry()), address(modelRegistry));
-        assertEq(taskManager.taskNonce(), 0);
+        assertEq(taskManager.taskNonce(), 1); // Starts at 1
     }
 
     function test_sendTask_success() public {
@@ -119,21 +119,21 @@ contract SertnTaskManagerTest is Test {
         ISertnTaskManager.Task memory task = _createValidTask();
 
         vm.expectEmit(true, true, false, true);
-        emit ISertnTaskManager.TaskCreated(0, user);
+        emit ISertnTaskManager.TaskCreated(task.nonce, user);
 
         vm.expectEmit(true, true, false, true);
-        emit ISertnTaskManager.TaskAssigned(0, operator);
+        emit ISertnTaskManager.TaskAssigned(task.nonce, operator);
 
         vm.prank(aggregator);
         taskManager.sendTask(task);
 
-        assertEq(taskManager.taskNonce(), 1);
+        assertEq(taskManager.taskNonce(), task.nonce + 1);
         // check the task ID has been added to the pending list
         uint256[] memory expected_ids = new uint256[](1);
-        expected_ids[0] = 0;
+        expected_ids[0] = task.nonce;
         assertEq(taskManager.getPendingTasksIds(), expected_ids);
 
-        ISertnTaskManager.Task memory storedTask = taskManager.getTask(0);
+        ISertnTaskManager.Task memory storedTask = taskManager.getTask(task.nonce);
         assertEq(uint8(storedTask.state), uint8(ISertnTaskManager.TaskState.ASSIGNED));
         assertEq(storedTask.operator, operator);
         assertEq(storedTask.user, user);
@@ -171,13 +171,16 @@ contract SertnTaskManagerTest is Test {
         bytes memory output = "test output";
 
         vm.expectEmit(true, true, false, true);
-        emit ISertnTaskManager.TaskCompleted(0, operator);
+        emit ISertnTaskManager.TaskCompleted(task.nonce, operator);
 
         vm.prank(operator);
-        taskManager.submitTaskOutput(0, output);
+        taskManager.submitTaskOutput(task.nonce, output);
 
-        assertEq(uint8(taskManager.getTask(0).state), uint8(ISertnTaskManager.TaskState.COMPLETED));
-        assertEq(taskManager.getTask(0).output, output);
+        assertEq(
+            uint8(taskManager.getTask(task.nonce).state),
+            uint8(ISertnTaskManager.TaskState.COMPLETED)
+        );
+        assertEq(taskManager.getTask(task.nonce).output, output);
     }
 
     function test_submitTaskOutput_revertTaskDoesNotExist() public {
@@ -205,7 +208,7 @@ contract SertnTaskManagerTest is Test {
         taskManager.sendTask(task);
 
         vm.prank(operator);
-        taskManager.submitTaskOutput(0, "output");
+        taskManager.submitTaskOutput(task.nonce, "output");
 
         // Try to submit output again
         vm.expectRevert(
@@ -215,7 +218,7 @@ contract SertnTaskManagerTest is Test {
             )
         );
         vm.prank(operator);
-        taskManager.submitTaskOutput(0, "output2");
+        taskManager.submitTaskOutput(task.nonce, "output2");
     }
 
     function test_challengeTask_success() public {
@@ -225,13 +228,13 @@ contract SertnTaskManagerTest is Test {
         taskManager.sendTask(task);
 
         vm.prank(operator);
-        taskManager.submitTaskOutput(0, "output");
+        taskManager.submitTaskOutput(1, "output");
 
         vm.expectEmit(true, true, false, true);
-        emit ISertnTaskManager.TaskChallenged(0, aggregator);
+        emit ISertnTaskManager.TaskChallenged(1, aggregator);
 
         vm.prank(aggregator);
-        taskManager.challengeTask(0);
+        taskManager.challengeTask(1);
     }
 
     function test_challengeTask_revertNotAggregator() public {
@@ -253,20 +256,23 @@ contract SertnTaskManagerTest is Test {
         taskManager.sendTask(task);
 
         vm.prank(operator);
-        taskManager.submitTaskOutput(0, "output");
+        taskManager.submitTaskOutput(task.nonce, "output");
 
         vm.prank(aggregator);
-        taskManager.challengeTask(0);
+        taskManager.challengeTask(task.nonce);
 
         bytes memory proof = bytes("1");
 
         vm.expectEmit(true, false, false, true);
-        emit ISertnTaskManager.ProofSubmitted(0, keccak256(proof));
+        emit ISertnTaskManager.ProofSubmitted(task.nonce, keccak256(proof));
 
         vm.prank(operator);
-        taskManager.submitProofForTask(0, proof);
+        taskManager.submitProofForTask(task.nonce, proof);
 
-        assertEq(uint8(taskManager.getTask(0).state), uint8(ISertnTaskManager.TaskState.RESOLVED));
+        assertEq(
+            uint8(taskManager.getTask(task.nonce).state),
+            uint8(ISertnTaskManager.TaskState.RESOLVED)
+        );
     }
 
     function test_submitProofForTask_revertTaskDoesNotExist() public {
@@ -282,14 +288,14 @@ contract SertnTaskManagerTest is Test {
         taskManager.sendTask(task);
 
         vm.prank(operator);
-        taskManager.submitTaskOutput(0, "output");
+        taskManager.submitTaskOutput(task.nonce, "output");
 
         vm.prank(aggregator);
-        taskManager.challengeTask(0);
+        taskManager.challengeTask(task.nonce);
 
         vm.expectRevert(ISertnTaskManager.NotAssignedToTask.selector);
         vm.prank(user);
-        taskManager.submitProofForTask(0, "proof");
+        taskManager.submitProofForTask(task.nonce, "proof");
     }
 
     function test_submitProofForTask_revertTaskStateIncorrect() public {
@@ -299,7 +305,7 @@ contract SertnTaskManagerTest is Test {
         taskManager.sendTask(task);
 
         vm.prank(operator);
-        taskManager.submitTaskOutput(0, "output");
+        taskManager.submitTaskOutput(task.nonce, "output");
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -308,7 +314,7 @@ contract SertnTaskManagerTest is Test {
             )
         );
         vm.prank(operator);
-        taskManager.submitProofForTask(0, "proof");
+        taskManager.submitProofForTask(task.nonce, "proof");
     }
 
     function test_resolveTask_success() public {
@@ -318,26 +324,29 @@ contract SertnTaskManagerTest is Test {
         taskManager.sendTask(task);
 
         vm.prank(operator);
-        taskManager.submitTaskOutput(0, "output");
+        taskManager.submitTaskOutput(task.nonce, "output");
 
         vm.prank(aggregator);
-        taskManager.challengeTask(0);
+        taskManager.challengeTask(task.nonce);
 
         // check the task ID sill in the pending list
         uint256[] memory expected_ids = new uint256[](1);
-        expected_ids[0] = 0;
+        expected_ids[0] = task.nonce;
         assertEq(taskManager.getPendingTasksIds(), expected_ids);
 
         vm.expectEmit(true, true, false, true);
-        emit ISertnTaskManager.TaskResolved(0, operator);
+        emit ISertnTaskManager.TaskResolved(task.nonce, operator);
 
         vm.prank(aggregator);
-        taskManager.resolveTask(0, true);
+        taskManager.resolveTask(task.nonce, true);
 
         // check the task ID is not in the pending list anymore
         assertEq(taskManager.getPendingTasksIds().length, 0);
 
-        assertEq(uint8(taskManager.getTask(0).state), uint8(ISertnTaskManager.TaskState.RESOLVED));
+        assertEq(
+            uint8(taskManager.getTask(task.nonce).state),
+            uint8(ISertnTaskManager.TaskState.RESOLVED)
+        );
     }
 
     function test_resolveTask_reject() public {
@@ -347,23 +356,26 @@ contract SertnTaskManagerTest is Test {
         taskManager.sendTask(task);
 
         vm.prank(operator);
-        taskManager.submitTaskOutput(0, "output");
+        taskManager.submitTaskOutput(task.nonce, "output");
 
         vm.prank(aggregator);
-        taskManager.challengeTask(0);
+        taskManager.challengeTask(task.nonce);
 
         // check the task ID sill in the pending list
         uint256[] memory expected_ids = new uint256[](1);
-        expected_ids[0] = 0;
+        expected_ids[0] = task.nonce;
         assertEq(taskManager.getPendingTasksIds(), expected_ids);
 
         vm.expectEmit(true, true, false, true);
-        emit ISertnTaskManager.TaskRejected(0, operator);
+        emit ISertnTaskManager.TaskRejected(task.nonce, operator);
 
         vm.prank(aggregator);
-        taskManager.resolveTask(0, false);
+        taskManager.resolveTask(task.nonce, false);
 
-        assertEq(uint8(taskManager.getTask(0).state), uint8(ISertnTaskManager.TaskState.REJECTED));
+        assertEq(
+            uint8(taskManager.getTask(task.nonce).state),
+            uint8(ISertnTaskManager.TaskState.REJECTED)
+        );
 
         // check the task ID is not in the pending list anymore
         assertEq(taskManager.getPendingTasksIds().length, 0);
@@ -394,21 +406,21 @@ contract SertnTaskManagerTest is Test {
             )
         );
         vm.prank(aggregator);
-        taskManager.resolveTask(0, true);
+        taskManager.resolveTask(task.nonce, true);
     }
 
     function test_taskNonceIncrementsCorrectly() public {
         ISertnTaskManager.Task memory task = _createValidTask();
 
-        assertEq(taskManager.taskNonce(), 0);
+        assertEq(taskManager.taskNonce(), task.nonce);
 
         vm.prank(aggregator);
         taskManager.sendTask(task);
-        assertEq(taskManager.taskNonce(), 1);
+        assertEq(taskManager.taskNonce(), task.nonce + 1);
 
         vm.prank(aggregator);
         taskManager.sendTask(task);
-        assertEq(taskManager.taskNonce(), 2);
+        assertEq(taskManager.taskNonce(), task.nonce + 2);
     }
 
     // Helper function to create a valid task
@@ -421,7 +433,7 @@ contract SertnTaskManagerTest is Test {
                 inputs: "test inputs",
                 proofHash: "",
                 user: user,
-                nonce: 0,
+                nonce: 1,
                 operator: operator,
                 state: ISertnTaskManager.TaskState.CREATED,
                 output: "",
