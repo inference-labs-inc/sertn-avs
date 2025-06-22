@@ -250,7 +250,7 @@ contract InitLocalEnvScript is Script {
             address(mockVerifier),
             IModelRegistry.VerificationStrategy.Offchain,
             "model_0",
-            1000 // Example compute cost
+            1 // Example compute cost
         );
         console.log("Model created with ID:", modelId);
     }

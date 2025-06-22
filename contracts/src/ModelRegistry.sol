@@ -61,30 +61,21 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
     }
 
     /// @inheritdoc IModelRegistry
-    function updateModelURI(
-        uint256 modelId,
-        string memory _modelURI
-    ) external onlyOwner {
+    function updateModelURI(uint256 modelId, string memory _modelURI) external onlyOwner {
         if (modelId >= modelIndex) revert ModelDoesNotExist();
         modelURI[modelId] = _modelURI;
         emit ModelURIUpdated(modelId, _modelURI);
     }
 
     /// @inheritdoc IModelRegistry
-    function updateComputeCost(
-        uint256 modelId,
-        uint256 _computeCost
-    ) external onlyOwner {
+    function updateComputeCost(uint256 modelId, uint256 _computeCost) external onlyOwner {
         if (modelId >= modelIndex) revert ModelDoesNotExist();
         computeCost[modelId] = _computeCost;
         emit ComputeCostUpdated(modelId, _computeCost);
     }
 
     /// @inheritdoc IModelRegistry
-    function updateModelVerifier(
-        uint256 modelId,
-        address _modelVerifier
-    ) external onlyOwner {
+    function updateModelVerifier(uint256 modelId, address _modelVerifier) external onlyOwner {
         if (modelId >= modelIndex) revert ModelDoesNotExist();
         if (_modelVerifier == address(0)) revert InvalidModelVerifier();
         if (modelVerifiers[_modelVerifier] != 0)

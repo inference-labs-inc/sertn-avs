@@ -135,6 +135,13 @@ class Aggregator:
         inputs = " ".join(str(random.uniform(0.0, 0.85)) for _ in range(5))
 
         model_id = self.get_model_id()
+        if model_id is None:
+            console.print(
+                "No models found in the model registry, cannot send a new task",
+                style=styles.error,
+            )
+            return None
+
         operator_address = self.get_random_operator()
         if operator_address is None:
             console.print(
@@ -256,16 +263,26 @@ class Aggregator:
     def get_model_id(self) -> int:
         """
         Get a model ID from the model registry.
-        This is just a placeholder function, you might want to implement a more sophisticated logic.
         """
-        return 1  # TODO: implement a real logic to get a model ID
+        models_count = self.eth_client.model_registry.functions.modelIndex().call() - 1
+        if models_count <= 0:
+            console.print("No models found in the model registry", style=styles.error)
+            return None
+        # return a random model ID from 1 to models_count
+        return random.randint(1, models_count)
 
     def get_model_cost(self, model_id: int) -> int:
         """
         Get the compute cost for a model by its ID.
         This is just a placeholder function, you might want to implement a more sophisticated logic.
         """
-        return 1  # TODO: cost from computer cost via `ModelRegistry.computeCost`
+        cost: int = self.eth_client.model_registry.functions.computeCost(
+            model_id
+        ).call()
+        if not cost:
+            console.print(f"Model {model_id} has zero cost!!!", style=styles.error)
+            cost = 0
+        return cost
 
     def get_token(self, task: dict):
         """
