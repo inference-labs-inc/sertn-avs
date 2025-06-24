@@ -8,6 +8,10 @@ TEMP_FOLDER = os.path.join(CLIENT_PATH, "src", "models", "temp")
 PROOFS_FOLDER = os.path.join(CLIENT_PATH, "src", "models", "generated_proofs")
 MODELS_FOLDER = os.path.join(CLIENT_PATH, "src", "models", "models")
 
+LOCAL_EZKL_PATH = os.environ.get(
+    "LOCAL_EZKL_PATH", os.path.join(os.path.expanduser("~"), ".ezkl", "ezkl")
+)
+
 os.makedirs(MODELS_DATA_DIR, exist_ok=True)
 os.makedirs(TEMP_FOLDER, exist_ok=True)
 os.makedirs(PROOFS_FOLDER, exist_ok=True)
