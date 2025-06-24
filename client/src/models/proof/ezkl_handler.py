@@ -33,7 +33,7 @@ class EZKLHandler:
 
         model_path = os.path.join(MODELS_FOLDER, f"{model_id}")
         self.compiled_model_path = os.path.join(model_path, "model.compiled")
-        self.pk_path = os.path.join(model_path, "test.pk")
+        self.pk_path = os.path.join(model_path, "pk.key")  # TODO: ...
         self.vk_path = os.path.join(model_path, "vk.key")
         self.settings_path = os.path.join(model_path, "settings.json")
         self.settings = json.load(open(self.settings_path, "r", encoding="utf-8"))
@@ -111,11 +111,9 @@ class EZKLHandler:
             proof_json = proof
 
         input_instances = self.translate_inputs_to_instances(validator_inputs)
-
         proof_json["instances"] = [
             input_instances[:] + proof_json["instances"][0][len(input_instances) :]
         ]
-
         proof_json["transcript_type"] = "EVM"
 
         with open(self.proof_filepath, "w", encoding="utf-8") as f:
@@ -177,7 +175,7 @@ class EZKLHandler:
 
     def translate_inputs_to_instances(self, validator_inputs) -> list[int]:
         scale_map = self.settings.get("model_input_scales", [])
-        type_map = self.settings.get("model_input_types", [])
+        type_map = self.settings.get("input_types", [])
         return [
             ezkl.float_to_felt(x, scale_map[i], EZKLInputType[type_map[i]].value)
             for i, arr in enumerate(validator_inputs)

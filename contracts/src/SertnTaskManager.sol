@@ -66,6 +66,7 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         // check if the task is valid
         if (modelRegistry.modelVerifier(task.modelId) == address(0)) revert InvalidModelId();
         task.startTimestamp = uint32(block.timestamp);
+        task.nonce = taskNonce;
         tasks[taskNonce] = task;
         taskNonce++;
         IStrategy strategy = allocationManager.getAllocatedStrategies(

@@ -154,15 +154,13 @@ class TaskOperator:
             task_id=str(task_id),
             inputs=[float(i) for i in inputs.decode().split(" ")],
         )
-        # TODO: proof generation fails for some reason
-        # proof_generator.gen_input_file()
-        # TODO: handle pk file downloading
-        # proof: bytes = json.dumps(proof_generator.gen_proof()).encode()
-        proof: bytes = b"dummy_proof"  # Placeholder for actual proof generation
+        proof_generator.gen_input_file()
+        proof: str = proof_generator.gen_proof()[0]
+        proof_encoded = proof.encode()
 
         # submit proof to the task manager contract
         tx = self.eth_client.task_manager.functions.submitProofForTask(
-            task_id, proof
+            task_id, proof_encoded
         ).build_transaction(
             {
                 "from": self.operator_address,
@@ -190,7 +188,7 @@ class TaskOperator:
         # sign the proof
         encoded = eth_abi.encode(
             ["uint32", "bytes", "address"],
-            [task_id, proof, operator_address],
+            [task_id, proof_encoded, operator_address],
         )
         message = encode_defunct(primitive=encoded)
         signed_message: SignedMessage = Account.sign_message(
@@ -208,7 +206,7 @@ class TaskOperator:
             f"http://{self.config['aggregator_server_ip_port_address']}/proof",
             json={
                 "task_id": task_id,
-                "proof": proof.hex(),
+                "proof": proof,
                 "signature": signature,
             },
         )

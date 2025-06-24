@@ -86,11 +86,9 @@ class Aggregator:
         @self.app.post("/proof")
         async def _(data: ProofRequest):
             try:
-                self.process_submitted_proof(
-                    data.task_id, bytes.fromhex(data.proof), data.signature
-                )
+                self.process_submitted_proof(data.task_id, data.proof, data.signature)
             except InvalidProofError as exc:
-                raise HTTPException(status_code=400, detail=exc)
+                raise HTTPException(status_code=400, detail=str(exc))
 
     def start_server(self):
         host, port = self.config["aggregator_server_ip_port_address"].split(":")
@@ -401,9 +399,7 @@ class Aggregator:
             style=styles.agg_info,
         )
 
-    def process_submitted_proof(
-        self, task_id: int, proof: bytes, signature: str
-    ) -> bool:
+    def process_submitted_proof(self, task_id: int, proof: str, signature: str) -> bool:
         console.print(
             f"Processing proof submitted for the task #{task_id}...",
             style=styles.agg_info,
@@ -414,7 +410,7 @@ class Aggregator:
         # check the signature (the origin operator submitted us the data)
         encoded = eth_abi.encode(
             ["uint32", "bytes", "address"],
-            [task_id, proof, operator_address],
+            [task_id, proof.encode(), operator_address],
         )
         message = encode_defunct(primitive=encoded)
         recovered_address = Account.recover_message(
@@ -455,12 +451,20 @@ class Aggregator:
                 style=styles.error,
             )
             return InvalidProofError("Not verifiable")
+        model_uri = self.eth_client.model_registry.functions.modelURI(model_id).call()
+        if not model_uri:
+            console.print(
+                f"The model {model_id} has no URI, cannot verify the proof...",
+                style=styles.error,
+            )
+            return InvalidProofError("Model URI is empty")
 
         inputs: bytes = task[TaskStructMap.INPUTS]
+        output: bytes = task[TaskStructMap.OUTPUT]
         proof_hash: bytes = task[TaskStructMap.PROOF_HASH]
 
         # check the task hash (is the same one submitted to the chain?)
-        if proof_hash != Web3.keccak(proof):
+        if proof_hash != Web3.keccak(proof.encode()):
             print(
                 "Proof hashes mismatch! Proof, submitted to the aggregator differs from"
                 f" one submitted to the chain. Task #{task_id} Rejecting...",
@@ -471,15 +475,14 @@ class Aggregator:
 
         # OK, we are good to verify the task
         validator_input = [float(i) for i in inputs.decode().split(" ")]
-        # proof_generator = EZKLHandler(
-        #     model_id="dummy",  # verifier doesn't use that
-        #     task_id=str(task_id),
-        #     inputs=validator_input,
-        # )
-        # verified: bool = proof_generator.verify_proof(
-        #     validator_inputs=validator_input, proof=proof.decode()
-        # )
-        verified: bool = True  # TODO: use EZKLHandler to verify the proof
+        proof_generator = EZKLHandler(
+            model_id=model_uri,
+            task_id=str(task_id),
+            inputs=validator_input,
+        )
+        verified: bool = proof_generator.verify_proof(
+            validator_inputs=[validator_input], proof=proof
+        )
         if verified:
             # cool, the operator might receive the reward
             console.print(f"The task #{task_id} is verified!", style=styles.agg_info)
@@ -487,7 +490,9 @@ class Aggregator:
             return True
         else:
             # not good... the proof is not verified
-            print(f"The proof for task #{task_id} is invalid!", style=styles.error)
+            console.print(
+                f"The proof for task #{task_id} is invalid!", style=styles.error
+            )
             self.resolve_task(task_id=task_id, resolved=False)
             raise InvalidProofError("Proof is not verified")
 

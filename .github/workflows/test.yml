@@ -57,6 +57,16 @@ jobs:
       working-directory: ./contracts/test
       run: forge test
 
+    - name: Install ezkl
+      run: curl https://raw.githubusercontent.com/zkonduit/ezkl/main/install_ezkl_cli.sh | bash
+
+    - name: Check ezkl version
+      run: ~/.ezkl/ezkl --version
+
+    - name: Generate pk.key with ezkl setup
+      working-directory: ./client/src/models/models/model_0
+      run: ~/.ezkl/ezkl setup
+
     - name: Start anvil local blockchain
       run: make start-anvil-background
 
