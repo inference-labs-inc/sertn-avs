@@ -67,7 +67,9 @@ jobs:
 
     - name: Generate srs file
       working-directory: /home/runner/.ezkl
-      run: mkdir -p srs & ezkl gen-srs --logrows 19 --srs-path srs/kzg19.srs
+      run: |
+        mkdir -p srs 
+        /home/runner/.ezkl/ezkl gen-srs --logrows 19 --srs-path srs/kzg19.srs
 
     - name: Generate pk.key with ezkl setup
       working-directory: ./client/src/models/models/model_0
