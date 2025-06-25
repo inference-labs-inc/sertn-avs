@@ -1,460 +1,443 @@
-// // SPDX-License-Identifier: UNLICENSED
-// pragma solidity ^0.8.12;
-
-// import {SertnServiceManager} from "../src/SertnServiceManager.sol";
-// import {MockAVSDeployer} from "@eigenlayer-middleware/test/utils/MockAVSDeployer.sol";
-// import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
-// import {Vm} from "forge-std/Vm.sol";
-// import {console2} from "forge-std/Test.sol";
-// import {SertnDeploymentLib} from "../script/utils/SertnDeploymentLib.sol";
-// import {CoreDeploymentLib} from "../script/utils/CoreDeploymentLib.sol";
-// import {UpgradeableProxyLib} from "../script/utils/UpgradeableProxyLib.sol";
-// import {ERC20Mock} from "./ERC20Mock.sol";
-// import {IERC20, StrategyFactory} from "@eigenlayer/contracts/strategies/StrategyFactory.sol";
-// import {IPermissionController} from "@eigenlayer/contracts/interfaces/IPermissionController.sol";
-// import {IStrategy} from "eigenlayer-contracts/src/contracts/interfaces/IStrategy.sol";
-// import {IECDSAStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistry.sol";
-
-// import {IStrategyManager} from "@eigenlayer/contracts/interfaces/IStrategyManager.sol";
-// import {IDelegationManagerTypes} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
-// import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
-// import {ISignatureUtils} from "@eigenlayer/contracts/interfaces/ISignatureUtils.sol";
-// import {AllocationManager} from "@eigenlayer/contracts/core/AllocationManager.sol";
-// import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
-// import {Test, console2 as console} from "forge-std/Test.sol";
-// import {ISertnServiceManager} from "../src/ISertnServiceManager.sol";
-// import {ECDSAUpgradeable} from
-//     "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
-
-// contract SertnTaskManagerSetup is Test {
-//     IECDSAStakeRegistryTypes.Quorum internal quorum;
-
-//     struct Operator {
-//         Vm.Wallet key;
-//         Vm.Wallet signingKey;
-//     }
-
-//     struct TrafficGenerator {
-//         Vm.Wallet key;
-//     }
-
-//     struct AVSOwner {
-//         Vm.Wallet key;
-//     }
-
-//     Operator[] internal operators;
-//     TrafficGenerator internal generator;
-//     AVSOwner internal owner;
-
-//     SertnDeploymentLib.DeploymentData internal sertnDeployment;
-//     CoreDeploymentLib.DeploymentData internal coreDeployment;
-//     CoreDeploymentLib.DeploymentConfigData coreConfigData;
-
-//     IStrategy[] _tokenToStrategy;
-
-//     ERC20Mock public mockToken;
-
-//     mapping(address => IStrategy) public tokenToStrategy;
-
-//     function setUp() public virtual {
-//         generator = TrafficGenerator({key: vm.createWallet("generator_wallet")});
-//         owner = AVSOwner({key: vm.createWallet("owner_wallet")});
-
-//         address proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
-
-//         coreConfigData =
-//             CoreDeploymentLib.readDeploymentConfigValues("test/mockData/config/core/", 1337); // TODO: Fix this to correct path
-//         coreDeployment = CoreDeploymentLib.deployContracts(proxyAdmin, coreConfigData);
-
-//         mockToken = new ERC20Mock();
-
-//         IStrategy strategy = addStrategy(address(mockToken));
-//         quorum.strategies.push(IECDSAStakeRegistryTypes.StrategyParams({strategy: strategy, multiplier: 10_000}));
-
-//         sertnDeployment = SertnDeploymentLib.deployContracts(
-//             proxyAdmin, coreDeployment, quorum, owner.key.addr, owner.key.addr
-//         );
-//         labelContracts(coreDeployment, sertnDeployment);
-//     }
-
-//     function addStrategy(
-//         address token
-//     ) public returns (IStrategy) {
-//         if (tokenToStrategy[token] != IStrategy(address(0))) {
-//             return tokenToStrategy[token];
-//         }
-
-//         StrategyFactory strategyFactory = StrategyFactory(coreDeployment.strategyFactory);
-//         IStrategy newStrategy = strategyFactory.deployNewStrategy(IERC20(token));
-//         tokenToStrategy[token] = newStrategy;
-//         return newStrategy;
-//     }
-
-//     function labelContracts(
-//         CoreDeploymentLib.DeploymentData memory coreDeployment,
-//         SertnDeploymentLib.DeploymentData memory sertnDeployment
-//     ) internal {
-//         vm.label(coreDeployment.delegationManager, "DelegationManager");
-//         // vm.label(coreDeployment.avsDirectory, "AVSDirectory");
-//         vm.label(coreDeployment.allocationManager, "AllocationManager");
-//         vm.label(coreDeployment.strategyManager, "StrategyManager");
-//         vm.label(coreDeployment.eigenPodManager, "EigenPodManager");
-//         vm.label(coreDeployment.rewardsCoordinator, "RewardsCoordinator");
-//         vm.label(coreDeployment.eigenPodBeacon, "EigenPodBeacon");
-//         vm.label(coreDeployment.pauserRegistry, "PauserRegistry");
-//         vm.label(coreDeployment.strategyFactory, "StrategyFactory");
-//         vm.label(coreDeployment.strategyBeacon, "StrategyBeacon");
-//         vm.label(sertnDeployment.sertnServiceManager, "SertnServiceManager");
-//         vm.label(sertnDeployment.stakeRegistry, "StakeRegistry");
-//     }
-
-//     function signWithOperatorKey(
-//         Operator memory operator,
-//         bytes32 digest
-//     ) internal pure returns (bytes memory) {
-//         (uint8 v, bytes32 r, bytes32 s) = vm.sign(operator.key.privateKey, digest);
-//         return abi.encodePacked(r, s, v);
-//     }
-
-//     function signWithSigningKey(
-//         Operator memory operator,
-//         bytes32 digest
-//     ) internal pure returns (bytes memory) {
-//         (uint8 v, bytes32 r, bytes32 s) = vm.sign(operator.signingKey.privateKey, digest);
-//         return abi.encodePacked(r, s, v);
-//     }
-
-//     function mintMockTokens(Operator memory operator, uint256 amount) internal {
-//         mockToken.mint(operator.key.addr, amount);
-//     }
-
-//     function depositTokenIntoStrategy(
-//         Operator memory operator,
-//         address token,
-//         uint256 amount
-//     ) internal returns (uint256) {
-//         IStrategy strategy = IStrategy(tokenToStrategy[token]);
-//         require(address(strategy) != address(0), "Strategy was not found");
-//         IStrategyManager strategyManager = IStrategyManager(coreDeployment.strategyManager);
-
-//         vm.startPrank(operator.key.addr);
-//         mockToken.approve(address(strategyManager), amount);
-//         uint256 shares = strategyManager.depositIntoStrategy(strategy, IERC20(token), amount);
-//         vm.stopPrank();
-
-//         return shares;
-//     }
-
-//     function registerAsOperator(
-//         Operator memory operator
-//     ) internal {
-//         IDelegationManager delegationManager = IDelegationManager(coreDeployment.delegationManager);
-
-//         IDelegationManagerTypes.OperatorDetails memory operatorDetails = IDelegationManagerTypes.OperatorDetails({
-//             __deprecated_earningsReceiver: operator.key.addr,
-//             delegationApprover: address(0),
-//             __deprecated_stakerOptOutWindowBlocks: 0
-//         });
-
-//         vm.prank(operator.key.addr);
-//         delegationManager.registerAsOperator(address(operator.key.addr), 0, "");
-//         // operatorDetails, "");
-//     }
-// // replace with allocation manager implementation
-//     // function registerOperatorToAVS(
-//     //     Operator memory operator
-//     // ) internal {
-//     //     ECDSAStakeRegistry stakeRegistry = ECDSAStakeRegistry(sertnDeployment.stakeRegistry);
-//     //     AllocationManager allocationManager = AllocationManager(coreDeployment.allocationManager);
-
-//     //     bytes32 salt = keccak256(abi.encodePacked(block.timestamp, operator.key.addr));
-//     //     uint256 expiry = block.timestamp + 1 hours;
-//     //     allocationManager.calculateOperatorAVSRegistrationDigestHash();
-//     //     bytes32 operatorRegistrationDigestHash = allocationManager
-//     //         .calculateOperatorAVSRegistrationDigestHash(
-//     //         operator.key.addr, address(sertnDeployment.sertnServiceManager), salt, expiry
-//     //     );
-
-//     //     bytes memory signature = signWithOperatorKey(operator, operatorRegistrationDigestHash);
-
-//     //     ISignatureUtils.SignatureWithSaltAndExpiry memory operatorSignature = ISignatureUtils
-//     //         .SignatureWithSaltAndExpiry({signature: signature, salt: salt, expiry: expiry});
-
-//     //     vm.prank(address(operator.key.addr));
-//     //     stakeRegistry.registerOperatorWithSignature(operatorSignature, operator.signingKey.addr);
-//     // }
-
-//     // function deregisterOperatorFromAVS(
-//     //     Operator memory operator
-//     // ) internal {
-//     //     ECDSAStakeRegistry stakeRegistry = ECDSAStakeRegistry(sertnDeployment.stakeRegistry);
-
-//     //     vm.prank(operator.key.addr);
-//     //     stakeRegistry.deregisterOperator();
-//     // }
-
-//     function createAndAddOperator() internal returns (Operator memory) {
-//         Vm.Wallet memory operatorKey =
-//             vm.createWallet(string.concat("operator", vm.toString(operators.length)));
-//         Vm.Wallet memory signingKey =
-//             vm.createWallet(string.concat("signing", vm.toString(operators.length)));
-
-//         Operator memory newOperator = Operator({key: operatorKey, signingKey: signingKey});
-
-//         operators.push(newOperator);
-//         return newOperator;
-//     }
-
-//     function updateOperatorWeights(
-//         Operator[] memory _operators
-//     ) internal {
-//         ECDSAStakeRegistry stakeRegistry = ECDSAStakeRegistry(sertnDeployment.stakeRegistry);
-
-//         address[] memory operatorAddresses = new address[](_operators.length);
-//         for (uint256 i = 0; i < _operators.length; i++) {
-//             operatorAddresses[i] = _operators[i].key.addr;
-//         }
-
-//         stakeRegistry.updateOperators(operatorAddresses);
-//     }
-
-//     function getSortedOperatorSignatures(
-//         Operator[] memory _operators,
-//         bytes32 digest
-//     ) internal pure returns (bytes[] memory) {
-//         uint256 length = _operators.length;
-//         bytes[] memory signatures = new bytes[](length);
-//         address[] memory addresses = new address[](length);
-
-//         for (uint256 i = 0; i < length; i++) {
-//             addresses[i] = _operators[i].key.addr;
-//             signatures[i] = signWithOperatorKey(_operators[i], digest);
-//         }
-
-//         for (uint256 i = 0; i < length - 1; i++) {
-//             for (uint256 j = 0; j < length - i - 1; j++) {
-//                 if (addresses[j] > addresses[j + 1]) {
-//                     // Swap addresses
-//                     address tempAddr = addresses[j];
-//                     addresses[j] = addresses[j + 1];
-//                     addresses[j + 1] = tempAddr;
-
-//                     // Swap signatures
-//                     bytes memory tempSig = signatures[j];
-//                     signatures[j] = signatures[j + 1];
-//                     signatures[j + 1] = tempSig;
-//                 }
-//             }
-//         }
-
-//         return signatures;
-//     }
-
-//     function createTask(TrafficGenerator memory generator, string memory taskName) internal {
-//         ISertnServiceManager sertnServiceManager =
-//             ISertnServiceManager(sertnDeployment.sertnServiceManager);
-
-//         vm.prank(generator.key.addr);
-//         sertnServiceManager.createNewTask(taskName);
-//     }
-
-//     function respondToTask(
-//         Operator memory operator,
-//         ISertnServiceManager.Task memory task,
-//         uint32 referenceTaskIndex
-//     ) internal {
-//         // Create the message hash
-//         bytes32 messageHash = keccak256(abi.encodePacked("Hello, ", task.name));
-
-//         bytes memory signature = signWithSigningKey(operator, messageHash);
-
-//         address[] memory operators = new address[](1);
-//         operators[0] = operator.key.addr;
-//         bytes[] memory signatures = new bytes[](1);
-//         signatures[0] = signature;
-
-//         bytes memory signedTask = abi.encode(operators, signatures, uint32(block.number));
-
-//         ISertnServiceManager(sertnDeployment.sertnServiceManager).respondToTask(
-//             task, referenceTaskIndex, signedTask
-//         );
-//     }
-// }
-
-// contract SertnServiceManagerInitialization is SertnTaskManagerSetup {
-//     function testInitialization() public view {
-//         ECDSAStakeRegistry stakeRegistry = ECDSAStakeRegistry(sertnDeployment.stakeRegistry);
-
-//         IECDSAStakeRegistryTypes.Quorum memory quorum = stakeRegistry.quorum();
-
-//         assertGt(quorum.strategies.length, 0, "No strategies in quorum");
-//         assertEq(
-//             address(quorum.strategies[0].strategy),
-//             address(tokenToStrategy[address(mockToken)]),
-//             "First strategy doesn't match mock token strategy"
-//         );
-
-//         assertTrue(sertnDeployment.stakeRegistry != address(0), "StakeRegistry not deployed");
-//         assertTrue(
-//             sertnDeployment.sertnServiceManager != address(0),
-//             "SertnServiceManager not deployed"
-//         );
-//         assertTrue(coreDeployment.delegationManager != address(0), "DelegationManager not deployed");
-//         // assertTrue(coreDeployment.avsDirectory != address(0), "AVSDirectory not deployed");
-//         assertTrue(coreDeployment.strategyManager != address(0), "StrategyManager not deployed");
-//         assertTrue(coreDeployment.eigenPodManager != address(0), "EigenPodManager not deployed");
-//         assertTrue(coreDeployment.strategyFactory != address(0), "StrategyFactory not deployed");
-//         assertTrue(coreDeployment.strategyBeacon != address(0), "StrategyBeacon not deployed");
-//     }
-// }
-
-// contract RegisterOperator is SertnTaskManagerSetup {
-//     uint256 internal constant INITIAL_BALANCE = 100 ether;
-//     uint256 internal constant DEPOSIT_AMOUNT = 1 ether;
-//     uint256 internal constant OPERATOR_COUNT = 4;
-//     IDelegationManager internal delegationManager;
-//     AllocationManager internal allocationManager;
-//     ISertnServiceManager internal sm;
-//     ECDSAStakeRegistry internal stakeRegistry;
-//     IPermissionController internal permissionController;
-
-//     function setUp() public virtual override {
-//         super.setUp();
-//         /// Setting to internal state for convenience
-//         delegationManager = IDelegationManager(coreDeployment.delegationManager);
-//         allocationManager = AllocationManager(coreDeployment.allocationManager);
-//         permissionController = IPermissionController(coreDeployment.permissionController);
-        
-       
-//         sm = ISertnServiceManager(sertnDeployment.sertnServiceManager);
-        
-//         vm.startPrank(address(sm));
-        
-//         allocationManager.updateAVSMetadataURI(address(sm), "");
-//         vm.stopPrank();
-//         stakeRegistry = ECDSAStakeRegistry(sertnDeployment.stakeRegistry);
-
-//         addStrategy(address(mockToken));
-
-//         while (operators.length < OPERATOR_COUNT) {
-//             createAndAddOperator();
-//         }
-
-//         for (uint256 i = 0; i < OPERATOR_COUNT; i++) {
-//             mintMockTokens(operators[i], INITIAL_BALANCE);
-
-//             depositTokenIntoStrategy(operators[i], address(mockToken), DEPOSIT_AMOUNT);
-
-//             registerAsOperator(operators[i]);
-//         }
-//     }
-
-//     function testVerifyOperatorStates() public {
-//         for (uint256 i = 0; i < OPERATOR_COUNT; i++) {
-//             address operatorAddr = operators[i].key.addr;
-//             _tokenToStrategy.push(tokenToStrategy[address(mockToken)]);
-//             uint256[] memory operatorShares = 
-//                 delegationManager.getOperatorShares(operatorAddr, _tokenToStrategy);
-//             delete _tokenToStrategy;
-//             assertEq(operatorShares[0], DEPOSIT_AMOUNT, "Operator shares in DelegationManager incorrect");
-//         }
-//     }
-
-//     // function test_RegisterOperatorToAVS() public {
-//     //     address operatorAddr = operators[0].key.addr;
-//     //     registerOperatorToAVS(operators[0]);
-//     //     assertTrue(
-//     //         allocationManager.avsOperatorStatus(address(sm), operatorAddr)
-//     //             == IAllocationManager.OperatorAVSRegistrationStatus.REGISTERED,
-//     //         "Operator not registered in AVSDirectory"
-//     //     );
-
-//     //     address signingKey = stakeRegistry.getLastestOperatorSigningKey(operatorAddr);
-//     //     assertTrue(signingKey != address(0), "Operator signing key not set in ECDSAStakeRegistry");
-
-//     //     uint256 operatorWeight = stakeRegistry.getLastCheckpointOperatorWeight(operatorAddr);
-//     //     assertTrue(operatorWeight > 0, "Operator weight not set in ECDSAStakeRegistry");
-//     // }
-// }
-
-// contract CreateTask is SertnTaskManagerSetup, ISertnServiceManagerTypes {
-//     ISertnServiceManager internal sm;
-
-//     function setUp() public override {
-//         super.setUp();
-//         sm = ISertnServiceManager(sertnDeployment.sertnServiceManager);
-//     }
-
-//     function testCreateTask() public {
-//         string memory taskName = "Test Task";
-
-//         vm.prank(generator.key.addr);
-//         ISertnServiceManager.Task memory newTask = sm.createNewTask(taskName);
-
-//         require(
-//             sha256(abi.encodePacked(newTask.name)) == sha256(abi.encodePacked(taskName)),
-//             "Task name not set correctly"
-//         );
-//         require(
-//             newTask.taskCreatedBlock == uint32(block.number), "Task created block not set correctly"
-//         );
-//     }
-// }
-
-// contract RespondToTask is SertnTaskManagerSetup {
-//     using ECDSAUpgradeable for bytes32;
-
-//     uint256 internal constant INITIAL_BALANCE = 100 ether;
-//     uint256 internal constant DEPOSIT_AMOUNT = 1 ether;
-//     uint256 internal constant OPERATOR_COUNT = 4;
-
-//     IDelegationManager internal delegationManager;
-//     AllocationManager internal allocationManager;
-//     ISertnServiceManager internal sm;
-//     ECDSAStakeRegistry internal stakeRegistry;
-
-//     function setUp() public override {
-//         super.setUp();
-
-//         delegationManager = IDelegationManager(coreDeployment.delegationManager);
-//         allocationManager = AllocationManager(coreDeployment.allocationManager);
-//         sm = ISertnServiceManager(sertnDeployment.sertnServiceManager);
-//         stakeRegistry = ECDSAStakeRegistry(sertnDeployment.stakeRegistry);
-
-//         addStrategy(address(mockToken));
-
-//         while (operators.length < OPERATOR_COUNT) {
-//             createAndAddOperator();
-//         }
-
-//         for (uint256 i = 0; i < OPERATOR_COUNT; i++) {
-//             mintMockTokens(operators[i], INITIAL_BALANCE);
-
-//             depositTokenIntoStrategy(operators[i], address(mockToken), DEPOSIT_AMOUNT);
-
-//             registerAsOperator(operators[i]);
-
-//             // registerOperatorToAVS(operators[i]);
-//         }
-//     }
-
-//     function testRespondToTask() public {
-//         string memory taskName = "TestTask";
-//         ISertnServiceManager.Task memory newTask = sm.createNewTask(taskName);
-//         uint32 taskIndex = sm.latestTaskNum() - 1;
-
-//         bytes32 messageHash = keccak256(abi.encodePacked("Hello, ", taskName));
-//         bytes32 ethSignedMessageHash = messageHash.toEthSignedMessageHash();
-//         bytes memory signature = signWithSigningKey(operators[0], ethSignedMessageHash); // TODO: Use signing key after changes to service manager
-
-//         address[] memory operatorsMem = new address[](1);
-//         operatorsMem[0] = operators[0].key.addr;
-//         bytes[] memory signatures = new bytes[](1);
-//         signatures[0] = signature;
-
-//         bytes memory signedTask = abi.encode(operatorsMem, signatures, uint32(block.number));
-
-//         vm.roll(block.number + 1);
-//         sm.respondToTask(newTask, taskIndex, signedTask);
-//     }
-// }
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.29;
+
+import {Test, console2 as console} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
+import {SertnServiceManager} from "../src/SertnServiceManager.sol";
+import {ISertnServiceManager} from "../interfaces/ISertnServiceManager.sol";
+import {ISertnTaskManager} from "../interfaces/ISertnTaskManager.sol";
+import {IModelRegistry} from "../interfaces/IModelRegistry.sol";
+import {ModelRegistry} from "../src/ModelRegistry.sol";
+import {MockVerifier} from "./mockContracts/VerifierMock.sol";
+import {ERC20Mock} from "./mockContracts/ERC20Mock.sol";
+import {MockAllocationManager} from "./mockContracts/AllocationManagerMock.sol";
+import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IRewardsCoordinator, IRewardsCoordinatorTypes} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
+
+contract MockDelegationManager {
+    // Empty implementation for testing
+}
+
+contract MockRewardsCoordinator {
+    uint32 public constant CALCULATION_INTERVAL_SECONDS = 604800; // 1 week
+
+    mapping(address => mapping(address => uint256)) public allowances;
+
+    function createOperatorDirectedAVSRewardsSubmission(
+        address avs,
+        IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[] memory submissions
+    ) external view {
+        // Mock implementation - just check allowances
+        for (uint256 i = 0; i < submissions.length; i++) {
+            uint256 totalAmount = 0;
+            for (uint256 j = 0; j < submissions[i].operatorRewards.length; j++) {
+                totalAmount += submissions[i].operatorRewards[j].amount;
+            }
+            require(
+                submissions[i].token.allowance(msg.sender, address(this)) >= totalAmount,
+                "Insufficient allowance"
+            );
+        }
+    }
+}
+
+contract MockStrategy {
+    address public underlyingToken;
+
+    constructor(address _token) {
+        underlyingToken = _token;
+    }
+}
+
+contract MockSertnTaskManager {
+    address public sertnServiceManager;
+
+    function setServiceManager(address _serviceManager) external {
+        sertnServiceManager = _serviceManager;
+    }
+}
+
+contract MockSertnRegistrar {
+    // Empty implementation for testing
+}
+
+contract SertnServiceManagerTest is Test {
+    SertnServiceManager serviceManager;
+    MockAllocationManager mockAllocationManager;
+    MockDelegationManager mockDelegationManager;
+    MockRewardsCoordinator mockRewardsCoordinator;
+    MockSertnTaskManager mockTaskManager;
+    MockSertnRegistrar mockRegistrar;
+    ModelRegistry modelRegistry;
+    MockVerifier mockVerifier;
+    ERC20Mock mockToken1;
+    ERC20Mock mockToken2;
+    MockStrategy mockStrategy1;
+    MockStrategy mockStrategy2;
+
+    address owner = vm.addr(1);
+    address aggregator1 = vm.addr(2);
+    address aggregator2 = vm.addr(3);
+    address operator = vm.addr(4);
+    address user = vm.addr(5);
+    address nonOwner = vm.addr(6);
+
+    IStrategy[] strategies;
+    string constant AVS_METADATA = "test_metadata_uri";
+
+    function setUp() public {
+        vm.startPrank(owner);
+        // Deploy mock contracts
+        mockAllocationManager = new MockAllocationManager();
+        mockDelegationManager = new MockDelegationManager();
+        mockRewardsCoordinator = new MockRewardsCoordinator();
+        mockTaskManager = new MockSertnTaskManager();
+        mockRegistrar = new MockSertnRegistrar();
+        // Deploy tokens and strategies
+        mockToken1 = new ERC20Mock();
+        mockToken2 = new ERC20Mock();
+        mockStrategy1 = new MockStrategy(address(mockToken1));
+        mockStrategy2 = new MockStrategy(address(mockToken2));
+        strategies.push(IStrategy(address(mockStrategy1)));
+        strategies.push(IStrategy(address(mockStrategy2)));
+        // Deploy and initialize ModelRegistry
+        modelRegistry = new ModelRegistry();
+        modelRegistry.initialize();
+        mockVerifier = new MockVerifier();
+        // Deploy and initialize ServiceManager
+        serviceManager = new SertnServiceManager();
+        serviceManager.initialize(
+            address(mockRewardsCoordinator),
+            address(mockDelegationManager),
+            address(mockAllocationManager),
+            address(mockRegistrar),
+            strategies,
+            AVS_METADATA
+        );
+        // Update references
+        serviceManager.updateTaskManager(address(mockTaskManager));
+        serviceManager.updateModelRegistry(address(modelRegistry));
+        console.log("References updated in SertnServiceManager");
+        vm.stopPrank();
+    }
+
+    function test_initialize() public view {
+        assertEq(address(serviceManager.allocationManager()), address(mockAllocationManager));
+        assertEq(address(serviceManager.delegationManager()), address(mockDelegationManager));
+        assertEq(address(serviceManager.rewardsCoordinator()), address(mockRewardsCoordinator));
+        assertEq(address(serviceManager.sertnTaskManager()), address(mockTaskManager));
+        assertEq(address(serviceManager.modelRegistry()), address(modelRegistry));
+        assertEq(address(serviceManager.sertnRegistrar()), address(mockRegistrar));
+
+        // Check that owner is automatically added as aggregator
+        assertTrue(serviceManager.isAggregator(owner));
+        assertEq(serviceManager.aggregators(0), owner);
+    }
+
+    function test_updateTaskManager_success() public {
+        address newTaskManager = vm.addr(100);
+
+        vm.prank(owner);
+        serviceManager.updateTaskManager(newTaskManager);
+
+        assertEq(address(serviceManager.sertnTaskManager()), newTaskManager);
+    }
+
+    function test_updateTaskManager_revertZeroAddress() public {
+        vm.expectRevert(ISertnServiceManager.ZeroAddress.selector);
+        vm.prank(owner);
+        serviceManager.updateTaskManager(address(0));
+    }
+
+    function test_updateTaskManager_revertNotOwner() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(nonOwner);
+        serviceManager.updateTaskManager(vm.addr(100));
+    }
+
+    function test_updateModelRegistry_success() public {
+        address newModelRegistry = vm.addr(101);
+
+        vm.prank(owner);
+        serviceManager.updateModelRegistry(newModelRegistry);
+
+        assertEq(address(serviceManager.modelRegistry()), newModelRegistry);
+    }
+
+    function test_updateModelRegistry_revertZeroAddress() public {
+        vm.expectRevert(ISertnServiceManager.ZeroAddress.selector);
+        vm.prank(owner);
+        serviceManager.updateModelRegistry(address(0));
+    }
+
+    function test_updateModelRegistry_revertNotOwner() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(nonOwner);
+        serviceManager.updateModelRegistry(vm.addr(101));
+    }
+
+    function test_addAggregator_success() public {
+        vm.prank(owner);
+        serviceManager.addAggregator(aggregator1);
+
+        assertTrue(serviceManager.isAggregator(aggregator1));
+        assertEq(serviceManager.aggregators(1), aggregator1); // Index 1 since owner is at 0
+    }
+
+    function test_addAggregator_revertZeroAddress() public {
+        vm.expectRevert(ISertnServiceManager.ZeroAddress.selector);
+        vm.prank(owner);
+        serviceManager.addAggregator(address(0));
+    }
+
+    function test_addAggregator_revertAlreadyExists() public {
+        vm.startPrank(owner);
+        serviceManager.addAggregator(aggregator1);
+
+        vm.expectRevert(ISertnServiceManager.AggregatorAlreadyExists.selector);
+        serviceManager.addAggregator(aggregator1);
+        vm.stopPrank();
+    }
+
+    function test_addAggregator_revertNotOwner() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(nonOwner);
+        serviceManager.addAggregator(aggregator1);
+    }
+
+    function test_removeAggregator_success() public {
+        vm.startPrank(owner);
+
+        // Add multiple aggregators
+        serviceManager.addAggregator(aggregator1);
+        serviceManager.addAggregator(aggregator2);
+
+        assertEq(serviceManager.aggregators(2), aggregator2); // aggregator2 should now be at index 2
+
+        // Remove aggregator1
+        serviceManager.removeAggregator(aggregator1);
+
+        assertFalse(serviceManager.isAggregator(aggregator1));
+        assertTrue(serviceManager.isAggregator(aggregator2));
+
+        assertEq(serviceManager.aggregators(1), aggregator2); // aggregator2 should now be at index 1
+
+        vm.stopPrank();
+    }
+
+    function test_removeAggregator_revertNotAggregator() public {
+        vm.expectRevert(ISertnServiceManager.NotAggregator.selector);
+        vm.prank(owner);
+        serviceManager.removeAggregator(aggregator1);
+    }
+
+    function test_removeAggregator_revertNotOwner() public {
+        vm.startPrank(owner);
+        serviceManager.addAggregator(aggregator1);
+        vm.stopPrank();
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(nonOwner);
+        serviceManager.removeAggregator(aggregator1);
+    }
+
+    function test_addStrategies_revertNotOwner() public {
+        IStrategy[] memory newStrategies = new IStrategy[](1);
+        newStrategies[0] = IStrategy(vm.addr(200));
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(nonOwner);
+        serviceManager.addStrategies(newStrategies, 0);
+    }
+
+    function test_pullFeeFromUser_success() public {
+        // Setup: Add aggregator and give them permission to call pullFeeFromUser
+        vm.prank(owner);
+        serviceManager.addAggregator(aggregator1);
+
+        // Setup: Mint tokens to user and approve service manager
+        uint256 feeAmount = 1000;
+        mockToken1.mint(user, feeAmount);
+
+        vm.prank(user);
+        mockToken1.approve(address(serviceManager), feeAmount);
+
+        // Set task manager as caller (mock)
+        vm.mockCall(
+            address(mockTaskManager),
+            abi.encodeWithSignature("sertnServiceManager()"),
+            abi.encode(address(serviceManager))
+        );
+
+        // Test: Pull fee from user
+        vm.prank(address(mockTaskManager));
+        serviceManager.pullFeeFromUser(user, IERC20(address(mockToken1)), feeAmount);
+
+        // Verify: Tokens transferred to service manager
+        assertEq(mockToken1.balanceOf(address(serviceManager)), feeAmount);
+        assertEq(mockToken1.balanceOf(user), 0);
+    }
+
+    function test_pullFeeFromUser_revertNotTaskManager() public {
+        vm.expectRevert(ISertnServiceManager.NotTaskManager.selector);
+        vm.prank(aggregator1);
+        serviceManager.pullFeeFromUser(user, IERC20(address(mockToken1)), 1000);
+    }
+
+    function test_taskCompleted_success() public {
+        // Setup: Add aggregator and mint tokens
+        vm.prank(owner);
+        serviceManager.addAggregator(aggregator1);
+
+        uint256 feeAmount = 1000;
+        mockToken1.mint(address(serviceManager), feeAmount);
+
+        // Setup: Approve rewards coordinator
+        vm.prank(address(serviceManager));
+        mockToken1.approve(address(mockRewardsCoordinator), feeAmount);
+
+        // Test: Complete task (called by task manager)
+        vm.prank(address(mockTaskManager));
+        serviceManager.taskCompleted(
+            operator,
+            feeAmount,
+            IStrategy(address(mockStrategy1)),
+            IERC20(address(mockToken1)),
+            12345 // start Timestamp (mocked)
+        );
+
+        // No revert means success
+    }
+
+    function test_taskCompleted_revertNotTaskManager() public {
+        vm.expectRevert(ISertnServiceManager.NotTaskManager.selector);
+        vm.prank(aggregator1);
+        serviceManager.taskCompleted(
+            operator,
+            1000,
+            IStrategy(address(mockStrategy1)),
+            IERC20(address(mockToken1)),
+            12345 // start Timestamp (mocked)
+        );
+    }
+
+    function test_slashOperator_success() public {
+        // Test: Slash operator (called by task manager)
+        vm.prank(address(mockTaskManager));
+        serviceManager.slashOperator(
+            operator,
+            1000,
+            0, // operatorSetId
+            IStrategy(address(mockStrategy1))
+        );
+
+        // No revert means success
+    }
+
+    function test_slashOperator_revertNotTaskManager() public {
+        vm.expectRevert(ISertnServiceManager.NotTaskManager.selector);
+        vm.prank(aggregator1);
+        serviceManager.slashOperator(operator, 1000, 0, IStrategy(address(mockStrategy1)));
+    }
+
+    function test_aggregatorManagement_comprehensive() public {
+        vm.startPrank(owner);
+
+        // Initially only owner should be aggregator
+        assertTrue(serviceManager.isAggregator(owner));
+        assertFalse(serviceManager.isAggregator(aggregator1));
+        assertFalse(serviceManager.isAggregator(aggregator2));
+
+        // Add first aggregator
+        serviceManager.addAggregator(aggregator1);
+        assertTrue(serviceManager.isAggregator(aggregator1));
+        assertEq(serviceManager.aggregators(1), aggregator1);
+
+        // Add second aggregator
+        serviceManager.addAggregator(aggregator2);
+        assertTrue(serviceManager.isAggregator(aggregator2));
+        assertEq(serviceManager.aggregators(2), aggregator2);
+
+        // Remove first aggregator
+        serviceManager.removeAggregator(aggregator1);
+        assertFalse(serviceManager.isAggregator(aggregator1));
+        assertTrue(serviceManager.isAggregator(aggregator2));
+
+        // Verify array management (aggregator2 should still be accessible)
+        // Note: The implementation swaps with last element, so indexes might change
+        assertTrue(serviceManager.isAggregator(aggregator2));
+
+        vm.stopPrank();
+    }
+
+    function test_modifierRestrictions() public {
+        // Test onlyOwner modifier
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(nonOwner);
+        serviceManager.addAggregator(aggregator1);
+
+        // Test onlyTaskManager modifier
+        vm.expectRevert(ISertnServiceManager.NotTaskManager.selector);
+        vm.prank(nonOwner);
+        serviceManager.pullFeeFromUser(user, IERC20(address(mockToken1)), 1000);
+    }
+
+    function test_integrationWithModelRegistry() public {
+        vm.startPrank(owner);
+
+        // Create a model in the registry
+        uint256 modelId = modelRegistry.createNewModel(
+            address(mockVerifier),
+            IModelRegistry.VerificationStrategy.Onchain,
+            "test_model",
+            100
+        );
+
+        // Verify model exists
+        assertEq(modelRegistry.modelURI(modelId), "test_model");
+        assertEq(address(serviceManager.modelRegistry()), address(modelRegistry));
+
+        vm.stopPrank();
+    }
+
+    function test_complexWorkflow() public {
+        vm.startPrank(owner);
+
+        // Setup: Create model and add aggregator
+        uint256 modelId = modelRegistry.createNewModel(
+            address(mockVerifier),
+            IModelRegistry.VerificationStrategy.Onchain,
+            "workflow_model",
+            500
+        );
+        serviceManager.addAggregator(aggregator1);
+
+        vm.stopPrank();
+
+        // Workflow: Aggregator initiates fee pull
+        uint256 feeAmount = 2000;
+        mockToken1.mint(user, feeAmount);
+
+        vm.prank(user);
+        mockToken1.approve(address(serviceManager), feeAmount);
+
+        vm.prank(address(mockTaskManager));
+        serviceManager.pullFeeFromUser(user, IERC20(address(mockToken1)), feeAmount);
+
+        // Workflow: Task completed, rewards distributed
+        vm.prank(address(mockTaskManager));
+        serviceManager.taskCompleted(
+            operator,
+            feeAmount,
+            IStrategy(address(mockStrategy1)),
+            IERC20(address(mockToken1)),
+            12345 // start Timestamp (mocked)
+        );
+
+        // Verify final state
+        assertEq(mockToken1.balanceOf(address(serviceManager)), feeAmount);
+        assertTrue(serviceManager.isAggregator(aggregator1));
+        assertEq(modelRegistry.modelURI(modelId), "workflow_model");
+    }
+}

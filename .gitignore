@@ -1,18 +1,25 @@
-# lib/
-
+# Environment Variables
 .env
+.env.*
+!.env.example
+
+# IDE / Editor / OS Files
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# Python Cache & Artifacts
 __pycache__/
 *.py[cod]
-*$py.class
 *.so
 .Python
 build/
-develop-eggs/
 dist/
 downloads/
 eggs/
 .eggs/
-lib/
+lib/ # Keep this if Python packages are installed here, otherwise remove if only for Solidity
 lib64/
 parts/
 sdist/
@@ -21,9 +28,34 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-.pytest_cache/
-.coverage
-htmlcov/
+
+# Python Virtual Environments
 .venv/
 venv/
 ENV/
+env/
+
+# Python Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Python Type Checking & Linting
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+dmypy.json
+
+# Solidity / Foundry / Slither / Mythril
+cache/
+out/
+*.slither.json
+*.mythril.json
+broadcast/
+cache/
+anvil.log

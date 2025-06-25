@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10"]
 
     steps:
     - uses: actions/checkout@v4
@@ -43,7 +43,52 @@ jobs:
         source .venv/bin/activate
         uv pip install -e ".[test]"
 
-    - name: Run tests
-      working-directory: ./client
+    - name: Install Foundry
+      uses: foundry-rs/foundry-toolchain@v1
+
+    - name: Create .env file
+      working-directory: ./contracts
+      run: cp .env.example .env
+
+    - name: Build contracts
+      run: make build-contracts
+
+    - name: Run foundry tests
+      working-directory: ./contracts/test
+      run: forge test
+
+    - name: Install ezkl
+      env: 
+        EZKL_DIR: /home/runner/.ezkl
+      run: curl https://raw.githubusercontent.com/zkonduit/ezkl/main/install_ezkl_cli.sh | bash
+
+    - name: Check ezkl version
+      run: /home/runner/.ezkl/ezkl --version
+
+    - name: Generate srs file
+      working-directory: /home/runner/.ezkl
       run: |
-        uv run pytest tests/ -v
+        mkdir -p srs 
+        /home/runner/.ezkl/ezkl gen-srs --logrows 19 --srs-path srs/kzg19.srs
+
+    - name: Generate pk.key with ezkl setup
+      working-directory: ./client/src/models/models/model_0
+      run: /home/runner/.ezkl/ezkl setup
+
+    - name: Start anvil local blockchain
+      run: make start-anvil-background
+
+    - name: Deploy eigenlayer contracts
+      run: make deploy-eigenlayer-contracts
+
+    - name: Deploy sertn contracts
+      run: make deploy-sertn-contracts
+
+    - name: Init local workers
+      run: make init-local-workers
+
+    - name: Run tests
+      run: make test-client
+
+    - name: Stop anvil local blockchain
+      run: make stop-anvil

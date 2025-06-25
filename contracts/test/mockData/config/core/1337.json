@@ -17,9 +17,9 @@
   "rewardsCoordinator": {
     "init_paused_status": 0,
     "MAX_REWARDS_DURATION": 864000,
-    "MAX_RETROACTIVE_LENGTH": 86400,
+    "MAX_RETROACTIVE_LENGTH": 259200,
     "MAX_FUTURE_LENGTH": 86400,
-    "GENESIS_REWARDS_TIMESTAMP": 1672531200,
+    "GENESIS_REWARDS_TIMESTAMP": 86400,
     "rewards_updater_address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
     "rewards_updater_key": "0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356",
     "activation_delay": 0,

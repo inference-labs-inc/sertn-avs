@@ -20,6 +20,14 @@ start-anvil:
 	@chmod +x ./contracts/anvil/start-anvil.sh
 	./contracts/anvil/start-anvil.sh
 
+start-anvil-background:
+	@chmod +x ./contracts/anvil/start-anvil.sh
+	./contracts/anvil/start-anvil.sh true
+
+stop-anvil: ## stops anvil
+	@chmod +x ./contracts/anvil/stop-anvil.sh
+	./contracts/anvil/stop-anvil.sh
+
 ___CONTRACTS___: ##
 
 build-contracts: ## builds all contracts and generates ABIs
@@ -28,8 +36,11 @@ build-contracts: ## builds all contracts and generates ABIs
 	cd contracts && forge inspect SertnServiceManager abi --json > ../abis/SertnServiceManager.abi.json
 	cd contracts && forge inspect StrategyBase abi --json > ../abis/StrategyBase.abi.json
 	cd contracts && forge inspect ERC20Mock abi --json > ../abis/ERC20Mock.abi.json
+	cd contracts && forge inspect ERC20 abi --json > ../abis/ERC20.abi.json
 	cd contracts && forge inspect DelegationManager abi --json > ../abis/DelegationManager.abi.json
 	cd contracts && forge inspect StrategyManager abi --json > ../abis/StrategyManager.abi.json
+	cd contracts && forge inspect AllocationManager abi --json > ../abis/AllocationManager.abi.json
+	cd contracts && forge inspect ModelRegistry abi --json > ../abis/ModelRegistry.abi.json
 
 deploy-eigenlayer-contracts:
 	@chmod +x ./contracts/anvil/deploy-el.sh
@@ -39,8 +50,9 @@ deploy-sertn-contracts:
 	@chmod +x ./contracts/anvil/deploy-sertn.sh
 	./contracts/anvil/deploy-sertn.sh
 
-add-operator-model:
-	pwd # TODO: ...
+init-local-workers:  # init operator and aggregator for local testing
+	@chmod +x ./contracts/anvil/init-local-workers.sh
+	./contracts/anvil/init-local-workers.sh
 
 __CLI__: ##
 
@@ -59,5 +71,8 @@ start-aggregator: ## start aggregator (part of quickstart)
 
 -----------------------------: ##
 _____HELPER_____: ##
-tests-contract: ## runs all forge tests
+test-contracts: ## runs all forge tests
 	cd contracts && forge test
+
+test-client: ## runs all client tests
+	cd client && uv run pytest -k test_process_task # -s -v --tb=short --disable-warnings --cov=src --cov-report=term-missing

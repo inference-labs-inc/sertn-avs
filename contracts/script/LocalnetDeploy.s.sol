@@ -5,7 +5,7 @@ import {Script} from "forge-std/Script.sol";
 import {SertnServiceManager} from "../src/SertnServiceManager.sol";
 import {CoreDeploymentLib} from "./utils/CoreDeploymentLib.sol";
 import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
-import {ERC20Mock} from "../test/ERC20Mock.sol";
+import {ERC20Mock} from "../test/mockContracts/ERC20Mock.sol";
 import {IERC20, StrategyFactory} from "@eigenlayer/contracts/strategies/StrategyFactory.sol";
 import {IStrategy} from "eigenlayer-contracts/src/contracts/interfaces/IStrategy.sol";
 import {Test, console2} from "forge-std/Test.sol";
@@ -18,40 +18,53 @@ contract LocalnetDeploy is Script {
 
         address proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
 
-        CoreDeploymentLib.DeploymentConfigData memory coreConfigData = CoreDeploymentLib.readDeploymentConfigValues(
-            "config/core/",
-            31337
-        );
+        CoreDeploymentLib.DeploymentConfigData
+            memory coreConfigData = CoreDeploymentLib
+                .readDeploymentConfigValues("config/core/", 31337);
 
-        CoreDeploymentLib.DeploymentData memory coreDeployment = CoreDeploymentLib.deployContracts(
-            proxyAdmin,
-            coreConfigData
-        );
+        CoreDeploymentLib.DeploymentData
+            memory coreDeployment = CoreDeploymentLib.deployContracts(
+                proxyAdmin,
+                coreConfigData
+            );
 
         ERC20Mock ethToken1 = new ERC20Mock();
         ERC20Mock ethToken2 = new ERC20Mock();
         ERC20Mock serToken = new ERC20Mock();
 
-        StrategyFactory strategyFactory = StrategyFactory(coreDeployment.strategyFactory);
+        StrategyFactory strategyFactory = StrategyFactory(
+            coreDeployment.strategyFactory
+        );
 
         IStrategy[] memory strategies = new IStrategy[](3);
-        strategies[0] = strategyFactory.deployNewStrategy(IERC20(address(serToken)));
-        strategies[1] = strategyFactory.deployNewStrategy(IERC20(address(ethToken1)));
-        strategies[2] = strategyFactory.deployNewStrategy(IERC20(address(ethToken2)));
-
+        strategies[0] = strategyFactory.deployNewStrategy(
+            IERC20(address(serToken))
+        );
+        strategies[1] = strategyFactory.deployNewStrategy(
+            IERC20(address(ethToken1))
+        );
+        strategies[2] = strategyFactory.deployNewStrategy(
+            IERC20(address(ethToken2))
+        );
 
         console2.log("Deploying SertnServiceManager");
-        SertnServiceManager sertnServiceManager = new SertnServiceManager(
+        SertnServiceManager sertnServiceManagerImpl = new SertnServiceManager(); // Deploy implementation first
+        // TODO: Deploy proxy and point to implementation, then initialize proxy
+        // For now, just initializing the implementation directly for simplicity
+        sertnServiceManagerImpl.initialize(
             coreDeployment.rewardsCoordinator,
             coreDeployment.delegationManager,
             coreDeployment.allocationManager,
+            address(0), // FIXME: Provide the actual SertnRegistrar address
             strategies,
-            ""
+            "" // FIXME: Provide the actual AVS metadata URI
         );
 
-
         console2.log("Deployment Complete");
-        console2.log("SertnServiceManager:", address(sertnServiceManager));
+        console2.log(
+            "SertnServiceManager (Implementation):",
+            address(sertnServiceManagerImpl)
+        );
         console2.log("ETH Token 1:", address(ethToken1));
         console2.log("ETH Token 2:", address(ethToken2));
         console2.log("SER Token:", address(serToken));

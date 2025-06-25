@@ -11,10 +11,13 @@ from common.abis import (
     TASK_MANAGER_ABI,
     DELEGATION_MANAGER_ABI,
     STRATEGY_MANAGER_ABI,
+    ALLOCATION_MANAGER_ABI,
+    MODEL_REGISTRY_ABI,
 )
 from common.constants import (
     SERVICE_MANAGER_ADDRESS,
     TASK_MANAGER_ADDRESS,
+    ALLOCATION_MANAGER_ADDRESS,
 )
 from common.console import console, styles
 
@@ -83,6 +86,18 @@ class EthereumClient:
             address=strategy_manager_address,
             abi=STRATEGY_MANAGER_ABI,
         )
+        # allocation manager
+        self.check_contract_deployed(ALLOCATION_MANAGER_ADDRESS)
+        self.allocation_manager = self.w3.eth.contract(
+            address=ALLOCATION_MANAGER_ADDRESS,
+            abi=ALLOCATION_MANAGER_ABI,
+        )
+        # Model registry
+        self.model_registry = self.w3.eth.contract(
+            address=self.task_manager.functions.modelRegistry().call(),
+            abi=MODEL_REGISTRY_ABI,
+        )
+        self.check_contract_deployed(self.model_registry.address)
 
     def is_connected(self) -> bool:
         return self.w3.is_connected()

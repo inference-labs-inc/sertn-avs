@@ -95,12 +95,10 @@ def delegate():
     eth_client.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
     eth_client.check_transaction_success(signed_tx)
 
-    ###################============####################
-
-    tx = eth_client.strategy_manager.functions.testMappingWrite(
-        # (address staker, IStrategy strategy)
-        operator_address,
-        strategy_contract.address,
+    # Deposit tokens into the strategy
+    console.print("Depositing tokens into the strategy...", style=styles.op_info)
+    tx = eth_client.strategy_manager.functions.depositIntoStrategy(
+        strategy_contract.address, token_address, amount
     ).build_transaction(
         {
             "from": operator_address,
@@ -113,28 +111,7 @@ def delegate():
         tx, private_key
     )
     eth_client.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-
-    # import pdb
-    # pdb.set_trace()
-    ################### -- ==== -- ####################
-
-    # Deposit tokens into the strategy
-    # console.print("Depositing tokens into the strategy...", style=styles.op_info)
-    # tx = eth_client.strategy_manager.functions.depositIntoStrategy(
-    #     strategy_contract.address, token_address, amount
-    # ).build_transaction(
-    #     {
-    #         "from": operator_address,
-    #         "gas": 200000,
-    #         "gasPrice": eth_client.w3.to_wei("20", "gwei"),
-    #         "nonce": eth_client.w3.eth.get_transaction_count(operator_address),
-    #     }
-    # )
-    # signed_tx: SignedTransaction = eth_client.w3.eth.account.sign_transaction(
-    #     tx, private_key
-    # )
-    # eth_client.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-    # eth_client.check_transaction_success(signed_tx)
+    eth_client.check_transaction_success(signed_tx)
 
     # create a "Delegate approval digest" for the delegation manager
     console.print("Creating a Delegate approval digest...", style=styles.op_info)
