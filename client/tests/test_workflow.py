@@ -8,6 +8,7 @@ import uvicorn
 from aggregator.main import Aggregator
 from avs_operator.main import TaskOperator
 from common.contract_constants import TaskStateMap, TaskStructMap
+from common.constants import STRATEGIES_ADDRESSES
 
 
 class TestWorkflow:
@@ -88,7 +89,43 @@ class TestWorkflow:
         # here the task should be resolved by the aggregator
         task = aggregator.eth_client.task_manager.functions.getTask(task_id).call()
         assert task[TaskStructMap.STATE] == TaskStateMap.RESOLVED
+        model_id = task[TaskStructMap.MODEL_ID]
+
+        # check rewards collected for the operator
+        interval: int = (
+            aggregator.eth_client.service_manager.functions.getCurrentInterval().call()
+        )
+        operators_in_interval: list = (
+            aggregator.eth_client.service_manager.functions.getOperatorsInInterval(
+                interval
+            ).call()
+        )
+        strategies_in_interval: list = (
+            aggregator.eth_client.service_manager.functions.getStrategiesInInterval(
+                interval
+            ).call()
+        )
+        rewards = aggregator.eth_client.service_manager.functions.getIntervalRewards(
+            interval,
+            operator.operator_address,
+            STRATEGIES_ADDRESSES[0],
+        ).call()
+        model_cost: int = aggregator.eth_client.model_registry.functions.computeCost(
+            model_id
+        ).call()
+        assert operators_in_interval == [
+            operator.operator_address,
+        ], "Operator should be in the current interval"
+        assert strategies_in_interval == [
+            STRATEGIES_ADDRESSES[0],
+        ], "Aggregator should be in the current interval"
+        assert (
+            rewards == model_cost
+        ), "Operator should receive rewards equal to the model cost"
 
         self.stop_aggregator_server()
+
+        # TODO: test rewards submission to the operator
+
         if aggregator_server:
             aggregator_server.join(timeout=5)  # Wait up to 5 seconds
