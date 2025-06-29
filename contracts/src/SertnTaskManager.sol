@@ -157,14 +157,12 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         IStrategy strategy = allocationManager.getAllocatedStrategies(task.operator, operatorSet)[
             0
         ];
-        IERC20 token = strategy.underlyingToken();
 
         if (success) {
             sertnServiceManager.taskCompleted(
                 task.operator,
                 task.fee,
                 strategy,
-                token,
                 task.startTimestamp
             );
             tasks[taskId].state = TaskState.RESOLVED;
