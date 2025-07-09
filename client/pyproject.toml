@@ -19,6 +19,7 @@ dependencies = [
   "ezkl==19.0.7",
   "onnxruntime>=1.21.1",
   "eth-abi>=5.2.0",
+  "python-dotenv>=1.1.1",
 ]
 
 [project.optional-dependencies]

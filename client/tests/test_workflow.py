@@ -1,14 +1,20 @@
 import asyncio
+import os
 import threading
 import time
 
 import pytest
 import uvicorn
+from dotenv import load_dotenv
+from eth_account import Account
+from eth_account.datastructures import SignedMessage, SignedTransaction
 
 from aggregator.main import Aggregator
 from avs_operator.main import TaskOperator
+from common.constants import CONTRACTS_DIR, STRATEGIES_ADDRESSES
 from common.contract_constants import TaskStateMap, TaskStructMap
-from common.constants import STRATEGIES_ADDRESSES
+
+load_dotenv(os.path.join(CONTRACTS_DIR, ".env"))  # Load environment variables
 
 
 class TestWorkflow:
@@ -60,6 +66,39 @@ class TestWorkflow:
     def test_process_task(self, aggregator: Aggregator, operator: TaskOperator):
         """Just a smoke test to ensure send_new_task runs without errors"""
 
+        # Get the current blockchain timestamp
+        current_block = aggregator.eth_client.w3.eth.get_block("latest")
+        current_timestamp = current_block["timestamp"]
+
+        # Get interval duration once
+        interval_seconds = (
+            aggregator.eth_client.rewards_coordinator.functions.CALCULATION_INTERVAL_SECONDS().call()
+        )
+        init_interval_datetime = (
+            aggregator.eth_client.service_manager.functions.firstIntervalTimestamp().call()
+        )
+
+        # Fast forward time by the interval duration
+        aggregator.eth_client.w3.provider.make_request(
+            "evm_increaseTime",
+            [init_interval_datetime + interval_seconds - current_timestamp + 1],
+        )
+        aggregator.eth_client.w3.provider.make_request("evm_mine", [])
+
+        # Get the owner address from the private key
+        owner_address = Account.from_key(os.getenv("PRIVATE_KEY")).address
+        # Get the current interval and initial operator rewards
+        currentInterval: int = (
+            aggregator.eth_client.service_manager.functions.getCurrentInterval().call()
+        )
+        init_rewards: int = (
+            aggregator.eth_client.service_manager.functions.getIntervalRewards(
+                currentInterval,
+                operator.operator_address,
+                STRATEGIES_ADDRESSES[0],
+            ).call()
+        )
+
         # create a new task
         task_id = aggregator.send_new_task(1)
         assert task_id is not None, "Task ID should not be None"
@@ -75,6 +114,8 @@ class TestWorkflow:
         assert processed_count == 1, "Aggregator should process one task"
         # At this point the task should be challenged
 
+        # start aggregator server in a separate thread
+        # This is necessary to allow the aggregator to listen for events and process the challenge
         aggregator_server = threading.Thread(
             target=self.start_aggregator_server, args=[aggregator]
         )
@@ -92,21 +133,19 @@ class TestWorkflow:
         model_id = task[TaskStructMap.MODEL_ID]
 
         # check rewards collected for the operator
-        interval: int = (
-            aggregator.eth_client.service_manager.functions.getCurrentInterval().call()
-        )
         operators_in_interval: list = (
             aggregator.eth_client.service_manager.functions.getOperatorsInInterval(
-                interval
+                currentInterval
             ).call()
         )
         strategies_in_interval: list = (
             aggregator.eth_client.service_manager.functions.getStrategiesInInterval(
-                interval
+                currentInterval
             ).call()
         )
+        # Get the rewards for the operator after processing the task
         rewards = aggregator.eth_client.service_manager.functions.getIntervalRewards(
-            interval,
+            currentInterval,
             operator.operator_address,
             STRATEGIES_ADDRESSES[0],
         ).call()
@@ -120,12 +159,41 @@ class TestWorkflow:
             STRATEGIES_ADDRESSES[0],
         ], "Aggregator should be in the current interval"
         assert (
-            rewards == model_cost
+            rewards - init_rewards == model_cost
         ), "Operator should receive rewards equal to the model cost"
 
+        # Fast forward blockchain time by one interval
+        aggregator.eth_client.w3.provider.make_request(
+            "evm_increaseTime", [interval_seconds]
+        )
+        aggregator.eth_client.w3.provider.make_request("evm_mine", [])
+
+        # Submit rewards for the interval
+        tx = aggregator.eth_client.service_manager.functions.submitRewardsForInterval(
+            currentInterval
+        ).build_transaction(
+            {
+                "from": owner_address,
+                "gas": 2000000,
+                "gasPrice": aggregator.eth_client.w3.to_wei("20", "gwei"),
+                "nonce": aggregator.eth_client.w3.eth.get_transaction_count(
+                    owner_address
+                ),
+                "chainId": aggregator.eth_client.w3.eth.chain_id,
+            }
+        )
+        signed_tx: SignedTransaction = (
+            aggregator.eth_client.w3.eth.account.sign_transaction(
+                tx, private_key=os.getenv("PRIVATE_KEY")
+            )
+        )
+        tx_hash = aggregator.eth_client.w3.eth.send_raw_transaction(
+            signed_tx.raw_transaction
+        )
+        receipt = aggregator.eth_client.w3.eth.wait_for_transaction_receipt(tx_hash)
+        if receipt.status != 1:
+            raise Exception("Failed to submit rewards for the interval")
+
         self.stop_aggregator_server()
-
-        # TODO: test rewards submission to the operator
-
         if aggregator_server:
             aggregator_server.join(timeout=5)  # Wait up to 5 seconds

@@ -445,5 +445,33 @@ contract SertnServiceManagerTest is Test {
         assertEq(mockToken1.balanceOf(address(serviceManager)), feeAmount);
         assertTrue(serviceManager.isAggregator(aggregator1));
         assertEq(modelRegistry.modelURI(modelId), "workflow_model");
+
+        uint32 currentInterval = serviceManager.getCurrentInterval();
+
+        // Verify operator rewards
+        assertEq(
+            serviceManager.getIntervalRewards(currentInterval, operator, address(mockStrategy1)),
+            feeAmount,
+            "Operator reward should match fee amount"
+        );
+        assertEq(
+            serviceManager.getOperatorsInInterval(currentInterval)[0],
+            operator,
+            "Operator should be in the current interval"
+        );
+        assertEq(
+            serviceManager.getStrategiesInInterval(currentInterval)[0],
+            address(mockStrategy1),
+            "Strategy should be in the current interval"
+        );
+
+        vm.stopPrank();
+
+        // Submit rewards to operator
+        vm.startPrank(owner);
+        vm.warp(block.timestamp + 604800); // Fast forward one week (604800 seconds)
+
+        // Just smoke test:
+        serviceManager.submitRewardsForInterval(currentInterval);
     }
 }

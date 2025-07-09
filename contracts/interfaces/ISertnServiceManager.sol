@@ -20,6 +20,8 @@ interface ISertnServiceManager {
     /// @notice Emitted when the task is completed and operator reward is accumulated
     event TaskRewardAccumulated(address indexed operator, uint256 fee, uint32 currentInterval);
 
+    event RewardsSubmittedForInterval(uint32 interval, uint256 operators_quantity);
+
     /**
      * @notice Update the task manager
      * @param _sertnTaskManager The address of the task manager to update to

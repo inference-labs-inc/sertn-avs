@@ -1,0 +1,2666 @@
+[
+  {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "params",
+        "type": "tuple",
+        "internalType": "struct IRewardsCoordinatorTypes.RewardsCoordinatorConstructorParams",
+        "components": [
+          {
+            "name": "delegationManager",
+            "type": "address",
+            "internalType": "contract IDelegationManager"
+          },
+          {
+            "name": "strategyManager",
+            "type": "address",
+            "internalType": "contract IStrategyManager"
+          },
+          {
+            "name": "allocationManager",
+            "type": "address",
+            "internalType": "contract IAllocationManager"
+          },
+          {
+            "name": "pauserRegistry",
+            "type": "address",
+            "internalType": "contract IPauserRegistry"
+          },
+          {
+            "name": "permissionController",
+            "type": "address",
+            "internalType": "contract IPermissionController"
+          },
+          {
+            "name": "CALCULATION_INTERVAL_SECONDS",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "MAX_REWARDS_DURATION",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "MAX_RETROACTIVE_LENGTH",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "MAX_FUTURE_LENGTH",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "GENESIS_REWARDS_TIMESTAMP",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "version",
+            "type": "string",
+            "internalType": "string"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "CALCULATION_INTERVAL_SECONDS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "GENESIS_REWARDS_TIMESTAMP",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_FUTURE_LENGTH",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_RETROACTIVE_LENGTH",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_REWARDS_DURATION",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "activationDelay",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "allocationManager",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IAllocationManager"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "beaconChainETHStrategy",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IStrategy"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "calculateEarnerLeafHash",
+    "inputs": [
+      {
+        "name": "leaf",
+        "type": "tuple",
+        "internalType": "struct IRewardsCoordinatorTypes.EarnerTreeMerkleLeaf",
+        "components": [
+          {
+            "name": "earner",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "earnerTokenRoot",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "calculateTokenLeafHash",
+    "inputs": [
+      {
+        "name": "leaf",
+        "type": "tuple",
+        "internalType": "struct IRewardsCoordinatorTypes.TokenTreeMerkleLeaf",
+        "components": [
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "contract IERC20"
+          },
+          {
+            "name": "cumulativeEarnings",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "checkClaim",
+    "inputs": [
+      {
+        "name": "claim",
+        "type": "tuple",
+        "internalType": "struct IRewardsCoordinatorTypes.RewardsMerkleClaim",
+        "components": [
+          {
+            "name": "rootIndex",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "earnerIndex",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "earnerTreeProof",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
+          {
+            "name": "earnerLeaf",
+            "type": "tuple",
+            "internalType": "struct IRewardsCoordinatorTypes.EarnerTreeMerkleLeaf",
+            "components": [
+              {
+                "name": "earner",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "earnerTokenRoot",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              }
+            ]
+          },
+          {
+            "name": "tokenIndices",
+            "type": "uint32[]",
+            "internalType": "uint32[]"
+          },
+          {
+            "name": "tokenTreeProofs",
+            "type": "bytes[]",
+            "internalType": "bytes[]"
+          },
+          {
+            "name": "tokenLeaves",
+            "type": "tuple[]",
+            "internalType": "struct IRewardsCoordinatorTypes.TokenTreeMerkleLeaf[]",
+            "components": [
+              {
+                "name": "token",
+                "type": "address",
+                "internalType": "contract IERC20"
+              },
+              {
+                "name": "cumulativeEarnings",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "claimerFor",
+    "inputs": [
+      {
+        "name": "earner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "claimer",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "createAVSRewardsSubmission",
+    "inputs": [
+      {
+        "name": "rewardsSubmissions",
+        "type": "tuple[]",
+        "internalType": "struct IRewardsCoordinatorTypes.RewardsSubmission[]",
+        "components": [
+          {
+            "name": "strategiesAndMultipliers",
+            "type": "tuple[]",
+            "internalType": "struct IRewardsCoordinatorTypes.StrategyAndMultiplier[]",
+            "components": [
+              {
+                "name": "strategy",
+                "type": "address",
+                "internalType": "contract IStrategy"
+              },
+              {
+                "name": "multiplier",
+                "type": "uint96",
+                "internalType": "uint96"
+              }
+            ]
+          },
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "contract IERC20"
+          },
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "startTimestamp",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "duration",
+            "type": "uint32",
+            "internalType": "uint32"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "createOperatorDirectedAVSRewardsSubmission",
+    "inputs": [
+      {
+        "name": "avs",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "operatorDirectedRewardsSubmissions",
+        "type": "tuple[]",
+        "internalType": "struct IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[]",
+        "components": [
+          {
+            "name": "strategiesAndMultipliers",
+            "type": "tuple[]",
+            "internalType": "struct IRewardsCoordinatorTypes.StrategyAndMultiplier[]",
+            "components": [
+              {
+                "name": "strategy",
+                "type": "address",
+                "internalType": "contract IStrategy"
+              },
+              {
+                "name": "multiplier",
+                "type": "uint96",
+                "internalType": "uint96"
+              }
+            ]
+          },
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "contract IERC20"
+          },
+          {
+            "name": "operatorRewards",
+            "type": "tuple[]",
+            "internalType": "struct IRewardsCoordinatorTypes.OperatorReward[]",
+            "components": [
+              {
+                "name": "operator",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "amount",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "startTimestamp",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "duration",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "internalType": "string"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "createOperatorDirectedOperatorSetRewardsSubmission",
+    "inputs": [
+      {
+        "name": "operatorSet",
+        "type": "tuple",
+        "internalType": "struct OperatorSet",
+        "components": [
+          {
+            "name": "avs",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "id",
+            "type": "uint32",
+            "internalType": "uint32"
+          }
+        ]
+      },
+      {
+        "name": "operatorDirectedRewardsSubmissions",
+        "type": "tuple[]",
+        "internalType": "struct IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[]",
+        "components": [
+          {
+            "name": "strategiesAndMultipliers",
+            "type": "tuple[]",
+            "internalType": "struct IRewardsCoordinatorTypes.StrategyAndMultiplier[]",
+            "components": [
+              {
+                "name": "strategy",
+                "type": "address",
+                "internalType": "contract IStrategy"
+              },
+              {
+                "name": "multiplier",
+                "type": "uint96",
+                "internalType": "uint96"
+              }
+            ]
+          },
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "contract IERC20"
+          },
+          {
+            "name": "operatorRewards",
+            "type": "tuple[]",
+            "internalType": "struct IRewardsCoordinatorTypes.OperatorReward[]",
+            "components": [
+              {
+                "name": "operator",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "amount",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "startTimestamp",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "duration",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "internalType": "string"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "createRewardsForAllEarners",
+    "inputs": [
+      {
+        "name": "rewardsSubmissions",
+        "type": "tuple[]",
+        "internalType": "struct IRewardsCoordinatorTypes.RewardsSubmission[]",
+        "components": [
+          {
+            "name": "strategiesAndMultipliers",
+            "type": "tuple[]",
+            "internalType": "struct IRewardsCoordinatorTypes.StrategyAndMultiplier[]",
+            "components": [
+              {
+                "name": "strategy",
+                "type": "address",
+                "internalType": "contract IStrategy"
+              },
+              {
+                "name": "multiplier",
+                "type": "uint96",
+                "internalType": "uint96"
+              }
+            ]
+          },
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "contract IERC20"
+          },
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "startTimestamp",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "duration",
+            "type": "uint32",
+            "internalType": "uint32"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "createRewardsForAllSubmission",
+    "inputs": [
+      {
+        "name": "rewardsSubmissions",
+        "type": "tuple[]",
+        "internalType": "struct IRewardsCoordinatorTypes.RewardsSubmission[]",
+        "components": [
+          {
+            "name": "strategiesAndMultipliers",
+            "type": "tuple[]",
+            "internalType": "struct IRewardsCoordinatorTypes.StrategyAndMultiplier[]",
+            "components": [
+              {
+                "name": "strategy",
+                "type": "address",
+                "internalType": "contract IStrategy"
+              },
+              {
+                "name": "multiplier",
+                "type": "uint96",
+                "internalType": "uint96"
+              }
+            ]
+          },
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "contract IERC20"
+          },
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "startTimestamp",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "duration",
+            "type": "uint32",
+            "internalType": "uint32"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "cumulativeClaimed",
+    "inputs": [
+      {
+        "name": "earner",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "contract IERC20"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "totalClaimed",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "currRewardsCalculationEndTimestamp",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "defaultOperatorSplitBips",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint16",
+        "internalType": "uint16"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "delegationManager",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IDelegationManager"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "disableRoot",
+    "inputs": [
+      {
+        "name": "rootIndex",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "getCurrentClaimableDistributionRoot",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct IRewardsCoordinatorTypes.DistributionRoot",
+        "components": [
+          {
+            "name": "root",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "rewardsCalculationEndTimestamp",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "activatedAt",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "disabled",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getCurrentDistributionRoot",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct IRewardsCoordinatorTypes.DistributionRoot",
+        "components": [
+          {
+            "name": "root",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "rewardsCalculationEndTimestamp",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "activatedAt",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "disabled",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getDistributionRootAtIndex",
+    "inputs": [
+      {
+        "name": "index",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct IRewardsCoordinatorTypes.DistributionRoot",
+        "components": [
+          {
+            "name": "root",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "rewardsCalculationEndTimestamp",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "activatedAt",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "disabled",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getDistributionRootsLength",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getOperatorAVSSplit",
+    "inputs": [
+      {
+        "name": "operator",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "avs",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint16",
+        "internalType": "uint16"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getOperatorPISplit",
+    "inputs": [
+      {
+        "name": "operator",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint16",
+        "internalType": "uint16"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getOperatorSetSplit",
+    "inputs": [
+      {
+        "name": "operator",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "operatorSet",
+        "type": "tuple",
+        "internalType": "struct OperatorSet",
+        "components": [
+          {
+            "name": "avs",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "id",
+            "type": "uint32",
+            "internalType": "uint32"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint16",
+        "internalType": "uint16"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRootIndexFromHash",
+    "inputs": [
+      {
+        "name": "rootHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "initialize",
+    "inputs": [
+      {
+        "name": "initialOwner",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "initialPausedStatus",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_rewardsUpdater",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_activationDelay",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "_defaultSplitBips",
+        "type": "uint16",
+        "internalType": "uint16"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "isAVSRewardsSubmissionHash",
+    "inputs": [
+      {
+        "name": "avs",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "hash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "valid",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isOperatorDirectedAVSRewardsSubmissionHash",
+    "inputs": [
+      {
+        "name": "avs",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "hash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "valid",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isOperatorDirectedOperatorSetRewardsSubmissionHash",
+    "inputs": [
+      {
+        "name": "avs",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "hash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "valid",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isRewardsForAllSubmitter",
+    "inputs": [
+      {
+        "name": "submitter",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "valid",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isRewardsSubmissionForAllEarnersHash",
+    "inputs": [
+      {
+        "name": "avs",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "hash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "valid",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isRewardsSubmissionForAllHash",
+    "inputs": [
+      {
+        "name": "avs",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "hash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "valid",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "owner",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "pause",
+    "inputs": [
+      {
+        "name": "newPausedStatus",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "pauseAll",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "paused",
+    "inputs": [
+      {
+        "name": "index",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "paused",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "pauserRegistry",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IPauserRegistry"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "permissionController",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IPermissionController"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "processClaim",
+    "inputs": [
+      {
+        "name": "claim",
+        "type": "tuple",
+        "internalType": "struct IRewardsCoordinatorTypes.RewardsMerkleClaim",
+        "components": [
+          {
+            "name": "rootIndex",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "earnerIndex",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "earnerTreeProof",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
+          {
+            "name": "earnerLeaf",
+            "type": "tuple",
+            "internalType": "struct IRewardsCoordinatorTypes.EarnerTreeMerkleLeaf",
+            "components": [
+              {
+                "name": "earner",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "earnerTokenRoot",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              }
+            ]
+          },
+          {
+            "name": "tokenIndices",
+            "type": "uint32[]",
+            "internalType": "uint32[]"
+          },
+          {
+            "name": "tokenTreeProofs",
+            "type": "bytes[]",
+            "internalType": "bytes[]"
+          },
+          {
+            "name": "tokenLeaves",
+            "type": "tuple[]",
+            "internalType": "struct IRewardsCoordinatorTypes.TokenTreeMerkleLeaf[]",
+            "components": [
+              {
+                "name": "token",
+                "type": "address",
+                "internalType": "contract IERC20"
+              },
+              {
+                "name": "cumulativeEarnings",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "recipient",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "processClaims",
+    "inputs": [
+      {
+        "name": "claims",
+        "type": "tuple[]",
+        "internalType": "struct IRewardsCoordinatorTypes.RewardsMerkleClaim[]",
+        "components": [
+          {
+            "name": "rootIndex",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "earnerIndex",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "earnerTreeProof",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
+          {
+            "name": "earnerLeaf",
+            "type": "tuple",
+            "internalType": "struct IRewardsCoordinatorTypes.EarnerTreeMerkleLeaf",
+            "components": [
+              {
+                "name": "earner",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "earnerTokenRoot",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              }
+            ]
+          },
+          {
+            "name": "tokenIndices",
+            "type": "uint32[]",
+            "internalType": "uint32[]"
+          },
+          {
+            "name": "tokenTreeProofs",
+            "type": "bytes[]",
+            "internalType": "bytes[]"
+          },
+          {
+            "name": "tokenLeaves",
+            "type": "tuple[]",
+            "internalType": "struct IRewardsCoordinatorTypes.TokenTreeMerkleLeaf[]",
+            "components": [
+              {
+                "name": "token",
+                "type": "address",
+                "internalType": "contract IERC20"
+              },
+              {
+                "name": "cumulativeEarnings",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "recipient",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "renounceOwnership",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "rewardsUpdater",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "setActivationDelay",
+    "inputs": [
+      {
+        "name": "_activationDelay",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setClaimerFor",
+    "inputs": [
+      {
+        "name": "claimer",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setClaimerFor",
+    "inputs": [
+      {
+        "name": "earner",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "claimer",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setDefaultOperatorSplit",
+    "inputs": [
+      {
+        "name": "split",
+        "type": "uint16",
+        "internalType": "uint16"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setOperatorAVSSplit",
+    "inputs": [
+      {
+        "name": "operator",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "avs",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "split",
+        "type": "uint16",
+        "internalType": "uint16"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setOperatorPISplit",
+    "inputs": [
+      {
+        "name": "operator",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "split",
+        "type": "uint16",
+        "internalType": "uint16"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setOperatorSetSplit",
+    "inputs": [
+      {
+        "name": "operator",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "operatorSet",
+        "type": "tuple",
+        "internalType": "struct OperatorSet",
+        "components": [
+          {
+            "name": "avs",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "id",
+            "type": "uint32",
+            "internalType": "uint32"
+          }
+        ]
+      },
+      {
+        "name": "split",
+        "type": "uint16",
+        "internalType": "uint16"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setRewardsForAllSubmitter",
+    "inputs": [
+      {
+        "name": "_submitter",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_newValue",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setRewardsUpdater",
+    "inputs": [
+      {
+        "name": "_rewardsUpdater",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "strategyManager",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IStrategyManager"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "submissionNonce",
+    "inputs": [
+      {
+        "name": "avs",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "nonce",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "submitRoot",
+    "inputs": [
+      {
+        "name": "root",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "rewardsCalculationEndTimestamp",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "transferOwnership",
+    "inputs": [
+      {
+        "name": "newOwner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "unpause",
+    "inputs": [
+      {
+        "name": "newPausedStatus",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "version",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "AVSRewardsSubmissionCreated",
+    "inputs": [
+      {
+        "name": "avs",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "submissionNonce",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "rewardsSubmissionHash",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "rewardsSubmission",
+        "type": "tuple",
+        "indexed": false,
+        "internalType": "struct IRewardsCoordinatorTypes.RewardsSubmission",
+        "components": [
+          {
+            "name": "strategiesAndMultipliers",
+            "type": "tuple[]",
+            "internalType": "struct IRewardsCoordinatorTypes.StrategyAndMultiplier[]",
+            "components": [
+              {
+                "name": "strategy",
+                "type": "address",
+                "internalType": "contract IStrategy"
+              },
+              {
+                "name": "multiplier",
+                "type": "uint96",
+                "internalType": "uint96"
+              }
+            ]
+          },
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "contract IERC20"
+          },
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "startTimestamp",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "duration",
+            "type": "uint32",
+            "internalType": "uint32"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ActivationDelaySet",
+    "inputs": [
+      {
+        "name": "oldActivationDelay",
+        "type": "uint32",
+        "indexed": false,
+        "internalType": "uint32"
+      },
+      {
+        "name": "newActivationDelay",
+        "type": "uint32",
+        "indexed": false,
+        "internalType": "uint32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ClaimerForSet",
+    "inputs": [
+      {
+        "name": "earner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "oldClaimer",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "claimer",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "DefaultOperatorSplitBipsSet",
+    "inputs": [
+      {
+        "name": "oldDefaultOperatorSplitBips",
+        "type": "uint16",
+        "indexed": false,
+        "internalType": "uint16"
+      },
+      {
+        "name": "newDefaultOperatorSplitBips",
+        "type": "uint16",
+        "indexed": false,
+        "internalType": "uint16"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "DistributionRootDisabled",
+    "inputs": [
+      {
+        "name": "rootIndex",
+        "type": "uint32",
+        "indexed": true,
+        "internalType": "uint32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "DistributionRootSubmitted",
+    "inputs": [
+      {
+        "name": "rootIndex",
+        "type": "uint32",
+        "indexed": true,
+        "internalType": "uint32"
+      },
+      {
+        "name": "root",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "rewardsCalculationEndTimestamp",
+        "type": "uint32",
+        "indexed": true,
+        "internalType": "uint32"
+      },
+      {
+        "name": "activatedAt",
+        "type": "uint32",
+        "indexed": false,
+        "internalType": "uint32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Initialized",
+    "inputs": [
+      {
+        "name": "version",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "uint8"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OperatorAVSSplitBipsSet",
+    "inputs": [
+      {
+        "name": "caller",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "operator",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "avs",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "activatedAt",
+        "type": "uint32",
+        "indexed": false,
+        "internalType": "uint32"
+      },
+      {
+        "name": "oldOperatorAVSSplitBips",
+        "type": "uint16",
+        "indexed": false,
+        "internalType": "uint16"
+      },
+      {
+        "name": "newOperatorAVSSplitBips",
+        "type": "uint16",
+        "indexed": false,
+        "internalType": "uint16"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OperatorDirectedAVSRewardsSubmissionCreated",
+    "inputs": [
+      {
+        "name": "caller",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "avs",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "operatorDirectedRewardsSubmissionHash",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "submissionNonce",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "operatorDirectedRewardsSubmission",
+        "type": "tuple",
+        "indexed": false,
+        "internalType": "struct IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission",
+        "components": [
+          {
+            "name": "strategiesAndMultipliers",
+            "type": "tuple[]",
+            "internalType": "struct IRewardsCoordinatorTypes.StrategyAndMultiplier[]",
+            "components": [
+              {
+                "name": "strategy",
+                "type": "address",
+                "internalType": "contract IStrategy"
+              },
+              {
+                "name": "multiplier",
+                "type": "uint96",
+                "internalType": "uint96"
+              }
+            ]
+          },
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "contract IERC20"
+          },
+          {
+            "name": "operatorRewards",
+            "type": "tuple[]",
+            "internalType": "struct IRewardsCoordinatorTypes.OperatorReward[]",
+            "components": [
+              {
+                "name": "operator",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "amount",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "startTimestamp",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "duration",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "internalType": "string"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OperatorDirectedOperatorSetRewardsSubmissionCreated",
+    "inputs": [
+      {
+        "name": "caller",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "operatorDirectedRewardsSubmissionHash",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "operatorSet",
+        "type": "tuple",
+        "indexed": false,
+        "internalType": "struct OperatorSet",
+        "components": [
+          {
+            "name": "avs",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "id",
+            "type": "uint32",
+            "internalType": "uint32"
+          }
+        ]
+      },
+      {
+        "name": "submissionNonce",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "operatorDirectedRewardsSubmission",
+        "type": "tuple",
+        "indexed": false,
+        "internalType": "struct IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission",
+        "components": [
+          {
+            "name": "strategiesAndMultipliers",
+            "type": "tuple[]",
+            "internalType": "struct IRewardsCoordinatorTypes.StrategyAndMultiplier[]",
+            "components": [
+              {
+                "name": "strategy",
+                "type": "address",
+                "internalType": "contract IStrategy"
+              },
+              {
+                "name": "multiplier",
+                "type": "uint96",
+                "internalType": "uint96"
+              }
+            ]
+          },
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "contract IERC20"
+          },
+          {
+            "name": "operatorRewards",
+            "type": "tuple[]",
+            "internalType": "struct IRewardsCoordinatorTypes.OperatorReward[]",
+            "components": [
+              {
+                "name": "operator",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "amount",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "startTimestamp",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "duration",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "internalType": "string"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OperatorPISplitBipsSet",
+    "inputs": [
+      {
+        "name": "caller",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "operator",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "activatedAt",
+        "type": "uint32",
+        "indexed": false,
+        "internalType": "uint32"
+      },
+      {
+        "name": "oldOperatorPISplitBips",
+        "type": "uint16",
+        "indexed": false,
+        "internalType": "uint16"
+      },
+      {
+        "name": "newOperatorPISplitBips",
+        "type": "uint16",
+        "indexed": false,
+        "internalType": "uint16"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OperatorSetSplitBipsSet",
+    "inputs": [
+      {
+        "name": "caller",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "operator",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "operatorSet",
+        "type": "tuple",
+        "indexed": false,
+        "internalType": "struct OperatorSet",
+        "components": [
+          {
+            "name": "avs",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "id",
+            "type": "uint32",
+            "internalType": "uint32"
+          }
+        ]
+      },
+      {
+        "name": "activatedAt",
+        "type": "uint32",
+        "indexed": false,
+        "internalType": "uint32"
+      },
+      {
+        "name": "oldOperatorSetSplitBips",
+        "type": "uint16",
+        "indexed": false,
+        "internalType": "uint16"
+      },
+      {
+        "name": "newOperatorSetSplitBips",
+        "type": "uint16",
+        "indexed": false,
+        "internalType": "uint16"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OwnershipTransferred",
+    "inputs": [
+      {
+        "name": "previousOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Paused",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newPausedStatus",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RewardsClaimed",
+    "inputs": [
+      {
+        "name": "root",
+        "type": "bytes32",
+        "indexed": false,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "earner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "claimer",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "recipient",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": false,
+        "internalType": "contract IERC20"
+      },
+      {
+        "name": "claimedAmount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RewardsForAllSubmitterSet",
+    "inputs": [
+      {
+        "name": "rewardsForAllSubmitter",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "oldValue",
+        "type": "bool",
+        "indexed": true,
+        "internalType": "bool"
+      },
+      {
+        "name": "newValue",
+        "type": "bool",
+        "indexed": true,
+        "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RewardsSubmissionForAllCreated",
+    "inputs": [
+      {
+        "name": "submitter",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "submissionNonce",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "rewardsSubmissionHash",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "rewardsSubmission",
+        "type": "tuple",
+        "indexed": false,
+        "internalType": "struct IRewardsCoordinatorTypes.RewardsSubmission",
+        "components": [
+          {
+            "name": "strategiesAndMultipliers",
+            "type": "tuple[]",
+            "internalType": "struct IRewardsCoordinatorTypes.StrategyAndMultiplier[]",
+            "components": [
+              {
+                "name": "strategy",
+                "type": "address",
+                "internalType": "contract IStrategy"
+              },
+              {
+                "name": "multiplier",
+                "type": "uint96",
+                "internalType": "uint96"
+              }
+            ]
+          },
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "contract IERC20"
+          },
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "startTimestamp",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "duration",
+            "type": "uint32",
+            "internalType": "uint32"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RewardsSubmissionForAllEarnersCreated",
+    "inputs": [
+      {
+        "name": "tokenHopper",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "submissionNonce",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "rewardsSubmissionHash",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "rewardsSubmission",
+        "type": "tuple",
+        "indexed": false,
+        "internalType": "struct IRewardsCoordinatorTypes.RewardsSubmission",
+        "components": [
+          {
+            "name": "strategiesAndMultipliers",
+            "type": "tuple[]",
+            "internalType": "struct IRewardsCoordinatorTypes.StrategyAndMultiplier[]",
+            "components": [
+              {
+                "name": "strategy",
+                "type": "address",
+                "internalType": "contract IStrategy"
+              },
+              {
+                "name": "multiplier",
+                "type": "uint96",
+                "internalType": "uint96"
+              }
+            ]
+          },
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "contract IERC20"
+          },
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "startTimestamp",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "duration",
+            "type": "uint32",
+            "internalType": "uint32"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RewardsUpdaterSet",
+    "inputs": [
+      {
+        "name": "oldRewardsUpdater",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newRewardsUpdater",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Unpaused",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newPausedStatus",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "AmountExceedsMax",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AmountIsZero",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "CurrentlyPaused",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "DurationExceedsMax",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "DurationIsZero",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "EarningsNotGreaterThanClaimed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InputAddressZero",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InputArrayLengthMismatch",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InputArrayLengthZero",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidAddressZero",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidCalculationIntervalSecondsRemainder",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidClaimProof",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidDurationRemainder",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidEarner",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidEarnerLeafIndex",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidGenesisRewardsTimestampRemainder",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidNewPausedStatus",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidOperatorSet",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidPermissions",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidProofLength",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidRoot",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidRootIndex",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidShortString",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidStartTimestampRemainder",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidTokenLeafIndex",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NewRootMustBeForNewCalculatedPeriod",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "OnlyPauser",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "OnlyUnpauser",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "OperatorsNotInAscendingOrder",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "PreviousSplitPending",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "RewardsEndTimestampNotElapsed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "RootAlreadyActivated",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "RootDisabled",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "RootNotActivated",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SplitExceedsMax",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "StartTimestampTooFarInFuture",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "StartTimestampTooFarInPast",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "StrategiesNotInAscendingOrder",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "StrategyNotWhitelisted",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "StringTooLong",
+    "inputs": [
+      {
+        "name": "str",
+        "type": "string",
+        "internalType": "string"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "SubmissionNotRetroactive",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UnauthorizedCaller",
+    "inputs": []
+  }
+]
