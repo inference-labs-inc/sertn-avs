@@ -47,7 +47,6 @@ jobs:
       uses: foundry-rs/foundry-toolchain@v1
 
     - name: Create .env file
-      working-directory: ./contracts
       run: cp .env.example .env
 
     - name: Build contracts

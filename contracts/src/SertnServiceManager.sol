@@ -208,7 +208,7 @@ contract SertnServiceManager is
         IStrategy[] memory strategies = new IStrategy[](1);
         strategies[0] = _strategy;
         uint256[] memory wadsToSlash = new uint256[](1);
-        wadsToSlash[0] = _fee;
+        wadsToSlash[0] = 1e17; // 0.1 in WAD format (10%)
         allocationManager.slashOperator(
             address(this),
             IAllocationManagerTypes.SlashingParams({

@@ -9,7 +9,6 @@ contracts/anvil/start-anvil.sh true
 sleep 3
 
 cp .env.example .env
-cp contracts/.env.example contracts/.env
 
 echo "Building contracts"
 make build-contracts

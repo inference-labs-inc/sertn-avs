@@ -1,5 +1,8 @@
 {
   "python.defaultInterpreterPath": "./client/.venv/bin/python",
+  "python.analysis.extraPaths": [
+    "./client/src"
+  ],
   "isort.args": [
     "--settings-file",
     "./client/.isort.cfg"

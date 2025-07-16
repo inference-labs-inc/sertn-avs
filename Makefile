@@ -76,4 +76,4 @@ test-contracts: ## runs all forge tests
 	cd contracts && forge test
 
 test-client: ## runs all client tests
-	cd client && uv run pytest -k test_process_task # -s -v --tb=short --disable-warnings --cov=src --cov-report=term-missing
+	cd client && uv run pytest

@@ -4,7 +4,8 @@
   },
   "delegation": {
     "init_paused_status": 0,
-    "init_withdrawal_delay_blocks": 50400
+    "init_withdrawal_delay_blocks": 400,
+    "MIN_WITHDRAWAL_DELAY_BLOCKS": 400
   },
   "allocation": {
     "init_paused_status": 0,
