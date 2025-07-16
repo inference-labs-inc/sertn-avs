@@ -47,7 +47,7 @@ class TestWorkflow:
             private_key=os.getenv("PRIVATE_KEY"), eth_rpc_url="http://localhost:8545"
         )
 
-    @pytest.fixture(scope="session")
+    @pytest.fixture(scope="function")
     def init_environment(self, aggregator: Aggregator):
         """Ensure the Anvil node is running and has the correct state"""
         # Fast-forward the blockchain to 400 blocks,
@@ -220,6 +220,18 @@ class TestWorkflow:
             return "incorrect_proof"
 
         operator.generate_proof_for_task = mock_generate_proof_for_task
+        initial_shares = (
+            aggregator.eth_client.delegation_manager.functions.operatorShares(
+                operator.operator_address, STRATEGIES_ADDRESSES[0]
+            ).call()
+        )
+        initial_rewards = (
+            aggregator.eth_client.service_manager.functions.getIntervalRewards(
+                init_environment["current_interval"],
+                operator.operator_address,
+                STRATEGIES_ADDRESSES[0],
+            ).call()
+        )
 
         # create a new task
         task_id = aggregator.send_new_task(2)
@@ -251,7 +263,6 @@ class TestWorkflow:
 
         # here the task should be resolved by the aggregator
         task = aggregator.eth_client.task_manager.functions.getTask(task_id).call()
-        breakpoint()
         assert task[TaskStructMap.STATE] == TaskStateMap.REJECTED.value
         # model_id = task[TaskStructMap.MODEL_ID]
 
@@ -264,6 +275,24 @@ class TestWorkflow:
         assert (
             operator.operator_address not in operators_in_interval
         ), "Operator should NOT be in the current interval"
+
+        final_shares = (
+            aggregator.eth_client.delegation_manager.functions.operatorShares(
+                operator.operator_address, STRATEGIES_ADDRESSES[0]
+            ).call()
+        )
+        assert (
+            initial_shares - final_shares
+        ) / initial_shares == 0.1, "Operator's shares are reduced by 10%"
+
+        final_rewards = (
+            aggregator.eth_client.service_manager.functions.getIntervalRewards(
+                init_environment["current_interval"],
+                operator.operator_address,
+                STRATEGIES_ADDRESSES[0],
+            ).call()
+        )
+        assert final_rewards == initial_rewards, "No new rewards for the operator"
 
         self.stop_aggregator_server()
         if aggregator_server:
