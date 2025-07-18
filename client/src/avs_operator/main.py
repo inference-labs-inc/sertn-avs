@@ -229,7 +229,10 @@ class TaskOperator:
             inputs=[float(i) for i in inputs.decode().split(" ")],
         )
         proof_generator.gen_input_file()
-        proof: str = proof_generator.gen_proof()[0]
+        proof_result = proof_generator.gen_proof()
+        if not proof_result or len(proof_result) == 0:
+            return None
+        proof: str = proof_result[0]
         return proof
 
     def post_task_output(

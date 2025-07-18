@@ -8,7 +8,6 @@ import requests
 import uvicorn
 from dotenv import load_dotenv
 from eth_account import Account
-from eth_account.datastructures import SignedMessage, SignedTransaction
 
 from aggregator.main import Aggregator
 from avs_operator.main import TaskOperator
@@ -65,7 +64,10 @@ class TestWorkflow:
                 timeout=60,  # Set a timeout for the request
             )
         except requests.exceptions.ReadTimeout:
-            pass
+            # Mining 400 blocks can take time, timeout is expected
+            print(
+                "Warning: Mining request timed out, but blocks may still be processing"
+            )
         # Get the current blockchain timestamp
         current_block = aggregator.eth_client.w3.eth.get_block("latest")
         current_timestamp = current_block["timestamp"]

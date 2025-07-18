@@ -18,9 +18,7 @@ os.makedirs(TEMP_FOLDER, exist_ok=True)
 os.makedirs(PROOFS_FOLDER, exist_ok=True)
 
 # contracts addresses:
-with open(
-    os.path.join(ROOT_DIR, "contracts", "deployments", "sertnDeployment.json")
-) as f:
+with open(os.path.join(CONTRACTS_DIR, "deployments", "sertnDeployment.json")) as f:
     deployment_info = json.load(f)
     TASK_MANAGER_ADDRESS = deployment_info["sertnTaskManager"]
     SERVICE_MANAGER_ADDRESS = deployment_info["sertnServiceManager"]

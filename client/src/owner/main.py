@@ -10,7 +10,9 @@ class AvsOwner:
         self.private_key = private_key
         self.owner_address = Account.from_key(self.private_key).address
 
-    def submit_rewards_for_interval(self, current_interval: int):
+    def submit_rewards_for_interval(
+        self, current_interval: int, gas_limit: int = 2000000, gas_price_gwei: int = 20
+    ):
         """
         Submit rewards for the current interval.
         This function is called by the owner of the aggregator.
@@ -20,8 +22,8 @@ class AvsOwner:
         ).build_transaction(
             {
                 "from": self.owner_address,
-                "gas": 2000000,
-                "gasPrice": self.eth_client.w3.to_wei("20", "gwei"),
+                "gas": gas_limit,
+                "gasPrice": self.eth_client.w3.to_wei(str(gas_price_gwei), "gwei"),
                 "nonce": self.eth_client.w3.eth.get_transaction_count(
                     self.owner_address
                 ),
@@ -34,4 +36,6 @@ class AvsOwner:
         tx_hash = self.eth_client.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
         receipt = self.eth_client.w3.eth.wait_for_transaction_receipt(tx_hash)
         if receipt.status != 1:
-            raise Exception("Failed to submit rewards for the interval")
+            raise Exception(
+                f"Failed to submit rewards for interval {current_interval}. Transaction hash: {tx_hash.hex()}"
+            )
