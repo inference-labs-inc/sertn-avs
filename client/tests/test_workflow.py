@@ -217,7 +217,7 @@ class TestWorkflow:
 
         # Mock the generate_proof_for_task method to return incorrect proof
         def mock_generate_proof_for_task(*args, **kwargs) -> str:
-            return "incorrect_proof"
+            return '{"instances":[[1,2,3,4,5,6]]}'
 
         operator.generate_proof_for_task = mock_generate_proof_for_task
         initial_shares = (

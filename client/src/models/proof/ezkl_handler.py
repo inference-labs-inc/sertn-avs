@@ -39,6 +39,7 @@ class EZKLHandler:
         self.settings = json.load(open(self.settings_path, "r", encoding="utf-8"))
 
         self.proof_dir = os.path.join(PROOFS_FOLDER, task_id)
+        os.makedirs(self.proof_dir, exist_ok=True)
         self.input_path = os.path.join(self.proof_dir, "inputs.json")
         self.witness_path = os.path.join(self.proof_dir, "witness.json")
         self.proof_filepath = os.path.join(self.proof_dir, "proof.json")
