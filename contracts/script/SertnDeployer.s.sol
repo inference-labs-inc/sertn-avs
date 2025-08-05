@@ -20,6 +20,7 @@ import {IERC20, StrategyFactory} from "@eigenlayer/contracts/strategies/Strategy
 import {SertnTaskManager} from "../src/SertnTaskManager.sol";
 import {ModelRegistry} from "../src/ModelRegistry.sol";
 import {SertnRegistrar} from "../src/SertnRegistrar.sol";
+import {SertnNodesManager} from "../src/SertnNodesManager.sol";
 import "forge-std/Test.sol";
 
 contract SertnDeployer is Script, Test {
@@ -50,6 +51,7 @@ contract SertnDeployer is Script, Test {
     SertnTaskManager sertnTaskManager;
     ModelRegistry modelRegistry;
     SertnRegistrar sertnRegistrar;
+    SertnNodesManager sertnNodesManager;
 
     function setUp() public virtual {
         deployer = vm.rememberKey(vm.envUint("PRIVATE_KEY"));
@@ -78,6 +80,7 @@ contract SertnDeployer is Script, Test {
         modelRegistry = new ModelRegistry();
         sertnRegistrar = new SertnRegistrar();
         sertnTaskManager = new SertnTaskManager();
+        sertnNodesManager = new SertnNodesManager();
 
         sertnRegistrar.initialize(address(sertnServiceManager));
 
@@ -97,8 +100,11 @@ contract SertnDeployer is Script, Test {
             coreDeployment.delegationManager,
             coreDeployment.allocationManager,
             address(sertnServiceManager),
-            address(modelRegistry)
+            address(modelRegistry),
+            address(sertnNodesManager)
         );
+
+        sertnNodesManager.initialize(address(sertnServiceManager), address(modelRegistry));
 
         sertnServiceManager.updateTaskManager(address(sertnTaskManager));
         sertnServiceManager.updateModelRegistry(address(modelRegistry));

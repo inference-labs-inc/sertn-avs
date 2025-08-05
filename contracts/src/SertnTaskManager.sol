@@ -1,21 +1,24 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.29;
 
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {OwnableUpgradeable} from "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
 import {IAVSRegistrar} from "@eigenlayer/contracts/interfaces/IAVSRegistrar.sol";
 import {IAllocationManager, IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
+import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
+import {OperatorSet} from "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
 import {ISertnServiceManager} from "../interfaces/ISertnServiceManager.sol";
 import {ISertnTaskManager} from "../interfaces/ISertnTaskManager.sol";
-import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
+import {ISertnNodesManager} from "../interfaces/ISertnNodesManager.sol";
 import {IVerifier} from "../interfaces/IVerifier.sol";
 import {IModelRegistry} from "../interfaces/IModelRegistry.sol";
 import {ModelRegistry} from "./ModelRegistry.sol";
-import {OwnableUpgradeable} from "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {OperatorSet} from "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
+import {SertnNodesManager} from "./SertnNodesManager.sol";
+
 
 contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -35,7 +38,7 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
     IAllocationManager public allocationManager;
     IDelegationManager public delegationManager;
     IRewardsCoordinator public rewardsCoordinator;
-
+    ISertnNodesManager public sertnNodesManager;
     ISertnServiceManager public sertnServiceManager;
     ModelRegistry public modelRegistry;
 
@@ -51,7 +54,8 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         address _delegationManager,
         address _allocationManager,
         address _sertnServiceManager,
-        address _modelRegistry
+        address _modelRegistry,
+        address _sertnNodesManager
     ) public initializer {
         __Ownable_init();
         allocationManager = IAllocationManager(_allocationManager);
@@ -59,6 +63,7 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         rewardsCoordinator = IRewardsCoordinator(_rewardsCoordinator);
         sertnServiceManager = ISertnServiceManager(_sertnServiceManager);
         modelRegistry = ModelRegistry(_modelRegistry);
+        sertnNodesManager = ISertnNodesManager(_sertnNodesManager);
         taskNonce = 1; // Start task nonce at 1 to avoid zero-indexing issues
     }
 
@@ -79,6 +84,10 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         emit TaskCreated(task.nonce, task.user);
         tasks[task.nonce].state = TaskState.ASSIGNED;
         pendingTasks.add(task.nonce);
+
+        // Allocate FUCUs for this task
+        _allocateFucusForTask(task.nonce);
+
         emit TaskAssigned(task.nonce, task.operator);
     }
 
@@ -164,6 +173,10 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
             tasks[taskId].state = TaskState.REJECTED;
             emit TaskRejected(taskId, task.operator);
         }
+
+        // Release FUCUs regardless of success or failure
+        _releaseFucusForTask(taskId);
+
         pendingTasks.remove(taskId);
     }
 
@@ -226,5 +239,86 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
             result[i] = pendingTasks.at(i);
         }
         return result;
+    }
+
+    /**
+     * @notice Select an operator for a model based on available FUCUs
+     * @param modelId The ID of the model to run
+     * @param requiredFucus The required compute units (if 0, uses model's compute cost)
+     * @return selectedOperator The address of the selected operator (address(0) if none available)
+     */
+    function selectOperatorForModel(
+        uint256 modelId,
+        uint256 requiredFucus
+    ) external view returns (address selectedOperator) {
+        // If no specific FUCU requirement, use model's compute cost
+        if (requiredFucus == 0) {
+            requiredFucus = modelRegistry.computeCost(modelId);
+        }
+
+        // Get available operators for this model
+        (address[] memory availableOperators, ) = sertnNodesManager.getAvailableOperatorsForModel(
+            modelId,
+            requiredFucus
+        );
+
+        if (availableOperators.length == 0) {
+            return address(0); // No operators available
+        }
+
+        // Simple selection: return the first operator with enough capacity
+        // TODO: Implement more sophisticated selection logic (round-robin, load balancing, etc.)
+        return availableOperators[0];
+    }
+
+    /**
+     * @notice Get available operators for a model with their capacity
+     * @param modelId The ID of the model
+     * @param requiredFucus The required compute units (if 0, uses model's compute cost)
+     * @return availableOperators Array of available operators
+     * @return availableFucus Array of available FUCUs for each operator
+     */
+    function getAvailableOperators(
+        uint256 modelId,
+        uint256 requiredFucus
+    ) external view returns (address[] memory availableOperators, uint256[] memory availableFucus) {
+        // If no specific FUCU requirement, use model's compute cost
+        if (requiredFucus == 0) {
+            requiredFucus = modelRegistry.computeCost(modelId);
+        }
+
+        return sertnNodesManager.getAvailableOperatorsForModel(modelId, requiredFucus);
+    }
+
+    /**
+     * @notice Allocate FUCUs for a task when it's assigned to an operator
+     * @param taskId The ID of the task
+     */
+    function _allocateFucusForTask(uint256 taskId) internal {
+        Task memory task = tasks[taskId];
+        uint256 requiredFucus = modelRegistry.computeCost(task.modelId);
+
+        // Try to allocate FUCUs for this task
+        bool success = sertnNodesManager.allocateFucusForTask(
+            task.operator,
+            task.modelId,
+            requiredFucus
+        );
+
+        if (!success) {
+            revert("Insufficient FUCU capacity for operator");
+        }
+    }
+
+    /**
+     * @notice Release FUCUs when a task is completed or rejected
+     * @param taskId The ID of the task
+     */
+    function _releaseFucusForTask(uint256 taskId) internal {
+        Task memory task = tasks[taskId];
+        uint256 requiredFucus = modelRegistry.computeCost(task.modelId);
+
+        // Release the allocated FUCUs
+        sertnNodesManager.releaseFucusForTask(task.operator, task.modelId, requiredFucus);
     }
 }
