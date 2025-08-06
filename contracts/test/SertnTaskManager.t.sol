@@ -86,7 +86,8 @@ contract SertnTaskManagerTest is Test {
             address(mockDelegationManager),
             address(mockAllocationManager),
             address(mockServiceManager),
-            address(modelRegistry)
+            address(modelRegistry),
+            0x0000000000000000000000000000000000000000 // TODO: ...
         );
 
         // Setup mock data

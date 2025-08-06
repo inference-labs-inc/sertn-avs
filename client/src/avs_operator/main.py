@@ -11,6 +11,7 @@ from eth_account.messages import encode_defunct
 from tqdm import tqdm
 from web3 import Web3
 
+from avs_operator.nodes import OperatorNodesManager
 from common.console import console, styles
 from common.contract_constants import TaskStructMap
 from common.eth import EthereumClient, load_ecdsa_private_key
@@ -24,6 +25,8 @@ def run_operator(config: dict) -> None:
     with tqdm(total=100, desc="Initializing operator") as pbar:
         task_operator = TaskOperator(config)
         pbar.update(25)
+        task_operator.nodes_manager.sync_nodes()
+        task_operator.nodes_manager.print_nodes()
         # task_operator.register()
         pbar.update(100)
     task_operator.listen_for_events()
@@ -38,6 +41,13 @@ class TaskOperator:
             password=os.environ.get("OPERATOR_ECDSA_KEY_PASSWORD", ""),
         )
         self.operator_address = Account.from_key(self.private_key).address
+
+        self.nodes_manager = OperatorNodesManager(
+            private_key=self.private_key,
+            operator_address=self.operator_address,
+            eth_client=self.eth_client,
+            nodes_config=self.config["nodes"],
+        )
 
     def listen_for_events(self, loop_running: bool = True) -> int | None:
         console.print("Starting Operator...", style=styles.op_info)

@@ -4,6 +4,7 @@ from typing import Optional
 from eth_account import Account
 from eth_account.datastructures import SignedTransaction
 from web3 import Web3
+from web3.contract import Contract
 from web3.types import TxReceipt
 
 from common.abis import (
@@ -14,6 +15,7 @@ from common.abis import (
     ALLOCATION_MANAGER_ABI,
     MODEL_REGISTRY_ABI,
     REWARDS_COORDINATOR_ABI,
+    SERTN_NODES_MANAGER_ABI,
 )
 from common.constants import (
     SERVICE_MANAGER_ADDRESS,
@@ -105,6 +107,12 @@ class EthereumClient:
             abi=REWARDS_COORDINATOR_ABI,
         )
         self.check_contract_deployed(self.rewards_coordinator.address)
+        # Sertn nodes manager
+        self.nodes_manager = self.w3.eth.contract(
+            address=self.task_manager.functions.sertnNodesManager().call(),
+            abi=SERTN_NODES_MANAGER_ABI,
+        )
+        self.check_contract_deployed(self.nodes_manager.address)
 
     def is_connected(self) -> bool:
         return self.w3.is_connected()
@@ -125,26 +133,36 @@ class EthereumClient:
         if code == b"0x":
             raise ValueError(f"Address {address} is not a contract. Code: {code}")
 
-    def check_transaction_success(self, tx: SignedTransaction) -> None:
+    def execute_transaction(
+        self, contract_obj: Contract, function_name: str, private_key: str, args: list
+    ) -> TxReceipt:
         """
-        Check if a transaction was successful
-        :param tx: Transaction to check
-        :type tx: SignedTransaction
-        :raises Exception: If the transaction call failed
-        :return: None
+        Execute a transaction on the Ethereum network
+        :param contract_call: Contract call to execute
+        :param private_key: Private key to sign the transaction
+        :return: Transaction receipt
         """
-        receipt: TxReceipt = self.w3.eth.wait_for_transaction_receipt(
-            transaction_hash=tx.hash,
-            timeout=120,
-            poll_latency=0.5,
+        account = Account.from_key(private_key)
+        tx = getattr(contract_obj.functions, function_name)(*args).build_transaction(
+            {
+                "from": account.address,
+                "gas": 2000000,
+                "gasPrice": Web3.to_wei("20", "gwei"),
+                "nonce": self.w3.eth.get_transaction_count(account.address),
+                "chainId": self.w3.eth.chain_id,
+            }
         )
+        signed_tx: SignedTransaction = self.w3.eth.account.sign_transaction(
+            tx, private_key=private_key
+        )
+        tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+        receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
+
+        msg = f"{function_name} in the contract {contract_obj.address}"
         if receipt.status != 1:
-            console.print(
-                f"Transaction {tx.hash.hex()} failed. Receipt: {receipt}",
-                style=styles.error,
-            )
-            try:
-                self.w3.eth.call(tx)
-            except ValueError as e:
-                console.print(f"Transaction call failed: {e}", style=styles.error)
-                raise e
+            console.print(f"Failed to execute {msg}", style=styles.error)
+            raise RuntimeError(f"Failed to execute {msg}")
+
+        console.print(f"Successfully executed {msg}", style=styles.agg_info)
+
+        return receipt

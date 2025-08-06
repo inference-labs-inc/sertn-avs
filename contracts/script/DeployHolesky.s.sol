@@ -38,22 +38,22 @@ contract DeployHolesky is Script {
 
         bytes memory empty = "";
         TransparentUpgradeableProxy modelRegistryProxy = new TransparentUpgradeableProxy(
-                address(modelRegistryImpl),
-                address(proxyAdmin),
-                empty
-            );
+            address(modelRegistryImpl),
+            address(proxyAdmin),
+            empty
+        );
 
         TransparentUpgradeableProxy taskManagerProxy = new TransparentUpgradeableProxy(
-                address(taskManagerImpl),
-                address(proxyAdmin),
-                empty
-            );
+            address(taskManagerImpl),
+            address(proxyAdmin),
+            empty
+        );
 
         TransparentUpgradeableProxy serviceManagerProxy = new TransparentUpgradeableProxy(
-                address(serviceManagerImpl),
-                address(proxyAdmin),
-                empty
-            );
+            address(serviceManagerImpl),
+            address(proxyAdmin),
+            empty
+        );
 
         console2.log("Deployed proxies:");
         console2.log("- ModelRegistry:", address(modelRegistryProxy));
@@ -69,7 +69,8 @@ contract DeployHolesky is Script {
             delegationManager,
             allocationManager,
             address(serviceManagerProxy),
-            address(modelRegistryProxy)
+            address(modelRegistryProxy),
+            0x0000000000000000000000000000000000000000 // TODO: ...
         );
         SertnServiceManager(address(serviceManagerProxy)).initialize(
             rewardsCoordinator,
@@ -103,16 +104,13 @@ contract DeployHolesky is Script {
         uint32[] memory operatorSetIds = new uint32[](1);
         operatorSetIds[0] = 1;
 
-        IAllocationManagerTypes.RegisterParams
-            memory register = IAllocationManagerTypes.RegisterParams({
+        IAllocationManagerTypes.RegisterParams memory register = IAllocationManagerTypes
+            .RegisterParams({
                 avs: address(serviceManagerProxy),
                 operatorSetIds: operatorSetIds,
                 data: ""
             });
-        allocMgr.registerForOperatorSets(
-            address(serviceManagerProxy),
-            register
-        );
+        allocMgr.registerForOperatorSets(address(serviceManagerProxy), register);
 
         string memory deploymentInfo = string(
             abi.encodePacked(

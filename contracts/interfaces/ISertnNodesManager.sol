@@ -183,6 +183,14 @@ interface ISertnNodesManager {
     function getNodeSupportedModels(uint256 nodeId) external view returns (uint256[] memory);
 
     /**
+     * @notice Get list of FUCUs allocated for a node's models
+     * @param nodeId The ID of the node
+     * @return Array of FUCUs allocated for each model supported by the node
+     *         according to the order of model IDs returned by `getNodeSupportedModels`
+     */
+    function getNodeModelsFucus(uint256 nodeId) external view returns (uint256[] memory);
+
+    /**
      * @notice Get all node IDs that support a specific model
      * @param modelId The ID of the model
      * @return Array of node IDs that support the model

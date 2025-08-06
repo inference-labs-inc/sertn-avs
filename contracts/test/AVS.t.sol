@@ -121,7 +121,8 @@ contract AVSSetup2 is Test {
             coreDeployment.delegationManager,
             coreDeployment.allocationManager,
             address(sertnServiceManager),
-            address(modelRegistry)
+            address(modelRegistry),
+            0x0000000000000000000000000000000000000000 // TODO: ...
         );
         // // console.log(sertnServiceManager.owner(), owner.key.addr);
         sertnServiceManager.updateTaskManager(address(sertnTaskManager));

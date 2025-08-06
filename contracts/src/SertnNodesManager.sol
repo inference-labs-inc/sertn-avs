@@ -24,25 +24,6 @@ import {console2 as console} from "forge-std/Test.sol";
  * @title SertnNodesManager
  * @author Inference Labs, Inc.
  * @notice SertnNodesManager is a contract that manages nodes in the Sertn network.
- * Each operator of the Sertn network can have multiple machines/servers (nodes) that can run models.
- * The SertnNodesManager allows operators to register their nodes and manage the models they can run.
- * An operator declares available compute resources (functional compute units or FUCUs) for each node.
- * Each model has a compute cost in FUCUs, and operators can allocate their nodes to run models based on their available resources.
- * Here is an example of choosing an operator to run a model in pseudocode:
- * ```
- * model_id_requested = 0x1234
- * for o in operator
- *   allocated_fucus_for_model = o.allocated_fucus[model_id_requested]
- *   total_fucus_for_model = 0
- *   for n in o.nodes
- *     total_fucus_for_model += n.fucus[model_id_requested]
- *   available_fucus = total_fucus_for_model - allocated_fucus_for_model
- *   if available_fucus < models[model_id_requested].fucus
- *     continue // operator doesn't have capacity to run this model right now
- *   else
- *     o.allocated_fucus[model_id_requested] += models[model_id_requested].fucus
- *     // Select operator / assign them the task
- * ```
  */
 contract SertnNodesManager is OwnableUpgradeable, ISertnNodesManager {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -343,14 +324,34 @@ contract SertnNodesManager is OwnableUpgradeable, ISertnNodesManager {
     }
 
     /**
-     * @notice Get all model IDs supported by a node
+     * @notice Get all model IDs supported by a node with their allocated FUCUs
      */
-    function getNodeSupportedModels(uint256 nodeId) external view returns (uint256[] memory) {
-        uint256[] memory modelIds = new uint256[](nodeSupportedModels[nodeId].length());
-        for (uint256 i = 0; i < nodeSupportedModels[nodeId].length(); i++) {
-            modelIds[i] = nodeSupportedModels[nodeId].at(i);
+    function getNodeSupportedModels(
+        uint256 nodeId
+    ) external view returns (uint256[] memory modelIds) {
+        uint256 length = nodeSupportedModels[nodeId].length();
+        modelIds = new uint256[](length);
+
+        for (uint256 i = 0; i < length; i++) {
+            uint256 modelId = nodeSupportedModels[nodeId].at(i);
+            modelIds[i] = modelId;
         }
-        return modelIds;
+    }
+
+    /**
+     * @notice Get allocated FUCUs for each model supported by a node
+     * @dev Returns an array of allocated FUCUs corresponding to the models in getNodeSupportedModels
+     */
+    function getNodeModelsFucus(
+        uint256 nodeId
+    ) external view returns (uint256[] memory allocatedFucus) {
+        uint256 length = nodeSupportedModels[nodeId].length();
+        allocatedFucus = new uint256[](length);
+
+        for (uint256 i = 0; i < length; i++) {
+            uint256 modelId = nodeSupportedModels[nodeId].at(i);
+            allocatedFucus[i] = nodeModelConfigs[nodeId][modelId].allocatedFucus;
+        }
     }
 
     /**
