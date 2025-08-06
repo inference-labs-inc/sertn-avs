@@ -18,6 +18,7 @@ import {MockVerifier} from "./mockContracts/VerifierMock.sol";
 import {MockAllocationManager} from "./mockContracts/AllocationManagerMock.sol";
 import {MockPauserRegistry} from "./mockContracts/PauserRegistryMock.sol";
 import {MockSertnServiceManager} from "./mockContracts/SertnServiceManagerMock.sol";
+import {SertnNodesManagerMock} from "./mockContracts/SertnNodesManagerMock.sol";
 import {ERC20Mock} from "./mockContracts/ERC20Mock.sol";
 
 import {Test, console2 as console} from "forge-std/Test.sol";
@@ -36,6 +37,7 @@ contract SertnTaskManagerTest is Test {
     MockDelegationManager mockDelegationManager;
     MockRewardsCoordinator mockRewardsCoordinator;
     MockSertnServiceManager mockServiceManager;
+    SertnNodesManagerMock mockNodesManager;
     ModelRegistry modelRegistry;
     MockVerifier mockVerifier;
     ERC20Mock mockToken;
@@ -57,6 +59,7 @@ contract SertnTaskManagerTest is Test {
         mockDelegationManager = new MockDelegationManager();
         mockRewardsCoordinator = new MockRewardsCoordinator();
         mockServiceManager = new MockSertnServiceManager();
+        mockNodesManager = new SertnNodesManagerMock();
         mockToken = new ERC20Mock();
         mockStrategy = new StrategyBase(
             IStrategyManager(address(0)),
@@ -88,7 +91,7 @@ contract SertnTaskManagerTest is Test {
             address(mockAllocationManager),
             address(mockServiceManager),
             address(modelRegistry),
-            0x0000000000000000000000000000000000000000 // TODO: ...
+            address(mockNodesManager)
         );
 
         // Setup mock data
