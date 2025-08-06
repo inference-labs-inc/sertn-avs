@@ -46,7 +46,7 @@ class TaskOperator:
             private_key=self.private_key,
             operator_address=self.operator_address,
             eth_client=self.eth_client,
-            nodes_config=self.config["nodes"],
+            nodes_config=self.config.get("nodes", []),
         )
 
     def listen_for_events(self, loop_running: bool = True) -> int | None:

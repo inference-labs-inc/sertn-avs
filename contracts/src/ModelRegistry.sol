@@ -23,6 +23,8 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
     mapping(uint256 => VerificationStrategy) public verificationStrategy;
     // modelId => computeCost
     mapping(uint256 => uint256) public computeCost;
+    // modelId => requiredFUCUs
+    mapping(uint256 => uint256) public requiredFUCUs;
 
     function initialize() public initializer {
         __Ownable_init();
@@ -34,7 +36,8 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
         address _modelVerifier,
         VerificationStrategy _verificationStrategy,
         string memory _modelURI,
-        uint256 _computeCost
+        uint256 _computeCost,
+        uint256 _requiredFUCUs
     ) external onlyOwner returns (uint256 modelId) {
         // Validation checks for model verifier
         if (_modelVerifier == address(0)) revert InvalidModelVerifier();
@@ -45,6 +48,7 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
         modelURI[modelIndex] = _modelURI;
         verificationStrategy[modelIndex] = _verificationStrategy;
         computeCost[modelIndex] = _computeCost;
+        requiredFUCUs[modelIndex] = _requiredFUCUs;
         // Assign reverse mapping values
         modelVerifiers[_modelVerifier] = modelIndex;
 
@@ -53,7 +57,8 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
             _modelVerifier,
             _verificationStrategy,
             _modelURI,
-            _computeCost
+            _computeCost,
+            _requiredFUCUs
         );
         modelId = modelIndex;
         // Increment model index
@@ -72,6 +77,13 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
         if (modelId >= modelIndex) revert ModelDoesNotExist();
         computeCost[modelId] = _computeCost;
         emit ComputeCostUpdated(modelId, _computeCost);
+    }
+
+    /// @inheritdoc IModelRegistry
+    function updateRequiredFUCUs(uint256 modelId, uint256 fucus) external onlyOwner {
+        if (modelId >= modelIndex) revert ModelDoesNotExist();
+        requiredFUCUs[modelId] = fucus;
+        emit RequiredFUCUsUpdated(modelId, fucus);
     }
 
     /// @inheritdoc IModelRegistry

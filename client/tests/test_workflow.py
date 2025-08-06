@@ -32,13 +32,38 @@ class TestWorkflow:
 
     @pytest.fixture(scope="session")
     def operator(self):
-        return TaskOperator(
+        operator = TaskOperator(
             {
                 "eth_rpc_url": "http://localhost:8545",
                 "aggregator_server_ip_port_address": "localhost:8090",
                 "ecdsa_private_key_store_path": "tests/keys/operator.ecdsa.key.json",
+                "nodes": [
+                    {
+                        "node_name": "node1",
+                        "metadata": "optional metadata",
+                        "total_fucus": 100,
+                        "is_active": True,
+                        "models": [
+                            {"model_uri": "model_0", "allocated_fucus": 50},
+                            {"model_uri": "model_1", "allocated_fucus": 50},
+                        ],
+                    },
+                    {
+                        "node_name": "node2",
+                        "metadata": "optional metadata",
+                        "total_fucus": 100,
+                        "is_active": True,
+                        "models": [
+                            {"model_uri": "model_0", "allocated_fucus": 90},
+                            {"model_uri": "model_1", "allocated_fucus": 10},
+                        ],
+                    },
+                ],
             }
         )
+        operator.nodes_manager.sync_nodes()
+        operator.nodes_manager.print_nodes()
+        return operator
 
     @pytest.fixture(scope="session")
     def owner(self):

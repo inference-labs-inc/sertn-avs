@@ -398,7 +398,8 @@ contract SertnServiceManagerTest is Test {
             address(mockVerifier),
             IModelRegistry.VerificationStrategy.Onchain,
             "test_model",
-            100
+            100,
+            10
         );
 
         // Verify model exists
@@ -416,7 +417,8 @@ contract SertnServiceManagerTest is Test {
             address(mockVerifier),
             IModelRegistry.VerificationStrategy.Onchain,
             "workflow_model",
-            500
+            500,
+            10
         );
         serviceManager.addAggregator(aggregator1);
 

@@ -76,7 +76,8 @@ contract SertnTaskManagerTest is Test {
             address(mockVerifier),
             IModelRegistry.VerificationStrategy.Onchain,
             "test_model",
-            100
+            100,
+            10
         );
 
         // Deploy and initialize TaskManager

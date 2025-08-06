@@ -112,7 +112,8 @@ contract AVSSetup2 is Test {
             address(mockVerifier),
             IModelRegistry.VerificationStrategy.Onchain,
             "model1",
-            100
+            100,
+            10
         );
 
         sertnTaskManager = new SertnTaskManager();
@@ -436,7 +437,8 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
     //         address(mockVerifier),
     //         IModelRegistry.VerificationStrategy.Onchain,
     //         "model1",
-    //         1e2
+    //         1e2,
+    //         15
     //     );
 
     //     require(modelId == 0, "Model ID should be 0");

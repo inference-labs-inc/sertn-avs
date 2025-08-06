@@ -18,7 +18,6 @@ import {OwnableUpgradeable} from "@openzeppelin-upgrades/contracts/access/Ownabl
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {OperatorSet} from "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
 
-import {console2 as console} from "forge-std/Test.sol";
 
 /**
  * @title SertnNodesManager
@@ -32,6 +31,7 @@ contract SertnNodesManager is OwnableUpgradeable, ISertnNodesManager {
     // ============ STATE VARIABLES ============
     // Core contracts
     ISertnServiceManager public sertnServiceManager;
+    ISertnTaskManager public sertnTaskManager;
     ModelRegistry public modelRegistry;
 
     // Node management
@@ -79,12 +79,21 @@ contract SertnNodesManager is OwnableUpgradeable, ISertnNodesManager {
 
     // ============ INITIALIZATION ============
 
-    function initialize(address _sertnServiceManager, address _modelRegistry) public initializer {
+    function initialize(
+        address _sertnServiceManager,
+        address _sertnTaskManager,
+        address _modelRegistry
+    ) public initializer {
         __Ownable_init();
-        if (_sertnServiceManager == address(0) || _modelRegistry == address(0)) {
+        if (
+            _sertnServiceManager == address(0) ||
+            _sertnTaskManager == address(0) ||
+            _modelRegistry == address(0)
+        ) {
             revert ZeroAddress();
         }
         sertnServiceManager = ISertnServiceManager(_sertnServiceManager);
+        sertnTaskManager = ISertnTaskManager(_sertnTaskManager);
         modelRegistry = ModelRegistry(_modelRegistry);
         nextNodeId = 1;
     }
@@ -272,8 +281,8 @@ contract SertnNodesManager is OwnableUpgradeable, ISertnNodesManager {
         uint256 requiredFucus
     ) external validModel(modelId) returns (bool success) {
         // Only task manager should be able to allocate FUCUs
-        if (msg.sender != address(sertnServiceManager)) {
-            revert("Only ServiceManager can allocate FUCUs");
+        if (msg.sender != address(sertnTaskManager)) {
+            revert("Only TaskManager can allocate FUCUs");
         }
 
         uint256 availableFucus = getAvailableFucusForOperatorModel(operator, modelId);
@@ -297,8 +306,8 @@ contract SertnNodesManager is OwnableUpgradeable, ISertnNodesManager {
         uint256 fucusToRelease
     ) external {
         // Only task manager should be able to release FUCUs
-        if (msg.sender != address(sertnServiceManager)) {
-            revert("Only ServiceManager can release FUCUs");
+        if (msg.sender != address(sertnTaskManager)) {
+            revert("Only TaskManager can release FUCUs");
         }
 
         if (operatorAllocatedFucus[operator][modelId] >= fucusToRelease) {
