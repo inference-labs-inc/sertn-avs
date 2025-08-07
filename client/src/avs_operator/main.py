@@ -12,6 +12,7 @@ from tqdm import tqdm
 from web3 import Web3
 
 from avs_operator.nodes import OperatorNodesManager
+from common.config import OperatorConfig
 from common.console import console, styles
 from common.contract_constants import TaskStructMap
 from common.eth import EthereumClient, load_ecdsa_private_key
@@ -19,7 +20,7 @@ from models.onnx_run import run_onnx
 from models.proof.ezkl_handler import EZKLHandler
 
 
-def run_operator(config: dict) -> None:
+def run_operator(config: OperatorConfig) -> None:
     console.print("Starting Sertn Operator...", style=styles.op_info)
 
     with tqdm(total=100, desc="Initializing operator") as pbar:
@@ -33,11 +34,11 @@ def run_operator(config: dict) -> None:
 
 
 class TaskOperator:
-    def __init__(self, config: dict):
+    def __init__(self, config: OperatorConfig):
         self.config = config
-        self.eth_client = EthereumClient(rpc_url=self.config["eth_rpc_url"])
+        self.eth_client = EthereumClient(rpc_url=self.config.eth_rpc_url)
         self.private_key = load_ecdsa_private_key(
-            keystore_path=self.config["ecdsa_private_key_store_path"],
+            keystore_path=str(self.config.ecdsa_private_key_store_path),
             password=os.environ.get("OPERATOR_ECDSA_KEY_PASSWORD", ""),
         )
         self.operator_address = Account.from_key(self.private_key).address
@@ -46,7 +47,7 @@ class TaskOperator:
             private_key=self.private_key,
             operator_address=self.operator_address,
             eth_client=self.eth_client,
-            nodes_config=self.config.get("nodes", []),
+            nodes_config=self.config.nodes,
         )
 
     def listen_for_events(self, loop_running: bool = True) -> int | None:
@@ -204,7 +205,7 @@ class TaskOperator:
 
         # send the proof and signature to the aggregator server
         resp = requests.post(
-            f"http://{self.config['aggregator_server_ip_port_address']}/proof",
+            f"http://{self.config.aggregator_server_ip_port_address}/proof",
             json={
                 "task_id": task_id,
                 "proof": proof,

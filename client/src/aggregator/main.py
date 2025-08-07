@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from web3 import Web3
 
 from common.abis import ERC20_ABI, STRATEGY_ABI
+from common.config import AggregatorConfig
 from common.console import console, styles
 from common.constants import (
     DEFAULT_PROOF_REQUEST_PROBABILITY,
@@ -28,7 +29,7 @@ from common.eth import EthereumClient, load_ecdsa_private_key
 from models.proof.ezkl_handler import EZKLHandler
 
 
-def run_aggregator(config: dict) -> None:
+def run_aggregator(config: AggregatorConfig) -> None:
     console.print("Starting Sertn Aggregator...", style=styles.agg_info)
     aggregator = Aggregator(config=config)
     threading.Thread(target=aggregator.start_sending_new_tasks, args=[]).start()
@@ -62,17 +63,15 @@ class ProofRequest(BaseModel):
 
 
 class Aggregator:
-    def __init__(self, config: dict = None):
+    def __init__(self, config: AggregatorConfig = None):
         self.config = config
-        self.eth_client = EthereumClient(rpc_url=self.config["eth_rpc_url"])
+        self.eth_client = EthereumClient(rpc_url=self.config.eth_rpc_url)
         self.private_key = load_ecdsa_private_key(
-            keystore_path=self.config["ecdsa_private_key_store_path"],
+            keystore_path=str(self.config.ecdsa_private_key_store_path),
             password=os.environ.get("AGGREGATOR_ECDSA_KEY_PASSWORD", ""),
         )
         # the aggregator gonna request proofs for some responses randomly, so probability:
-        self.proof_req_probability = config.get(
-            "proof_request_probability", DEFAULT_PROOF_REQUEST_PROBABILITY
-        )
+        self.proof_req_probability = self.config.proof_request_probability
         self.aggregator_address = Account.from_key(self.private_key).address
 
         self.tasks = {}
@@ -91,7 +90,7 @@ class Aggregator:
                 raise HTTPException(status_code=400, detail=str(exc))
 
     def start_server(self):
-        host, port = self.config["aggregator_server_ip_port_address"].split(":")
+        host, port = self.config.aggregator_server_ip_port_address.split(":")
         uvicorn.run(
             self.app,
             host=host,

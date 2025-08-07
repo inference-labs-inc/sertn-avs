@@ -20,6 +20,7 @@ dependencies = [
   "onnxruntime>=1.21.1",
   "eth-abi>=5.2.0",
   "python-dotenv>=1.1.1",
+  "pydantic-settings>=2.10.1",
 ]
 
 [project.optional-dependencies]
@@ -54,8 +55,4 @@ url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
 [dependency-groups]
-dev = [
-    "httpx>=0.28.1",
-    "pytest>=8.3.5",
-    "pytest-mock>=3.14.1",
-]
+dev = ["httpx>=0.28.1", "pytest>=8.3.5", "pytest-mock>=3.14.1"]

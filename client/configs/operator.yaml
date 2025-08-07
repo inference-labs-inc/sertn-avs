@@ -1,5 +1,4 @@
-# this sets the logger level (true = info, false = debug)
-production: true
+environment: development
 
 # ETH RPC URL
 eth_rpc_url: http://localhost:8545

@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
-from typing import Optional
+from typing import List, Optional
 
+from common.config import ModelConfig, NodeConfig
 from common.console import console, styles
 from common.eth import EthereumClient
 
@@ -11,7 +12,7 @@ class OperatorNodesManager:
         private_key: str,
         operator_address: str,
         eth_client: EthereumClient,
-        nodes_config: list,
+        nodes_config: List[NodeConfig],
     ):
         self.private_key = private_key
         self.operator_address = operator_address
@@ -60,12 +61,12 @@ class OperatorNodesManager:
 
         new_nodes_registered = False
         for config_node in self.nodes_config:
-            if config_node["node_name"] not in updated_nodes:
+            if config_node.node_name not in updated_nodes:
                 # register new node
                 self.register_node(
-                    config_node["node_name"],
-                    config_node.get("metadata", ""),
-                    int(config_node["total_fucus"]),
+                    config_node.node_name,
+                    config_node.metadata,
+                    config_node.total_fucus,
                 )
                 new_nodes_registered = True
 
@@ -101,7 +102,7 @@ class OperatorNodesManager:
         # check if the node is in the config
         try:
             config_node = [
-                node for node in self.nodes_config if node["node_name"] == node_name
+                node for node in self.nodes_config if node.node_name == node_name
             ][0]
         except IndexError:
             # Node not found in the config, removing from blockchain...
@@ -113,17 +114,17 @@ class OperatorNodesManager:
             return None
 
         # activate or deactivate the node based on the config
-        if isActive != config_node.get("is_active", True):
-            if config_node.get("is_active", True):
+        if isActive != config_node.is_active:
+            if config_node.is_active:
                 self.activate_node(node_id)
             else:
                 self.deactivate_node(node_id)
 
         # update node details according to the config
         if (
-            node_name != config_node["node_name"]
-            or metadata != config_node.get("metadata", "")
-            or totalFucus != int(config_node["total_fucus"])
+            node_name != config_node.node_name
+            or metadata != config_node.metadata
+            or totalFucus != config_node.total_fucus
         ):
             console.print(
                 f"Updating node {node_name} with ID {node_id} details in the blockchain.",
@@ -132,22 +133,21 @@ class OperatorNodesManager:
             # update node details
             self.update_node(
                 node_id,
-                config_node["node_name"],
-                config_node.get("metadata", ""),
-                int(config_node["total_fucus"]),
+                config_node.node_name,
+                config_node.metadata,
+                config_node.total_fucus,
             )
 
         # update supported models for the node
-        self.update_node_models(node_id, config_node.get("models", []))
+        self.update_node_models(node_id, config_node.models)
 
         return node_name
 
-    def update_node_models(self, node_id: int, models: list[dict]):
+    def update_node_models(self, node_id: int, models: List[ModelConfig]):
         """
         Update the supported models for a node in the blockchain.
         :param node_id: The ID of the node to update.
-        :param models: List of models to support.
-        Each model should be a dictionary with 'model_id' and 'allocated_fucus'.
+        :param models: List of ModelConfig objects to support.
         """
         supported_models: list[int] = (  # model_allocated_fucus
             self.eth_client.nodes_manager.functions.getNodeSupportedModels(
@@ -160,8 +160,8 @@ class OperatorNodesManager:
 
         actual_models = dict(zip(supported_models, model_allocated_fucus))
         config_models = {
-            # TODO: what if the config has an invalid model URI? Looks like we need some config validation
-            self.registered_models[model["model_uri"]]: int(model["allocated_fucus"])
+            # Validated model URIs are guaranteed to exist in registered_models by Pydantic validation
+            self.registered_models[model.model_uri]: model.allocated_fucus
             for model in models
         }
 
