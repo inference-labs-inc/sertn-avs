@@ -5,6 +5,7 @@ import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 import {SertnServiceManager} from "../src/SertnServiceManager.sol";
 import {SertnTaskManager} from "../src/SertnTaskManager.sol";
+import {SertnNodesManager} from "../src/SertnNodesManager.sol";
 import {ModelRegistry} from "../src/ModelRegistry.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
@@ -30,11 +31,13 @@ contract DeployHolesky is Script {
         ModelRegistry modelRegistryImpl = new ModelRegistry();
         SertnTaskManager taskManagerImpl = new SertnTaskManager();
         SertnServiceManager serviceManagerImpl = new SertnServiceManager();
+        SertnNodesManager nodesManagerImpl = new SertnNodesManager();
 
         console2.log("Deployed implementations:");
         console2.log("- ModelRegistry:", address(modelRegistryImpl));
         console2.log("- TaskManager:", address(taskManagerImpl));
         console2.log("- ServiceManager:", address(serviceManagerImpl));
+        console2.log("- NodesManager:", address(nodesManagerImpl));
 
         bytes memory empty = "";
         TransparentUpgradeableProxy modelRegistryProxy = new TransparentUpgradeableProxy(
@@ -70,7 +73,7 @@ contract DeployHolesky is Script {
             allocationManager,
             address(serviceManagerProxy),
             address(modelRegistryProxy),
-            0x0000000000000000000000000000000000000000 // TODO: ...
+            address(nodesManagerImpl)
         );
         SertnServiceManager(address(serviceManagerProxy)).initialize(
             rewardsCoordinator,
