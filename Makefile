@@ -41,6 +41,7 @@ build-contracts: ## builds all contracts and generates ABIs
 	cd contracts && forge inspect StrategyManager abi --json > ../abis/StrategyManager.abi.json
 	cd contracts && forge inspect AllocationManager abi --json > ../abis/AllocationManager.abi.json
 	cd contracts && forge inspect ModelRegistry abi --json > ../abis/ModelRegistry.abi.json
+	cd contracts && forge inspect RewardsCoordinator abi --json > ../abis/RewardsCoordinator.abi.json
 
 deploy-eigenlayer-contracts:
 	@chmod +x ./contracts/anvil/deploy-el.sh
@@ -75,4 +76,4 @@ test-contracts: ## runs all forge tests
 	cd contracts && forge test
 
 test-client: ## runs all client tests
-	cd client && uv run pytest -k test_process_task # -s -v --tb=short --disable-warnings --cov=src --cov-report=term-missing
+	cd client && uv run pytest

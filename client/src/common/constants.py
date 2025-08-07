@@ -3,6 +3,7 @@ import json
 
 CLIENT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 ROOT_DIR = os.path.abspath(os.path.join(CLIENT_PATH, ".."))
+CONTRACTS_DIR = os.path.join(ROOT_DIR, "contracts")
 MODELS_DATA_DIR = os.path.join(CLIENT_PATH, "src", "models", "models_data")
 TEMP_FOLDER = os.path.join(CLIENT_PATH, "src", "models", "temp")
 PROOFS_FOLDER = os.path.join(CLIENT_PATH, "src", "models", "generated_proofs")
@@ -17,9 +18,7 @@ os.makedirs(TEMP_FOLDER, exist_ok=True)
 os.makedirs(PROOFS_FOLDER, exist_ok=True)
 
 # contracts addresses:
-with open(
-    os.path.join(ROOT_DIR, "contracts", "deployments", "sertnDeployment.json")
-) as f:
+with open(os.path.join(CONTRACTS_DIR, "deployments", "sertnDeployment.json")) as f:
     deployment_info = json.load(f)
     TASK_MANAGER_ADDRESS = deployment_info["sertnTaskManager"]
     SERVICE_MANAGER_ADDRESS = deployment_info["sertnServiceManager"]

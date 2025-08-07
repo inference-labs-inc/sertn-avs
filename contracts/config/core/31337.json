@@ -4,7 +4,8 @@
   },
   "delegation": {
     "init_paused_status": 0,
-    "init_withdrawal_delay_blocks": 50400
+    "init_withdrawal_delay_blocks": 400,
+    "MIN_WITHDRAWAL_DELAY_BLOCKS": 400
   },
   "allocation": {
     "init_paused_status": 0,
@@ -17,7 +18,7 @@
   "rewardsCoordinator": {
     "init_paused_status": 0,
     "MAX_REWARDS_DURATION": 864000,
-    "MAX_RETROACTIVE_LENGTH": 86400,
+    "MAX_RETROACTIVE_LENGTH": 864000,
     "MAX_FUTURE_LENGTH": 86400,
     "GENESIS_REWARDS_TIMESTAMP": 1672531200,
     "rewards_updater_address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",

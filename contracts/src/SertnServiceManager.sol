@@ -12,7 +12,10 @@ import {IRewardsCoordinator, IRewardsCoordinatorTypes} from "@eigenlayer/contrac
 import {IAllocationManager, IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
 import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
+import {StrategyBase} from "@eigenlayer/contracts/strategies/StrategyBase.sol";
+
 // OpenZeppelin
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {OwnableUpgradeable} from "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
@@ -28,6 +31,11 @@ contract SertnServiceManager is
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable
 {
+    using EnumerableSet for EnumerableSet.UintSet;
+    using EnumerableSet for EnumerableSet.AddressSet;
+
+    uint32 public firstIntervalTimestamp; // The timestamp of the first interval, used to calculate intervals
+
     IAllocationManager public allocationManager;
     IDelegationManager public delegationManager;
     IRewardsCoordinator public rewardsCoordinator;
@@ -36,24 +44,34 @@ contract SertnServiceManager is
     ISertnRegistrar public sertnRegistrar;
 
     // Operator info
-    mapping(address => bytes) public opInfo;
-    // Mapping of aggregators
-    mapping(address => bool) public isAggregator;
+    // mapping(address => bytes) public opInfo;
     // The number of nodes that a given operator has
-    mapping(address => uint256) public operatorNodeCount;
+    // mapping(address => uint256) public operatorNodeCount;
     // Compute units for a given operator-node
-    mapping(address => mapping(uint256 => uint256)) public operatorNodeComputeUnits;
+    // mapping(address => mapping(uint256 => uint256)) public operatorNodeComputeUnits;
     // Which models a given operator node supports
-    mapping(address => mapping(uint256 => mapping(uint256 => bool))) public operatorNodeModelIds;
+    // mapping(address => mapping(uint256 => mapping(uint256 => bool))) public operatorNodeModelIds;
 
-    // List of aggregators
-    address[] public aggregators;
+    // Set of aggregators
+    EnumerableSet.AddressSet internal aggregators;
+
+    // Reward tracking
+    // Here we track the rewards for each operator in each interval (interval is a time period, kinda one week)
+    // We pay rewards to operators for each interval, so we need to track them separately
+    // We might have multiple strategies, each one with its own reward token
+    mapping(uint32 => EnumerableSet.AddressSet) internal operatorsInInterval; // all operators participated in the interval
+    mapping(uint32 => EnumerableSet.AddressSet) internal strategiesInInterval; // strategies used in the interval
+    // here we track the rewards in the interval for each operator, by strategy
+    // schema: mapping(interval_id => mapping(strategy => mapping(operator => reward_count)))
+    mapping(uint32 => mapping(address => mapping(address => uint256))) public intervalRewards;
+
+    mapping(uint32 => bool) public intervalSubmitted;
 
     /**
      * @notice Modifier to ensure the caller is an aggregator
      */
     modifier onlyAggregators() {
-        if (!isAggregator[msg.sender]) {
+        if (aggregators.contains(msg.sender)) {
             revert NotAggregator();
         }
         _;
@@ -80,14 +98,28 @@ contract SertnServiceManager is
         __Ownable_init();
         __ReentrancyGuard_init();
         // Set the deployer as an aggregator
-        isAggregator[msg.sender] = true;
-        aggregators.push(msg.sender);
+        aggregators.add(msg.sender);
+
+        firstIntervalTimestamp =
+            uint32(
+                block.timestamp /
+                    IRewardsCoordinator(_rewardsCoordinator).CALCULATION_INTERVAL_SECONDS()
+            ) *
+            IRewardsCoordinator(_rewardsCoordinator).CALCULATION_INTERVAL_SECONDS();
 
         allocationManager = IAllocationManager(_allocationManager);
         delegationManager = IDelegationManager(_delegationManager);
         rewardsCoordinator = IRewardsCoordinator(_rewardsCoordinator);
         sertnRegistrar = ISertnRegistrar(_sertnRegistrar);
         _registerToEigen(_strategies, _avsMetadata);
+    }
+
+    /// @inheritdoc ISertnServiceManager
+    function canSubmitRewardsForInterval(uint32 interval) external view returns (bool) {
+        return
+            interval < this.getCurrentInterval() &&
+            !intervalSubmitted[interval] &&
+            operatorsInInterval[interval].length() > 0;
     }
 
     /// @inheritdoc ISertnServiceManager
@@ -138,25 +170,23 @@ contract SertnServiceManager is
         if (_aggregator == address(0)) {
             revert ZeroAddress();
         }
-        if (isAggregator[_aggregator]) {
+        if (aggregators.contains(_aggregator)) {
             revert AggregatorAlreadyExists();
         }
-        aggregators.push(_aggregator);
-        isAggregator[_aggregator] = true;
+        aggregators.add(_aggregator);
     }
 
     /// @inheritdoc ISertnServiceManager
     function removeAggregator(address _aggregator) external onlyOwner {
-        if (!isAggregator[_aggregator]) {
+        if (!aggregators.contains(_aggregator)) {
             revert NotAggregator();
         }
-        for (uint256 i = 0; i < aggregators.length; i++) {
-            if (aggregators[i] == _aggregator) {
-                aggregators[i] = aggregators[aggregators.length - 1];
-                aggregators.pop();
-            }
-        }
-        isAggregator[_aggregator] = false;
+        aggregators.remove(_aggregator);
+    }
+
+    /// @inheritdoc ISertnServiceManager
+    function isAggregator(address _aggregator) external view returns (bool) {
+        return aggregators.contains(_aggregator);
     }
 
     /// @inheritdoc ISertnServiceManager
@@ -178,7 +208,7 @@ contract SertnServiceManager is
         IStrategy[] memory strategies = new IStrategy[](1);
         strategies[0] = _strategy;
         uint256[] memory wadsToSlash = new uint256[](1);
-        wadsToSlash[0] = _fee;
+        wadsToSlash[0] = 1e17; // 0.1 in WAD format (10%)
         allocationManager.slashOperator(
             address(this),
             IAllocationManagerTypes.SlashingParams({
@@ -191,57 +221,144 @@ contract SertnServiceManager is
         );
     }
 
+    /// @inheritdoc ISertnServiceManager
     function taskCompleted(
         address _operator,
         uint256 _fee,
         IStrategy _strategy,
-        IERC20 _token,
         uint32 _startTimestamp
     ) external onlyTaskManager nonReentrant {
-        IRewardsCoordinatorTypes.StrategyAndMultiplier[]
-            memory strategiesAndMultipliers = new IRewardsCoordinatorTypes.StrategyAndMultiplier[](
-                1
-            );
-        strategiesAndMultipliers[0] = IRewardsCoordinatorTypes.StrategyAndMultiplier({
-            strategy: _strategy,
-            multiplier: 1
-        });
+        uint32 currentInterval = this.getCurrentInterval();
 
-        IRewardsCoordinatorTypes.OperatorReward[]
-            memory operatorRewards = new IRewardsCoordinatorTypes.OperatorReward[](1);
-        operatorRewards[0] = IRewardsCoordinatorTypes.OperatorReward({
-            operator: _operator,
-            amount: _fee
-        });
+        if (!operatorsInInterval[currentInterval].contains(_operator)) {
+            // If this operator is not in the current interval, we need to add it
+            operatorsInInterval[currentInterval].add(_operator);
+        }
+        if (!strategiesInInterval[currentInterval].contains(address(_strategy))) {
+            // If this strategy is not in the current interval, we need to add it
+            strategiesInInterval[currentInterval].add(address(_strategy));
+        }
 
+        // Accumulate rewards for this operator in this interval
+        if (intervalRewards[currentInterval][address(_strategy)][_operator] == 0) {
+            // First reward for this operator in this interval
+            intervalRewards[currentInterval][address(_strategy)][_operator] = 0;
+        }
+
+        intervalRewards[currentInterval][address(_strategy)][_operator] += _fee;
+
+        emit TaskRewardAccumulated(_operator, _fee, currentInterval);
+    }
+
+    /// @inheritdoc ISertnServiceManager
+    function submitRewardsForInterval(uint32 interval) external onlyOwner {
+        require(!intervalSubmitted[interval], "Interval already submitted");
+        require(interval <= this.getCurrentInterval(), "Interval not finished");
+        address[] memory operators = operatorsInInterval[interval].values();
+        require(operators.length > 0, "No operators to reward");
+        address[] memory strategies = strategiesInInterval[interval].values();
+        require(strategies.length > 0, "No strategies used in the interval");
+
+        for (uint256 i = 0; i < strategies.length; i++) {
+            _submitRewardsForStrategy(interval, IStrategy(strategies[i]), operators);
+        }
+
+        intervalSubmitted[interval] = true;
+        emit RewardsSubmittedForInterval(interval, operators.length);
+    }
+
+    function _submitRewardsForStrategy(
+        uint32 interval,
+        IStrategy strategy,
+        address[] memory operators
+    ) internal {
+        IERC20 rewardsToken = IERC20(strategy.underlyingToken());
+        uint256 totalRewards = 0;
         IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[]
             memory submissions = new IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission[](
                 1
             );
 
+        IRewardsCoordinatorTypes.StrategyAndMultiplier[]
+            memory strategiesAndMultipliers = new IRewardsCoordinatorTypes.StrategyAndMultiplier[](
+                1
+            );
+        strategiesAndMultipliers[0] = IRewardsCoordinatorTypes.StrategyAndMultiplier({
+            strategy: strategy,
+            multiplier: 1
+        });
+        IRewardsCoordinatorTypes.OperatorReward[]
+            memory operatorRewards = new IRewardsCoordinatorTypes.OperatorReward[](
+                operators.length
+            );
+
+        // Calculate total rewards for this strategy
+        for (uint256 j = 0; j < operators.length; j++) {
+            address operator = operators[j];
+            uint256 reward = intervalRewards[interval][address(strategy)][operator];
+            if (reward > 0) {
+                totalRewards += reward;
+            }
+            operatorRewards[j] = IRewardsCoordinatorTypes.OperatorReward({
+                operator: operator,
+                amount: reward
+            });
+        }
+        require(totalRewards > 0, "No rewards to submit for this strategy");
+
+        // Approve the rewards token for the rewards coordinator
+        rewardsToken.approve(address(rewardsCoordinator), totalRewards);
         submissions[0] = IRewardsCoordinatorTypes.OperatorDirectedRewardsSubmission({
             strategiesAndMultipliers: strategiesAndMultipliers,
-            token: _token,
+            token: rewardsToken,
             operatorRewards: operatorRewards,
-            // TODO: I'm not sure how to figure out params below
-            //       so they just picked up to have tests running :-P
-            //       values here must be compatible with the constraints
-            //       of the rewards coordinator
-            // @see "@eigenlayer/contracts/core/RewardsCoordinator.sol" - _validateCommonRewardsSubmission method
-            startTimestamp: _startTimestamp, // uint32(block.timestamp),
-            duration: rewardsCoordinator.CALCULATION_INTERVAL_SECONDS(), // 12
-            description: "Compensation for task completed"
+            startTimestamp: firstIntervalTimestamp +
+                interval *
+                rewardsCoordinator.CALCULATION_INTERVAL_SECONDS(),
+            duration: rewardsCoordinator.CALCULATION_INTERVAL_SECONDS(),
+            description: string(abi.encodePacked("Sertn AVS rewards for interval ", interval))
         });
 
-        // Approve the rewards coordinator to spend the fee
-        for (uint256 i = 0; i < submissions.length; i++) {
-            uint256 _rewards = 0;
-            for (uint256 j = 0; j < submissions[i].operatorRewards.length; j++) {
-                _rewards += submissions[i].operatorRewards[j].amount;
-            }
-            submissions[i].token.approve(address(rewardsCoordinator), _rewards);
-        }
-        // TODO: this line should not be call after each task completion, but rather once in a while
-        // rewardsCoordinator.createOperatorDirectedAVSRewardsSubmission(address(this), submissions);
+        // Submit to EigenLayer
+        rewardsCoordinator.createOperatorDirectedAVSRewardsSubmission(address(this), submissions);
+    }
+
+    // XXX: Do we need that called in `submitRewardsForInterval` or somewhere else?
+    // function autoSubmitPreviousIntervalRewards() external {
+    //     uint32 currentInterval = rewardsCoordinator.getCurrentInterval();
+    //     if (currentInterval > 0) {
+    //         uint32 previousInterval = currentInterval - 1;
+    //         if (canSubmitRewardsForInterval(previousInterval)) {
+    //             submitRewardsForInterval(previousInterval);
+    //         }
+    //     }
+    // }
+
+    /// @inheritdoc ISertnServiceManager
+    function getCurrentInterval() external view returns (uint32) {
+        return
+            uint32(
+                (uint32(block.timestamp) - firstIntervalTimestamp) /
+                    rewardsCoordinator.CALCULATION_INTERVAL_SECONDS()
+            );
+    }
+
+    /// @inheritdoc ISertnServiceManager
+    function getIntervalRewards(
+        uint32 interval,
+        address operator,
+        address strategy
+    ) external view returns (uint256) {
+        return intervalRewards[interval][strategy][operator];
+    }
+
+    /// @inheritdoc ISertnServiceManager
+    function getOperatorsInInterval(uint32 interval) external view returns (address[] memory) {
+        return operatorsInInterval[interval].values();
+    }
+
+    /// @inheritdoc ISertnServiceManager
+    function getStrategiesInInterval(uint32 interval) external view returns (address[] memory) {
+        return strategiesInInterval[interval].values();
     }
 }

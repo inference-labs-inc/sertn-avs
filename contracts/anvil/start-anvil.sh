@@ -6,7 +6,12 @@ RUN_ANVIL_IN_BACKGROUND=${1:-false}
 
 if [ $RUN_ANVIL_IN_BACKGROUND = true ]; then
   echo "Starting Anvil with state dump in background"
-  nohup anvil --host 0.0.0.0 --port $RPC_PORT --base-fee 0 --gas-price 0 --timestamp 1672531200 > anvil.log 2>&1 &
+  nohup anvil \
+      --host 0.0.0.0 \
+      --port $RPC_PORT \
+      --base-fee 0 \
+      --gas-price 0 \
+      --timestamp 1672531200 > anvil.log 2>&1 &
   ANVIL_PID=$!
 
   # Save the PID to a file
@@ -15,5 +20,11 @@ if [ $RUN_ANVIL_IN_BACKGROUND = true ]; then
 else
   # Start Anvil in foreground
   echo "Starting Anvil with state dump in foreground"
-  anvil --host 0.0.0.0 --port $RPC_PORT --base-fee 0 --gas-price 0 --timestamp 1672531200 -vvv
+  anvil \
+      --host 0.0.0.0 \
+      --port $RPC_PORT \
+      --base-fee 0 \
+      --gas-price 0 \
+      --timestamp 1672531200 \
+      -vvv
 fi

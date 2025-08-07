@@ -132,7 +132,6 @@ contract SertnServiceManagerTest is Test {
 
         // Check that owner is automatically added as aggregator
         assertTrue(serviceManager.isAggregator(owner));
-        assertEq(serviceManager.aggregators(0), owner);
     }
 
     function test_updateTaskManager_success() public {
@@ -178,11 +177,10 @@ contract SertnServiceManagerTest is Test {
     }
 
     function test_addAggregator_success() public {
+        assertFalse(serviceManager.isAggregator(aggregator1));
         vm.prank(owner);
         serviceManager.addAggregator(aggregator1);
-
         assertTrue(serviceManager.isAggregator(aggregator1));
-        assertEq(serviceManager.aggregators(1), aggregator1); // Index 1 since owner is at 0
     }
 
     function test_addAggregator_revertZeroAddress() public {
@@ -213,15 +211,11 @@ contract SertnServiceManagerTest is Test {
         serviceManager.addAggregator(aggregator1);
         serviceManager.addAggregator(aggregator2);
 
-        assertEq(serviceManager.aggregators(2), aggregator2); // aggregator2 should now be at index 2
-
         // Remove aggregator1
         serviceManager.removeAggregator(aggregator1);
 
         assertFalse(serviceManager.isAggregator(aggregator1));
         assertTrue(serviceManager.isAggregator(aggregator2));
-
-        assertEq(serviceManager.aggregators(1), aggregator2); // aggregator2 should now be at index 1
 
         vm.stopPrank();
     }
@@ -299,12 +293,28 @@ contract SertnServiceManagerTest is Test {
 
         // Test: Complete task (called by task manager)
         vm.prank(address(mockTaskManager));
+        vm.expectEmit(true, true, false, true);
+        emit ISertnServiceManager.TaskRewardAccumulated(operator, feeAmount, 0); // currentInterval is mocked as 0
         serviceManager.taskCompleted(
             operator,
             feeAmount,
             IStrategy(address(mockStrategy1)),
-            IERC20(address(mockToken1)),
             12345 // start Timestamp (mocked)
+        );
+
+        // Verify: Operator reward is accumulated
+        assertTrue(
+            serviceManager.getOperatorsInInterval(0)[0] == operator,
+            "Operator should be in the interval"
+        );
+        assertTrue(
+            serviceManager.getStrategiesInInterval(0)[0] == address(mockStrategy1),
+            "Strategy should be in the interval"
+        );
+        assertEq(
+            serviceManager.getIntervalRewards(0, operator, address(mockStrategy1)),
+            feeAmount,
+            "Operator reward should match fee amount"
         );
 
         // No revert means success
@@ -317,7 +327,6 @@ contract SertnServiceManagerTest is Test {
             operator,
             1000,
             IStrategy(address(mockStrategy1)),
-            IERC20(address(mockToken1)),
             12345 // start Timestamp (mocked)
         );
     }
@@ -352,12 +361,10 @@ contract SertnServiceManagerTest is Test {
         // Add first aggregator
         serviceManager.addAggregator(aggregator1);
         assertTrue(serviceManager.isAggregator(aggregator1));
-        assertEq(serviceManager.aggregators(1), aggregator1);
 
         // Add second aggregator
         serviceManager.addAggregator(aggregator2);
         assertTrue(serviceManager.isAggregator(aggregator2));
-        assertEq(serviceManager.aggregators(2), aggregator2);
 
         // Remove first aggregator
         serviceManager.removeAggregator(aggregator1);
@@ -431,7 +438,6 @@ contract SertnServiceManagerTest is Test {
             operator,
             feeAmount,
             IStrategy(address(mockStrategy1)),
-            IERC20(address(mockToken1)),
             12345 // start Timestamp (mocked)
         );
 
@@ -439,5 +445,33 @@ contract SertnServiceManagerTest is Test {
         assertEq(mockToken1.balanceOf(address(serviceManager)), feeAmount);
         assertTrue(serviceManager.isAggregator(aggregator1));
         assertEq(modelRegistry.modelURI(modelId), "workflow_model");
+
+        uint32 currentInterval = serviceManager.getCurrentInterval();
+
+        // Verify operator rewards
+        assertEq(
+            serviceManager.getIntervalRewards(currentInterval, operator, address(mockStrategy1)),
+            feeAmount,
+            "Operator reward should match fee amount"
+        );
+        assertEq(
+            serviceManager.getOperatorsInInterval(currentInterval)[0],
+            operator,
+            "Operator should be in the current interval"
+        );
+        assertEq(
+            serviceManager.getStrategiesInInterval(currentInterval)[0],
+            address(mockStrategy1),
+            "Strategy should be in the current interval"
+        );
+
+        vm.stopPrank();
+
+        // Submit rewards to operator
+        vm.startPrank(owner);
+        vm.warp(block.timestamp + 604800); // Fast forward one week (604800 seconds)
+
+        // Just smoke test:
+        serviceManager.submitRewardsForInterval(currentInterval);
     }
 }

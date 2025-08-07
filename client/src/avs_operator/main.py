@@ -146,16 +146,7 @@ class TaskOperator:
             return
 
         # generate proof for the task
-        model_uri: str = self.eth_client.model_registry.functions.modelURI(
-            model_id
-        ).call()
-        proof_generator = EZKLHandler(
-            model_id=model_uri,
-            task_id=str(task_id),
-            inputs=[float(i) for i in inputs.decode().split(" ")],
-        )
-        proof_generator.gen_input_file()
-        proof: str = proof_generator.gen_proof()[0]
+        proof = self.generate_proof_for_task(inputs, task_id, model_id)
         proof_encoded = proof.encode()
 
         # submit proof to the task manager contract
@@ -221,6 +212,28 @@ class TaskOperator:
                 f"Failed to post a proof for the {task_id} task: {resp.text}",
                 style=styles.error,
             )
+
+    def generate_proof_for_task(
+        self, inputs: bytes, task_id: int, model_id: int
+    ) -> Optional[str]:
+        """
+        Generate proof for the task with the given task_id.
+        """
+        # generate proof for the task
+        model_uri: str = self.eth_client.model_registry.functions.modelURI(
+            model_id
+        ).call()
+        proof_generator = EZKLHandler(
+            model_id=model_uri,
+            task_id=str(task_id),
+            inputs=[float(i) for i in inputs.decode().split(" ")],
+        )
+        proof_generator.gen_input_file()
+        proof_result = proof_generator.gen_proof()
+        if not proof_result or len(proof_result) == 0:
+            return None
+        proof: str = proof_result[0]
+        return proof
 
     def post_task_output(
         self,
