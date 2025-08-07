@@ -229,19 +229,6 @@ interface ISertnNodesManager {
     ) external view returns (uint256);
 
     /**
-     * @notice Check if an operator can handle a model with required FUCUs
-     * @param operator The operator address
-     * @param modelId The ID of the model
-     * @param requiredFucus The required number of FUCUs
-     * @return Whether the operator can handle the model
-     */
-    function canOperatorHandleModel(
-        address operator,
-        uint256 modelId,
-        uint256 requiredFucus
-    ) external view returns (bool);
-
-    /**
      * @notice Get detailed node information
      * @param nodeId The ID of the node
      * @return operator The operator who owns the node

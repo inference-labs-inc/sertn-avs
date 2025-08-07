@@ -105,7 +105,7 @@ contract SertnDeployer is Script, Test {
         );
 
         sertnNodesManager.initialize(
-            address(sertnServiceManager),
+            address(coreDeployment.delegationManager),
             address(sertnTaskManager),
             address(modelRegistry)
         );

@@ -136,7 +136,7 @@ contract AVSSetup2 is Test {
         // sertnServiceManager.updateModelRegistry(address(modelRegistry));
 
         sertnNodesManager.initialize(
-            address(sertnServiceManager),
+            address(coreDeployment.delegationManager),
             address(sertnTaskManager),
             address(modelRegistry)
         );

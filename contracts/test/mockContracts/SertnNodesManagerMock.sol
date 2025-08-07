@@ -156,14 +156,6 @@ contract SertnNodesManagerMock is ISertnNodesManager {
         return 1000000; // Always available
     }
 
-    function canOperatorHandleModel(
-        address,
-        uint256,
-        uint256
-    ) external pure override returns (bool) {
-        return true; // Always can handle
-    }
-
     function getNodeDetails(
         uint256 nodeId
     )

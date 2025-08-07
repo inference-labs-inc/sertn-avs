@@ -7,7 +7,6 @@ import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationMa
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
-import {ISertnServiceManager} from "../interfaces/ISertnServiceManager.sol";
 import {ISertnTaskManager} from "../interfaces/ISertnTaskManager.sol";
 import {ISertnNodesManager} from "../interfaces/ISertnNodesManager.sol";
 import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
@@ -17,7 +16,6 @@ import {ModelRegistry} from "./ModelRegistry.sol";
 import {OwnableUpgradeable} from "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {OperatorSet} from "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
-
 
 /**
  * @title SertnNodesManager
@@ -30,7 +28,7 @@ contract SertnNodesManager is OwnableUpgradeable, ISertnNodesManager {
 
     // ============ STATE VARIABLES ============
     // Core contracts
-    ISertnServiceManager public sertnServiceManager;
+    IDelegationManager public delegationManager;
     ISertnTaskManager public sertnTaskManager;
     ModelRegistry public modelRegistry;
 
@@ -80,19 +78,19 @@ contract SertnNodesManager is OwnableUpgradeable, ISertnNodesManager {
     // ============ INITIALIZATION ============
 
     function initialize(
-        address _sertnServiceManager,
+        address _delegationManager,
         address _sertnTaskManager,
         address _modelRegistry
     ) public initializer {
         __Ownable_init();
         if (
-            _sertnServiceManager == address(0) ||
+            _delegationManager == address(0) ||
             _sertnTaskManager == address(0) ||
             _modelRegistry == address(0)
         ) {
             revert ZeroAddress();
         }
-        sertnServiceManager = ISertnServiceManager(_sertnServiceManager);
+        delegationManager = IDelegationManager(_delegationManager);
         sertnTaskManager = ISertnTaskManager(_sertnTaskManager);
         modelRegistry = ModelRegistry(_modelRegistry);
         nextNodeId = 1;
@@ -113,6 +111,10 @@ contract SertnNodesManager is OwnableUpgradeable, ISertnNodesManager {
     ) external returns (uint256 nodeId) {
         if (totalFucus == 0) {
             revert InvalidFucusAmount();
+        }
+
+        if (!delegationManager.isOperator(msg.sender)) {
+            revert NotNodeOperator(0);
         }
 
         nodeId = nextNodeId++;
@@ -412,17 +414,6 @@ contract SertnNodesManager is OwnableUpgradeable, ISertnNodesManager {
         uint256 allocatedFucus = operatorAllocatedFucus[operator][modelId];
 
         return totalFucus > allocatedFucus ? totalFucus - allocatedFucus : 0;
-    }
-
-    /**
-     * @notice Check if an operator can handle a model with required FUCUs
-     */
-    function canOperatorHandleModel(
-        address operator,
-        uint256 modelId,
-        uint256 requiredFucus
-    ) external view returns (bool) {
-        return getAvailableFucusForOperatorModel(operator, modelId) >= requiredFucus;
     }
 
     /**
