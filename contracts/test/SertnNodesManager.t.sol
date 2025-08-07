@@ -209,6 +209,26 @@ contract SertnNodesManagerTest is Test {
         nodesManager.updateNode(999, "New Name", "new metadata", 1500);
     }
 
+    function testUpdateNodeTooLowFucus() public {
+        vm.startPrank(operator1.addr);
+        uint256 nodeId = nodesManager.registerNode(NODE_NAME, "", NODE_FUCUS);
+
+        // add model support
+        nodesManager.addModelSupport(nodeId, modelId1, MODEL_FUCUS);
+
+        // Try to update with too low Fucus for running the model
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ISertnNodesManager.InsufficientFucus.selector,
+                MODEL_FUCUS - 1,
+                MODEL_FUCUS
+            )
+        );
+        nodesManager.updateNode(nodeId, NODE_NAME, "", MODEL_FUCUS - 1);
+
+        vm.stopPrank();
+    }
+
     // ============ NODE ACTIVATION/DEACTIVATION TESTS ============
 
     function testDeactivateNode() public {
@@ -522,7 +542,7 @@ contract SertnNodesManagerTest is Test {
         nodesManager.addModelSupport(nodeId, modelId1, MODEL_FUCUS);
 
         vm.prank(operator2.addr);
-        vm.expectRevert("Only TaskManager can allocate FUCUs");
+        vm.expectRevert(ISertnNodesManager.OnlyTaskManager.selector);
         nodesManager.allocateFucusForTask(operator1.addr, modelId1, 100);
     }
 

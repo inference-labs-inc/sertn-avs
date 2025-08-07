@@ -1,10 +1,8 @@
+from datetime import datetime, timezone
 from typing import Optional
-from eth_account.datastructures import SignedMessage, SignedTransaction
-from web3 import Web3
 
 from common.console import console, styles
 from common.eth import EthereumClient
-from datetime import datetime, timezone
 
 
 class OperatorNodesManager:

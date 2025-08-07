@@ -143,6 +143,10 @@ contract SertnNodesManager is OwnableUpgradeable, ISertnNodesManager {
         string memory metadata,
         uint256 totalFucus
     ) external nodeExists(nodeId) onlyNodeOperator(nodeId) {
+        uint256 currentAllocated = getTotalAllocatedFucusForNode(nodeId);
+        if (totalFucus < currentAllocated) {
+            revert InsufficientFucus(totalFucus, currentAllocated);
+        }
         nodes[nodeId].name = name;
         nodes[nodeId].metadata = metadata;
         nodes[nodeId].totalFucus = totalFucus;
@@ -284,7 +288,7 @@ contract SertnNodesManager is OwnableUpgradeable, ISertnNodesManager {
     ) external validModel(modelId) returns (bool success) {
         // Only task manager should be able to allocate FUCUs
         if (msg.sender != address(sertnTaskManager)) {
-            revert("Only TaskManager can allocate FUCUs");
+            revert OnlyTaskManager();
         }
 
         uint256 availableFucus = getAvailableFucusForOperatorModel(operator, modelId);
@@ -309,7 +313,7 @@ contract SertnNodesManager is OwnableUpgradeable, ISertnNodesManager {
     ) external {
         // Only task manager should be able to release FUCUs
         if (msg.sender != address(sertnTaskManager)) {
-            revert("Only TaskManager can release FUCUs");
+            revert OnlyTaskManager();
         }
 
         if (operatorAllocatedFucus[operator][modelId] >= fucusToRelease) {

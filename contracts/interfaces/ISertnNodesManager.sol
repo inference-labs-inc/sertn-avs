@@ -56,6 +56,7 @@ interface ISertnNodesManager {
 
     error NodeDoesNotExist(uint256 nodeId);
     error NotNodeOperator(uint256 nodeId);
+    error OnlyTaskManager();
     error NodeInactive(uint256 nodeId);
     error InsufficientFucus(uint256 required, uint256 available);
     error ModelNotSupported(uint256 nodeId, uint256 modelId);

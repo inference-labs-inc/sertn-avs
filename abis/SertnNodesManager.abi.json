@@ -53,35 +53,6 @@
   },
   {
     "type": "function",
-    "name": "canOperatorHandleModel",
-    "inputs": [
-      {
-        "name": "operator",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "modelId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "requiredFucus",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "deactivateNode",
     "inputs": [
       {
@@ -92,6 +63,19 @@
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "delegationManager",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IDelegationManager"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -329,7 +313,12 @@
     "name": "initialize",
     "inputs": [
       {
-        "name": "_sertnServiceManager",
+        "name": "_delegationManager",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_sertnTaskManager",
         "type": "address",
         "internalType": "address"
       },
@@ -588,13 +577,13 @@
   },
   {
     "type": "function",
-    "name": "sertnServiceManager",
+    "name": "sertnTaskManager",
     "inputs": [],
     "outputs": [
       {
         "name": "",
         "type": "address",
-        "internalType": "contract ISertnServiceManager"
+        "internalType": "contract ISertnTaskManager"
       }
     ],
     "stateMutability": "view"
@@ -1023,6 +1012,11 @@
         "internalType": "uint256"
       }
     ]
+  },
+  {
+    "type": "error",
+    "name": "OnlyTaskManager",
+    "inputs": []
   },
   {
     "type": "error",

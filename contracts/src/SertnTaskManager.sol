@@ -306,7 +306,11 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         );
 
         if (!success) {
-            revert("Insufficient FUCUs capacity for operator");
+            revert ISertnTaskManager.InsufficientFucusCapacity(
+                task.operator,
+                task.modelId,
+                requiredFucus
+            );
         }
     }
 
@@ -316,7 +320,7 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
      */
     function _releaseFucusForTask(uint256 taskId) internal {
         Task memory task = tasks[taskId];
-        uint256 requiredFucus = modelRegistry.computeCost(task.modelId);
+        uint256 requiredFucus = modelRegistry.requiredFUCUs(task.modelId);
 
         // Release the allocated FUCUs
         sertnNodesManager.releaseFucusForTask(task.operator, task.modelId, requiredFucus);
