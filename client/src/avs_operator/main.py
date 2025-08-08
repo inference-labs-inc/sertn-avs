@@ -36,7 +36,9 @@ def run_operator(config: OperatorConfig) -> None:
 class TaskOperator:
     def __init__(self, config: OperatorConfig):
         self.config = config
-        self.eth_client = EthereumClient(rpc_url=self.config.eth_rpc_url)
+        self.eth_client = EthereumClient(
+            eth_rpc_url=self.config.eth_rpc_url, gas_strategy=self.config.gas_strategy
+        )
         self.private_key = load_ecdsa_private_key(
             keystore_path=str(self.config.ecdsa_private_key_store_path),
             password=os.environ.get("OPERATOR_ECDSA_KEY_PASSWORD", ""),
@@ -109,34 +111,13 @@ class TaskOperator:
             input_data=input_data,
         )
         output_bytes: bytes = json.dumps(output).encode()
-        # post task output to the task manager contract
-        tx = self.eth_client.task_manager.functions.submitTaskOutput(
-            task_id, output_bytes
-        ).build_transaction(
-            {
-                "from": self.operator_address,
-                "gas": 2000000,
-                "gasPrice": Web3.to_wei("20", "gwei"),
-                "nonce": self.eth_client.w3.eth.get_transaction_count(
-                    self.operator_address
-                ),
-                "chainId": self.eth_client.w3.eth.chain_id,
-            }
-        )
-        signed_tx: SignedTransaction = self.eth_client.w3.eth.account.sign_transaction(
-            tx, private_key=self.private_key
-        )
-        tx_hash = self.eth_client.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-        receipt = self.eth_client.w3.eth.wait_for_transaction_receipt(tx_hash)
-        if receipt.status != 1:
-            console.print(
-                "Failed to post task output to the contract", style=styles.error
-            )
-            raise Exception("Failed to post task output to the contract")
 
-        console.print(
-            f"Successfully posted an output for the {task_id} task",
-            style=styles.agg_info,
+        # post task output to the task manager contract
+        self.eth_client.execute_transaction(
+            self.eth_client.task_manager,
+            "submitTaskOutput",
+            self.private_key,
+            [task_id, output_bytes],
         )
 
     def process_challenged_task(self, task_id: int):
@@ -161,30 +142,11 @@ class TaskOperator:
         proof_encoded = proof.encode()
 
         # submit proof to the task manager contract
-        tx = self.eth_client.task_manager.functions.submitProofForTask(
-            task_id, proof_encoded
-        ).build_transaction(
-            {
-                "from": self.operator_address,
-                "gas": 2000000,
-                "gasPrice": Web3.to_wei("20", "gwei"),
-                "nonce": self.eth_client.w3.eth.get_transaction_count(
-                    self.operator_address
-                ),
-                "chainId": self.eth_client.w3.eth.chain_id,
-            }
-        )
-        signed_tx: SignedTransaction = self.eth_client.w3.eth.account.sign_transaction(
-            tx, private_key=self.private_key
-        )
-        tx_hash = self.eth_client.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-        receipt = self.eth_client.w3.eth.wait_for_transaction_receipt(tx_hash)
-        if receipt.status != 1:
-            console.print("Failed to post proof to the contract", style=styles.error)
-            return
-        console.print(
-            f"Successfully posted a proof for the {task_id} task",
-            style=styles.agg_info,
+        self.eth_client.execute_transaction(
+            self.eth_client.task_manager,
+            "submitProofForTask",
+            self.private_key,
+            [task_id, proof_encoded],
         )
 
         # sign the proof
@@ -254,29 +216,12 @@ class TaskOperator:
         """
         Post task output to the task manager contract.
         """
-        tx = self.eth_client.task_manager.functions.submitTaskOutput(
-            task_id, output
-        ).build_transaction(
-            {
-                "from": self.aggregator_address,
-                "gas": 2000000,
-                "gasPrice": Web3.to_wei("20", "gwei"),
-                "nonce": self.eth_client.w3.eth.get_transaction_count(
-                    self.aggregator_address
-                ),
-                "chainId": self.eth_client.w3.eth.chain_id,
-            }
+        self.eth_client.execute_transaction(
+            self.eth_client.task_manager,
+            "submitTaskOutput",
+            self.private_key,
+            [task_id, output],
         )
-        signed_tx: SignedTransaction = self.eth_client.w3.eth.account.sign_transaction(
-            tx, private_key=self.private_key
-        )
-        tx_hash = self.eth_client.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-        receipt = self.eth_client.w3.eth.wait_for_transaction_receipt(tx_hash)
-        if receipt.status != 1:
-            console.print(
-                "Failed to post task output to the contract", style=styles.error
-            )
-            return
         console.print(
             f"Successfully posted an output to the {task_id} task",
             style=styles.agg_info,

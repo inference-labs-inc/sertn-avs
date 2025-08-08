@@ -46,12 +46,12 @@ contract SertnNodesManagerMock is ISertnNodesManager {
     }
 
     function updateNode(
-        uint256,
+        uint256 nodeId,
         string memory name,
         string memory metadata,
         uint256
     ) external override {
-        emit NodeUpdated(1, name, metadata);
+        emit NodeUpdated(nodeId, name, metadata);
     }
 
     function removeNode(uint256 nodeId) external override {

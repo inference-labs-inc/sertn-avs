@@ -8,21 +8,23 @@ from web3.contract import Contract
 from web3.types import TxReceipt
 
 from common.abis import (
-    SERVICE_MANAGER_ABI,
-    TASK_MANAGER_ABI,
-    DELEGATION_MANAGER_ABI,
-    STRATEGY_MANAGER_ABI,
     ALLOCATION_MANAGER_ABI,
+    DELEGATION_MANAGER_ABI,
     MODEL_REGISTRY_ABI,
     REWARDS_COORDINATOR_ABI,
     SERTN_NODES_MANAGER_ABI,
+    SERVICE_MANAGER_ABI,
+    STRATEGY_MANAGER_ABI,
+    TASK_MANAGER_ABI,
 )
+from common.config import GasStrategy
+from common.console import console, styles
 from common.constants import (
+    ALLOCATION_MANAGER_ADDRESS,
     SERVICE_MANAGER_ADDRESS,
     TASK_MANAGER_ADDRESS,
-    ALLOCATION_MANAGER_ADDRESS,
 )
-from common.console import console, styles
+from common.gas_strategy import get_gas_config
 
 
 def load_ecdsa_private_key(keystore_path: str, password: str) -> str:
@@ -47,8 +49,12 @@ class EthereumClient:
     Maybe a good idea to refactor it later.
     """
 
-    def __init__(self, rpc_url: Optional[str] = None):
-        self.w3 = Web3(Web3.HTTPProvider(rpc_url or "http://localhost:8545"))
+    def __init__(
+        self,
+        eth_rpc_url: str,
+        gas_strategy: GasStrategy,
+    ):
+        self.w3 = Web3(Web3.HTTPProvider(eth_rpc_url))
         if not self.is_connected():
             raise ConnectionError("Failed to connect to Ethereum node")
         self.service_manager = None
@@ -56,6 +62,9 @@ class EthereumClient:
         self.delegation_manager = None
         self.strategy_manager = None
         self.init_contracts()
+        self.max_priority_fee_per_gas, self.max_fee_per_gas = get_gas_config(
+            self.w3.eth, gas_strategy
+        )
 
     def init_contracts(self) -> None:
         """
@@ -134,26 +143,46 @@ class EthereumClient:
             raise ValueError(f"Address {address} is not a contract. Code: {code}")
 
     def execute_transaction(
-        self, contract_obj: Contract, function_name: str, private_key: str, args: list
+        self,
+        contract_obj: Contract,
+        function_name: str,
+        private_key: str,
+        args: list,
+        gas_limit: Optional[int] = None,
+        gas_multiplier: float = 1.1,
     ) -> TxReceipt:
         """
-        Execute a transaction on the Ethereum network
-        :param contract_call: Contract call to execute
+        Execute a transaction on the Ethereum network with dynamic gas pricing
+
+        :param contract_obj: Contract object to call
+        :param function_name: Name of the contract function to call
         :param private_key: Private key to sign the transaction
+        :param args: Arguments to pass to the contract function
+        :param gas_limit: Optional gas limit override. If None, will estimate and add buffer
+        :param gas_multiplier: Multiplier for gas estimation buffer (default 1.1 = 10% buffer)
         :return: Transaction receipt
         """
         account = Account.from_key(private_key)
-        tx = getattr(contract_obj.functions, function_name)(*args).build_transaction(
+
+        # Build base transaction for estimation
+        base_tx = getattr(contract_obj.functions, function_name)(
+            *args
+        ).build_transaction(
             {
                 "from": account.address,
-                "gas": 2000000,
-                "gasPrice": Web3.to_wei("20", "gwei"),
                 "nonce": self.w3.eth.get_transaction_count(account.address),
                 "chainId": self.w3.eth.chain_id,
             }
         )
+
+        tx_params = self.update_tx_params(
+            base_tx,
+            gas_limit=gas_limit,
+            gas_multiplier=gas_multiplier,
+        )
+
         signed_tx: SignedTransaction = self.w3.eth.account.sign_transaction(
-            tx, private_key=private_key
+            tx_params, private_key=private_key
         )
         tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
         receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
@@ -166,3 +195,34 @@ class EthereumClient:
         console.print(f"Successfully executed {msg}", style=styles.agg_info)
 
         return receipt
+
+    def update_tx_params(
+        self,
+        base_tx,
+        gas_limit: Optional[int] = None,
+        gas_multiplier: float = 1.1,
+    ) -> dict:
+        # Estimate gas limit if not provided
+        if gas_limit is None:
+            try:
+                estimated_gas = self.w3.eth.estimate_gas(base_tx)
+                gas_limit = int(estimated_gas * gas_multiplier)
+                console.print(
+                    f"Estimated gas: {estimated_gas}, using: {gas_limit}",
+                    style=styles.debug,
+                )
+            except Exception as e:
+                console.print(
+                    f"Gas estimation failed: {e}, using default 2M", style=styles.error
+                )
+                gas_limit = 2000000
+
+        tx_params = base_tx.copy()
+        tx_params.update(
+            {
+                "gas": gas_limit,
+                "maxFeePerGas": self.max_fee_per_gas,
+                "maxPriorityFeePerGas": self.max_priority_fee_per_gas,
+            }
+        )
+        return tx_params

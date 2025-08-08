@@ -16,7 +16,6 @@ from common.abis import ERC20_ABI, STRATEGY_ABI
 from common.config import AggregatorConfig
 from common.console import console, styles
 from common.constants import (
-    DEFAULT_PROOF_REQUEST_PROBABILITY,
     RESOLVE_BLOCKS_DELAY,
     OPERATOR_SET_ID,
 )
@@ -65,7 +64,9 @@ class ProofRequest(BaseModel):
 class Aggregator:
     def __init__(self, config: AggregatorConfig = None):
         self.config = config
-        self.eth_client = EthereumClient(rpc_url=self.config.eth_rpc_url)
+        self.eth_client = EthereumClient(
+            eth_rpc_url=self.config.eth_rpc_url, gas_strategy=self.config.gas_strategy
+        )
         self.private_key = load_ecdsa_private_key(
             keystore_path=str(self.config.ecdsa_private_key_store_path),
             password=os.environ.get("AGGREGATOR_ECDSA_KEY_PASSWORD", ""),
@@ -168,62 +169,20 @@ class Aggregator:
         token = self.get_token(task)
 
         print(f"Approving funds for the task - {task['fee']} tokens")
-        tx = token.functions.approve(
-            self.eth_client.service_manager.address,  # Approve the task manager to spend tokens
-            # TODO: check is the fee correct after converting to wei
-            Web3.to_wei(task["fee"], "ether"),  # Approve the fee amount
-        ).build_transaction(
-            {
-                "from": self.aggregator_address,
-                "gas": 2000000,
-                "gasPrice": Web3.to_wei("20", "gwei"),
-                "nonce": self.eth_client.w3.eth.get_transaction_count(
-                    self.aggregator_address
-                ),
-                "chainId": self.eth_client.w3.eth.chain_id,
-            }
-        )
-        signed_tx: SignedTransaction = self.eth_client.w3.eth.account.sign_transaction(
-            tx, private_key=self.private_key
-        )
-        tx_hash = self.eth_client.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-        receipt = self.eth_client.w3.eth.wait_for_transaction_receipt(tx_hash)
-        if receipt.status != 1:
-            console.print("Failed to approve funds for the task", style=styles.error)
-            return
-        console.print(
-            f"Successfully approved {task['fee']} tokens for the task",
-            style=styles.agg_info,
+        self.eth_client.execute_transaction(
+            token,
+            "approve",
+            self.private_key,
+            [
+                self.eth_client.service_manager.address,  # Approve the task manager to spend tokens
+                Web3.to_wei(task["fee"], "ether"),  # Approve the fee amount
+            ],
         )
 
         # XXX: Approve funds for the task?
-        tx = self.eth_client.task_manager.functions.sendTask(task).build_transaction(
-            {
-                "from": self.aggregator_address,
-                "gas": 2000000,
-                "gasPrice": Web3.to_wei("20", "gwei"),
-                "nonce": self.eth_client.w3.eth.get_transaction_count(
-                    self.aggregator_address
-                ),
-                "chainId": self.eth_client.w3.eth.chain_id,
-            }
+        receipt = self.eth_client.execute_transaction(
+            self.eth_client.task_manager, "sendTask", self.private_key, [task]
         )
-
-        # try:
-        #     # Simulate the transaction
-        #     self.eth_client.w3.eth.call(tx)
-        # except Exception as e:
-        #     print(f"Transaction simulation failed: {e}")
-
-        signed_tx: SignedTransaction = self.eth_client.w3.eth.account.sign_transaction(
-            tx, private_key=self.private_key
-        )
-        tx_hash = self.eth_client.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-        receipt = self.eth_client.w3.eth.wait_for_transaction_receipt(tx_hash)
-
-        if not receipt["logs"]:
-            console.print("Failed to send new task", style=styles.error)
-            return
 
         console.print(f"New task sent!", style=styles.agg_info)
 
@@ -372,30 +331,8 @@ class Aggregator:
         1. The task is not completed for a long time (300 blocks or something). So we are slashing the operator
         2. The task is completed, but we want to get a proof from the operator.
         """
-        tx = self.eth_client.task_manager.functions.challengeTask(
-            task_id
-        ).build_transaction(
-            {
-                "from": self.aggregator_address,
-                "gas": 2000000,
-                "gasPrice": Web3.to_wei("20", "gwei"),
-                "nonce": self.eth_client.w3.eth.get_transaction_count(
-                    self.aggregator_address
-                ),
-                "chainId": self.eth_client.w3.eth.chain_id,
-            }
-        )
-        signed_tx: SignedTransaction = self.eth_client.w3.eth.account.sign_transaction(
-            tx, private_key=self.private_key
-        )
-        tx_hash = self.eth_client.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-        receipt = self.eth_client.w3.eth.wait_for_transaction_receipt(tx_hash)
-        if receipt.status != 1:
-            console.print("Failed to challenge the task", style=styles.error)
-            return
-        console.print(
-            f"Successfully challenged the task #{task_id}",
-            style=styles.agg_info,
+        self.eth_client.execute_transaction(
+            self.eth_client.task_manager, "challengeTask", self.private_key, [task_id]
         )
 
     def process_submitted_proof(self, task_id: int, proof: str, signature: str) -> bool:
@@ -501,30 +438,11 @@ class Aggregator:
         If `resolved` is True, the task is resolved as completed.
         If `resolved` is False, the task is resolved as rejected and the operator is slashed.
         """
-        tx = self.eth_client.task_manager.functions.resolveTask(
-            task_id, resolved
-        ).build_transaction(
-            {
-                "from": self.aggregator_address,
-                "gas": 2000000,
-                "gasPrice": Web3.to_wei("20", "gwei"),
-                "nonce": self.eth_client.w3.eth.get_transaction_count(
-                    self.aggregator_address
-                ),
-                "chainId": self.eth_client.w3.eth.chain_id,
-            }
-        )
-        signed_tx: SignedTransaction = self.eth_client.w3.eth.account.sign_transaction(
-            tx, private_key=self.private_key
-        )
-        tx_hash = self.eth_client.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-        receipt = self.eth_client.w3.eth.wait_for_transaction_receipt(tx_hash)
-        if receipt.status != 1:
-            console.print("Failed to resolve the task", style=styles.error)
-            return
-        console.print(
-            f"Successfully resolved the task #{task_id}",
-            style=styles.agg_info,
+        self.eth_client.execute_transaction(
+            self.eth_client.task_manager,
+            "resolveTask",
+            self.private_key,
+            [task_id, resolved],
         )
 
     def check_pending_tasks(self):

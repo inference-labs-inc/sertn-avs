@@ -21,6 +21,15 @@ class Environment(str, Enum):
     TESTING = "testing"
 
 
+class GasStrategy(str, Enum):
+    """Gas strategies for transaction execution."""
+
+    SLOW = "slow"
+    STANDARD = "standard"
+    FAST = "fast"
+    PRIORITY = "priority"
+
+
 class ModelConfig(BaseModel):
     """Configuration for a model supported by an operator node."""
 
@@ -80,6 +89,10 @@ class BaseConfig(BaseModel):
     aggregator_server_ip_port_address: str = Field(
         description="Address where aggregator server listens",
         pattern=r"^[^:]+:\d+$",
+    )
+    gas_strategy: GasStrategy = Field(
+        default=GasStrategy.STANDARD,
+        description="Gas strategy for transaction execution",
     )
 
     @field_validator("ecdsa_private_key_store_path")
