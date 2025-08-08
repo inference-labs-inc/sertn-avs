@@ -14,10 +14,9 @@ from web3 import Web3
 
 from common.abis import ERC20_ABI, STRATEGY_ABI
 from common.config import AggregatorConfig
-from common.console import console, styles
 from common.constants import (
-    RESOLVE_BLOCKS_DELAY,
     OPERATOR_SET_ID,
+    RESOLVE_BLOCKS_DELAY,
 )
 from common.contract_constants import (
     TaskStateMap,
@@ -25,11 +24,14 @@ from common.contract_constants import (
     VerificationStrategiesMap,
 )
 from common.eth import EthereumClient, load_ecdsa_private_key
+from common.logging import get_logger
 from models.proof.ezkl_handler import EZKLHandler
+
+logger = get_logger("aggregator")
 
 
 def run_aggregator(config: AggregatorConfig) -> None:
-    console.print("Starting Sertn Aggregator...", style=styles.agg_info)
+    logger.info("Starting Sertn Aggregator...")
     aggregator = Aggregator(config=config)
     threading.Thread(target=aggregator.start_sending_new_tasks, args=[]).start()
     threading.Thread(target=aggregator.listen_for_events, args=[]).start()
@@ -120,10 +122,10 @@ class Aggregator:
         """
         i = 0
         while True:
-            console.print("Sending new task", style=styles.debug)
+            logger.debug("Sending new task")
             self.send_new_task(i)
             if not loop_running:
-                console.print("Stopping sending new tasks", style=styles.debug)
+                logger.debug("Stopping sending new tasks")
                 break
             time.sleep(60)
             i += 1
@@ -134,17 +136,14 @@ class Aggregator:
 
         model_id = self.get_model_id()
         if model_id is None:
-            console.print(
+            logger.info(
                 "No models found in the model registry, cannot send a new task",
-                style=styles.error,
             )
             return None
 
         operator_address = self.get_random_operator()
         if operator_address is None:
-            console.print(
-                "No operators found, cannot send a new task", style=styles.error
-            )
+            logger.warning("No operators found, cannot send a new task")
             return None
 
         # Define the _task struct, the dict should correspond to the struct in the contract
@@ -184,7 +183,7 @@ class Aggregator:
             self.eth_client.task_manager, "sendTask", self.private_key, [task]
         )
 
-        console.print(f"New task sent!", style=styles.agg_info)
+        logger.debug(f"New task sent!")
 
         # also `TaskCreated` event is emitted, do we need it?
         event = self.eth_client.task_manager.events.TaskAssigned().process_log(
@@ -192,9 +191,7 @@ class Aggregator:
         )
 
         task_index = event["args"]["taskId"]
-        console.print(
-            f"Successfully sent the new task {task_index}", style=styles.agg_info
-        )
+        logger.info(f"Successfully sent the new task {task_index}")
 
         return task_index
 
@@ -211,9 +208,7 @@ class Aggregator:
         if operators:
             return random.choice(operators)
         else:
-            console.print(
-                "No operators found in the allocation manager", style=styles.error
-            )
+            logger.error("No operators found in the allocation manager")
             return None
 
     def get_model_id(self) -> int:
@@ -222,7 +217,7 @@ class Aggregator:
         """
         models_count = self.eth_client.model_registry.functions.modelIndex().call() - 1
         if models_count <= 0:
-            console.print("No models found in the model registry", style=styles.error)
+            logger.error("No models found in the model registry")
             return None
         # return a random model ID from 1 to models_count
         return random.randint(1, models_count)
@@ -236,7 +231,7 @@ class Aggregator:
             model_id
         ).call()
         if not cost:
-            console.print(f"Model {model_id} has zero cost!!!", style=styles.error)
+            logger.error(f"Model {model_id} has zero cost!!!")
             cost = 0
         return cost
 
@@ -277,7 +272,7 @@ class Aggregator:
         """
         Listen for task manager events in a separate thread.
         """
-        console.print("Listening for task manager events...", style=styles.debug)
+        logger.debug("Listening for task manager events...")
         task_completed_events = (
             self.eth_client.task_manager.events.TaskCompleted.create_filter(
                 from_block="latest"
@@ -286,14 +281,12 @@ class Aggregator:
         processed_count: int = 0
         while True:
             for event in task_completed_events.get_new_entries():
-                console.print(
-                    f"Some task has been completed. Processing...", style=styles.debug
-                )
+                logger.debug(f"Some task has been completed. Processing...")
                 self.process_completed_task(event)
                 processed_count += 1
 
             if not loop_running:
-                console.print("Stopping event listener...", style=styles.debug)
+                logger.debug("Stopping event listener...")
                 return processed_count
 
             time.sleep(3)
@@ -305,14 +298,13 @@ class Aggregator:
         It checks the task state and either resolves the task or challenges it for a proof.
         """
         task_id = event["args"]["taskId"]
-        console.print(f"Processing completed task #{task_id}", style=styles.agg_info)
+        logger.info(f"Processing completed task #{task_id}")
         # get task details from the contract
         task = self.eth_client.task_manager.functions.getTask(task_id).call()
         task_state = task[TaskStructMap.STATE]  # TaskStateMap
         if task_state != TaskStateMap.COMPLETED.value:
-            console.print(
+            logger.info(
                 f"Task {task_id} has invalid state, current state: {task_state}",
-                style=styles.error,
             )
             return
         # no we are going to mark the task resolved or challenge it, requesting a proof
@@ -336,9 +328,8 @@ class Aggregator:
         )
 
     def process_submitted_proof(self, task_id: int, proof: str, signature: str) -> bool:
-        console.print(
+        logger.info(
             f"Processing proof submitted for the task #{task_id}...",
-            style=styles.agg_info,
         )
         task: tuple = self.eth_client.task_manager.functions.getTask(task_id).call()
         operator_address: str = task[TaskStructMap.OPERATOR]
@@ -353,24 +344,21 @@ class Aggregator:
             message, signature=bytes.fromhex(signature)
         )
         if recovered_address != operator_address:
-            console.print(
+            logger.info(
                 f"Signature verification failed: {recovered_address} != {operator_address}",
-                style=styles.error,
             )
             raise InvalidProofError("Signature verification failed")
 
         # check the task state
         state: int = task[TaskStructMap.STATE]
         if state in (TaskStateMap.RESOLVED.value, TaskStateMap.REJECTED.value):
-            console.print(
-                f"The task #{task_id} is already {TaskStateMap.from_int(state)}, skipping...",
-                style=styles.error,
+            logger.error(
+                f"The task #{task_id} is already {TaskStateMap.from_int(state)}, skipping..."
             )
             return InvalidProofError("The task is already resolved")
         if state != TaskStateMap.CHALLENGED.value:
-            console.print(
-                f"The task #{task_id} isn't challenged. State is {TaskStateMap.from_int(state)}, skipping...",
-                style=styles.error,
+            logger.error(
+                f"The task #{task_id} isn't challenged. State is {TaskStateMap.from_int(state)}, skipping..."
             )
             return InvalidProofError("The task isn't challenged")
 
@@ -382,16 +370,14 @@ class Aggregator:
             ).call()
         )
         if verification_strategy != VerificationStrategiesMap.OFFCHAIN:
-            console.print(
+            logger.info(
                 f"The task #{task_id} is not offchain verifiable...",
-                style=styles.error,
             )
             return InvalidProofError("Not verifiable")
         model_uri = self.eth_client.model_registry.functions.modelURI(model_id).call()
         if not model_uri:
-            console.print(
+            logger.info(
                 f"The model {model_id} has no URI, cannot verify the proof...",
-                style=styles.error,
             )
             return InvalidProofError("Model URI is empty")
 
@@ -401,10 +387,9 @@ class Aggregator:
 
         # check the task hash (is the same one submitted to the chain?)
         if proof_hash != Web3.keccak(proof.encode()):
-            print(
+            logger.error(
                 "Proof hashes mismatch! Proof, submitted to the aggregator differs from"
-                f" one submitted to the chain. Task #{task_id} Rejecting...",
-                style=styles.error,
+                f" one submitted to the chain. Task #{task_id} Rejecting..."
             )
             self.resolve_task(task_id=task_id, resolved=False)  # slash the operator
             raise InvalidProofError("Invalid proof hash")
@@ -421,14 +406,12 @@ class Aggregator:
         )
         if verified:
             # cool, the operator might receive the reward
-            console.print(f"The task #{task_id} is verified!", style=styles.agg_info)
+            logger.info(f"The task #{task_id} is verified!")
             self.resolve_task(task_id=task_id, resolved=True)
             return True
         else:
             # not good... the proof is not verified
-            console.print(
-                f"The proof for task #{task_id} is invalid!", style=styles.error
-            )
+            logger.error(f"The proof for task #{task_id} is invalid!")
             self.resolve_task(task_id=task_id, resolved=False)
             raise InvalidProofError("Proof is not verified")
 
@@ -456,9 +439,7 @@ class Aggregator:
             )
             current_block: int = self.eth_client.w3.eth.block_number
             for task_id in pending_ids:
-                console.print(
-                    f"Checking pending task #{task_id}...", style=styles.debug
-                )
+                logger.debug(f"Checking pending task #{task_id}...")
                 task: tuple = self.eth_client.task_manager.functions.getTask(
                     task_id
                 ).call()
@@ -470,9 +451,8 @@ class Aggregator:
                 ):
                     # the task is assigned, but not completed for a long time
                     # we are going to challenge it and slash the operator
-                    console.print(
+                    logger.info(
                         f"Task #{task_id} is assigned, but not completed for a long time. Challenging...",
-                        style=styles.agg_info,
                     )
                     self.challenge_task(task_id)
                 elif (
@@ -481,10 +461,9 @@ class Aggregator:
                 ):
                     # the task is challenged, but not completed for a long time
                     # we are going to resolve it as rejected and slash the operator
-                    console.print(
+                    logger.info(
                         f"Task #{task_id} is challenged, but a proof is not completed for a long time. "
                         "Challenging again... Contract will slash the operator.",
-                        style=styles.agg_info,
                     )
                     self.challenge_task(task_id=task_id)
             time.sleep(60)

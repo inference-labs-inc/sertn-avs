@@ -2,8 +2,10 @@ from datetime import datetime, timezone
 from typing import List, Optional
 
 from common.config import ModelConfig, NodeConfig
-from common.console import console, styles
+from common.logging import get_logger
 from common.eth import EthereumClient
+
+logger = get_logger("operator")
 
 
 class OperatorNodesManager:
@@ -39,9 +41,8 @@ class OperatorNodesManager:
             if model_uri:  # Only add models with non-empty URIs
                 models[model_uri] = int(model_id)
             else:
-                console.print(
+                logger.info(
                     f"Model ID {model_id} has an empty URI, skipping.",
-                    style=styles.warning,
                 )
         return models
 
@@ -77,9 +78,8 @@ class OperatorNodesManager:
                 if node_id not in registered_node_ids:
                     # register new node
                     self.sync_node_state(node_id)
-                    console.print(
+                    logger.info(
                         f"Node with ID {node_id} is registered, and has synced state from the blockchain.",
-                        style=styles.agg_info,
                     )
 
     def sync_node_state(self, node_id: int) -> Optional[str]:
@@ -107,9 +107,8 @@ class OperatorNodesManager:
         except IndexError:
             # Node not found in the config, removing from blockchain...
             self.deregister_node(node_id)
-            console.print(
+            logger.info(
                 f"Node {node_name} with ID {node_id} not found in config, deregistered from blockchain.",
-                style=styles.warning,
             )
             return None
 
@@ -126,9 +125,8 @@ class OperatorNodesManager:
             or metadata != config_node.metadata
             or totalFucus != config_node.total_fucus
         ):
-            console.print(
+            logger.info(
                 f"Updating node {node_name} with ID {node_id} details in the blockchain.",
-                style=styles.agg_info,
             )
             # update node details
             self.update_node(
@@ -174,9 +172,8 @@ class OperatorNodesManager:
                     self.private_key,
                     [int(node_id), model_id, int(allocated_fucus)],
                 )
-                console.print(
+                logger.info(
                     f"Added model {model_id} with {allocated_fucus} FUCUs to node {node_id}",
-                    style=styles.agg_info,
                 )
                 continue
             if actual_models[model_id] != allocated_fucus:
@@ -186,9 +183,8 @@ class OperatorNodesManager:
                     self.private_key,
                     [node_id, model_id, allocated_fucus],
                 )
-                console.print(
+                logger.info(
                     f"Updated model {model_id} with {allocated_fucus} FUCUs for node {node_id}",
-                    style=styles.agg_info,
                 )
             del actual_models[model_id]
 
@@ -201,9 +197,8 @@ class OperatorNodesManager:
                     self.private_key,
                     [node_id, model_id],
                 )
-                console.print(
+                logger.info(
                     f"Removed model {model_id} from node {node_id}",
-                    style=styles.agg_info,
                 )
 
     def register_node(self, name: str, metadata: str, total_fucus: int):
@@ -224,9 +219,8 @@ class OperatorNodesManager:
             ],
         )
 
-        console.print(
+        logger.info(
             f'Successfully registered the "{name}" node in the blockchain',
-            style=styles.agg_info,
         )
 
     def deregister_node(self, node_id: int):
@@ -238,9 +232,8 @@ class OperatorNodesManager:
             self.eth_client.nodes_manager, "removeNode", self.private_key, [node_id]
         )
 
-        console.print(
+        logger.info(
             f'Successfully deregistered the "{node_id}" node from the contract',
-            style=styles.agg_info,
         )
 
     def activate_node(self, node_id: int):
@@ -252,9 +245,8 @@ class OperatorNodesManager:
             self.eth_client.nodes_manager, "reactivateNode", self.private_key, [node_id]
         )
 
-        console.print(
+        logger.info(
             f'Successfully activated the "{node_id}" node in the contract',
-            style=styles.agg_info,
         )
 
     def deactivate_node(self, node_id: int):
@@ -266,9 +258,8 @@ class OperatorNodesManager:
             self.eth_client.nodes_manager, "deactivateNode", self.private_key, [node_id]
         )
 
-        console.print(
+        logger.info(
             f'Successfully deactivated the "{node_id}" node in the contract',
-            style=styles.agg_info,
         )
 
     def update_node(
@@ -292,9 +283,8 @@ class OperatorNodesManager:
             [node_id, name, metadata, total_fucus],
         )
 
-        console.print(
+        logger.info(
             f'Successfully updated the "{node_id}" node in the contract',
-            style=styles.agg_info,
         )
 
     def print_nodes(self):
@@ -309,16 +299,13 @@ class OperatorNodesManager:
         )
 
         if not registered_node_ids:
-            console.print(
-                "No nodes registered for this operator.", style=styles.warning
-            )
+            logger.warning("No nodes registered for this operator.")
             return
 
-        console.print(
+        logger.info(
             f"\n📋 Nodes registered for operator {self.operator_address}:",
-            style=styles.agg_info,
         )
-        console.print("=" * 80, style=styles.agg_info)
+        logger.info("=" * 80)
 
         # Create reverse mapping from model ID to model URI
         model_id_to_uri = {
@@ -359,58 +346,50 @@ class OperatorNodesManager:
                 status_style = styles.agg_info if is_active else styles.warning
                 status_text = "🟢 ACTIVE" if is_active else "🔴 INACTIVE"
 
-                console.print(
+                logger.info(
                     f"\n{i}. Node ID: {node_id} - {status_text}", style=status_style
                 )
-                console.print("-" * 60, style=styles.debug)
+                logger.debug("-" * 60)
 
                 # Print basic node information
-                console.print(f"   Name: {node_name}", style=styles.debug)
-                console.print(
+                logger.debug(f"   Name: {node_name}")
+                logger.info(
                     f"   Metadata: {metadata if metadata else 'N/A'}",
-                    style=styles.debug,
                 )
-                console.print(f"   Total FUCUs: {total_fucus:,}", style=styles.debug)
-                console.print(
-                    f"   Allocated FUCUs: {allocated_fucus:,}", style=styles.debug
-                )
-                console.print(
-                    f"   Available FUCUs: {available_fucus:,}", style=styles.debug
-                )
+                logger.info(f"   Total FUCUs: {total_fucus:,}")
+                logger.info(f"   Allocated FUCUs: {allocated_fucus:,}")
+                logger.info(f"   Available FUCUs: {available_fucus:,}")
                 readable_created_at = datetime.fromtimestamp(
                     created_at, tz=timezone.utc
                 ).strftime("%Y-%m-%d %H:%M:%S UTC")
-                console.print(
+                logger.info(
                     f"   Created At: {created_at} ({readable_created_at})",
                     style=styles.debug,
                 )
-                console.print(
+                logger.info(
                     f"   Supported Models Count: {supported_models_count}",
-                    style=styles.debug,
                 )
 
                 # Print supported models
                 if supported_model_ids:
-                    console.print("\n   📦 Supported Models:", style=styles.agg_info)
+                    logger.info("\n   📦 Supported Models:")
                     for model_id, model_fucus in zip(
                         supported_model_ids, model_allocated_fucus
                     ):
                         model_uri = model_id_to_uri.get(
                             model_id, f"Unknown (ID: {model_id})"
                         )
-                        console.print(f"      • Model: {model_uri}", style=styles.debug)
-                        console.print(
+                        logger.debug(f"      • Model: {model_uri}")
+                        logger.info(
                             f"        Allocated FUCUs: {model_fucus:,}",
-                            style=styles.debug,
                         )
                 else:
-                    console.print("   📦 No models supported", style=styles.warning)
+                    logger.warning("   📦 No models supported")
 
             except Exception as e:
-                console.print(
+                logger.info(
                     f"   ❌ Error getting details for node {node_id}: {e}",
-                    style=styles.error,
                 )
 
-        console.print("\n" + "=" * 80, style=styles.agg_info)
-        console.print(f"Total nodes: {len(registered_node_ids)}", style=styles.agg_info)
+        logger.info("\n" + "=" * 80)
+        logger.info(f"Total nodes: {len(registered_node_ids)}")

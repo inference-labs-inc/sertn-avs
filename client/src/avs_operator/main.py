@@ -13,15 +13,17 @@ from web3 import Web3
 
 from avs_operator.nodes import OperatorNodesManager
 from common.config import OperatorConfig
-from common.console import console, styles
+from common.logging import get_logger
 from common.contract_constants import TaskStructMap
 from common.eth import EthereumClient, load_ecdsa_private_key
 from models.onnx_run import run_onnx
 from models.proof.ezkl_handler import EZKLHandler
 
+logger = get_logger("operator")
+
 
 def run_operator(config: OperatorConfig) -> None:
-    console.print("Starting Sertn Operator...", style=styles.op_info)
+    logger.info("Starting Sertn Operator...")
 
     with tqdm(total=100, desc="Initializing operator") as pbar:
         task_operator = TaskOperator(config)
@@ -53,7 +55,7 @@ class TaskOperator:
         )
 
     def listen_for_events(self, loop_running: bool = True) -> int | None:
-        console.print("Starting Operator...", style=styles.op_info)
+        logger.info("Starting Operator...")
         task_assigned_events = (
             self.eth_client.task_manager.events.TaskAssigned.create_filter(
                 from_block="latest"
@@ -67,21 +69,17 @@ class TaskOperator:
         processed_count: int = 0
         while True:
             for event in task_assigned_events.get_new_entries():
-                console.print(
-                    f"New assignedTask received. Processing...", style=styles.op_info
-                )
+                logger.info(f"New assignedTask received. Processing...")
                 self.process_assigned_task(
                     event["args"]["taskId"], event["args"]["operator"]
                 )
                 processed_count += 1
             for event in task_challenged_events.get_new_entries():
-                console.print(
-                    f"Challenged received. Processing...", style=styles.op_info
-                )
+                logger.info(f"Challenged received. Processing...")
                 self.process_challenged_task(event["args"]["taskId"])
                 processed_count += 1
             if not loop_running:
-                console.print("Stopping Operator...", style=styles.op_info)
+                logger.info("Stopping Operator...")
                 return processed_count
             time.sleep(3)
 
@@ -89,10 +87,9 @@ class TaskOperator:
         """Process assigned task by task ID and operator address."""
 
         if operator_address != self.operator_address:
-            console.print(
+            logger.info(
                 f"Operator address {operator_address} does not match "
                 f"the operator address {self.operator_address}, skipping...",
-                style=styles.debug,
             )
             return
 
@@ -130,10 +127,9 @@ class TaskOperator:
         operator_address: str = task[TaskStructMap.OPERATOR]  # address operator
 
         if operator_address != self.operator_address:
-            console.print(
+            logger.info(
                 f"Operator address {operator_address} does not match "
                 f"the operator address {self.operator_address}, skipping...",
-                style=styles.debug,
             )
             return
 
@@ -159,10 +155,9 @@ class TaskOperator:
             message, private_key=self.private_key
         )
         signature = signed_message.signature.hex()
-        console.print(
+        logger.info(
             f"Signature generated, task_id: {starting_block}, model: {model_id}, "
             f"signature: {signature}",
-            style=styles.debug,
         )
 
         # send the proof and signature to the aggregator server
@@ -176,14 +171,12 @@ class TaskOperator:
         )
         try:
             resp.raise_for_status()
-            console.print(
+            logger.info(
                 f"Successfully posted a proof for the {task_id} task",
-                style=styles.agg_info,
             )
         except requests.HTTPError:
-            console.print(
+            logger.info(
                 f"Failed to post a proof for the {task_id} task: {resp.text}",
-                style=styles.error,
             )
 
     def generate_proof_for_task(
@@ -222,7 +215,6 @@ class TaskOperator:
             self.private_key,
             [task_id, output],
         )
-        console.print(
+        logger.info(
             f"Successfully posted an output to the {task_id} task",
-            style=styles.agg_info,
         )

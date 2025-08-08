@@ -18,7 +18,7 @@ from common.abis import (
     TASK_MANAGER_ABI,
 )
 from common.config import GasStrategy
-from common.console import console, styles
+from common.logging import get_logger
 from common.constants import (
     ALLOCATION_MANAGER_ADDRESS,
     SERVICE_MANAGER_ADDRESS,
@@ -26,15 +26,16 @@ from common.constants import (
 )
 from common.gas_strategy import get_gas_config
 
+logger = get_logger("common")
+
 
 def load_ecdsa_private_key(keystore_path: str, password: str) -> str:
     """
     Load ECDSA private key from keystore file
     """
     if not password:
-        console.print(
+        logger.info(
             "ECDSA key password is not set. using empty string.",
-            style=styles.debug,
         )
 
     with open(keystore_path, "r") as f:
@@ -189,10 +190,10 @@ class EthereumClient:
 
         msg = f"{function_name} in the contract {contract_obj.address}"
         if receipt.status != 1:
-            console.print(f"Failed to execute {msg}", style=styles.error)
+            logger.error(f"Failed to execute {msg}")
             raise RuntimeError(f"Failed to execute {msg}")
 
-        console.print(f"Successfully executed {msg}", style=styles.agg_info)
+        logger.info(f"Successfully executed {msg}")
 
         return receipt
 
@@ -207,14 +208,11 @@ class EthereumClient:
             try:
                 estimated_gas = self.w3.eth.estimate_gas(base_tx)
                 gas_limit = int(estimated_gas * gas_multiplier)
-                console.print(
+                logger.info(
                     f"Estimated gas: {estimated_gas}, using: {gas_limit}",
-                    style=styles.debug,
                 )
             except Exception as e:
-                console.print(
-                    f"Gas estimation failed: {e}, using default 2M", style=styles.error
-                )
+                logger.info(f"Gas estimation failed: {e}, using default 2M")
                 gas_limit = 2000000
 
         tx_params = base_tx.copy()

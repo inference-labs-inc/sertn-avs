@@ -2,7 +2,9 @@ from web3 import Web3
 from web3.eth import Eth
 
 from common.config import GasStrategy
-from common.console import console, styles
+from common.logging import get_logger
+
+logger = get_logger("common")
 
 
 def get_gas_config(
@@ -57,5 +59,5 @@ def get_gas_config(
             )
 
     except Exception as e:
-        console.print(f"Failed to get gas config: {e}", style=styles.error)
+        logger.error(f"Failed to get gas config: {e}")
         return (None, None)  # Default to None if error occurs

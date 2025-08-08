@@ -2,10 +2,10 @@ from typing import Optional
 
 import typer
 
-from avs_operator import run_operator
 from aggregator import run_aggregator
+from avs_operator import run_operator
 from common.config import load_config
-from common.console import console, styles
+from common.logging import get_logger, setup_logging
 
 app = typer.Typer(
     name="sertn",
@@ -28,14 +28,27 @@ def start(
         "-c",
         help="Path to config file",
     ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Enable verbose logging (debug level)",
+    ),
+    log_file: Optional[str] = typer.Option(
+        None,
+        "--log-file",
+        "-l",
+        help="Path to log file (optional)",
+    ),
 ) -> None:
-    console.print(f"Starting Sertn in {mode} mode...", style=styles.debug)
+    # Setup logging first
+    setup_logging(verbose=verbose, log_file=log_file)
+    logger = get_logger()
+
+    logger.debug(f"Starting Sertn in {mode} mode...")
 
     if not config:
-        console.print(
-            "Config file path is required. Use --config to specify the path.",
-            style=styles.error,
-        )
+        logger.error("Config file path is required. Use --config to specify the path.")
         raise typer.Exit(1)
 
     try:
@@ -46,16 +59,10 @@ def start(
             config_obj = load_config(config, "aggregator")
             run_aggregator(config_obj)
         else:
-            console.print(
-                f"Invalid mode: {mode}. Use 'operator' or 'aggregator'",
-                style=styles.error,
-            )
+            logger.error(f"Invalid mode: {mode}. Use 'operator' or 'aggregator'")
             raise typer.Exit(1)
     except Exception as e:
-        console.print(
-            f"Error loading or validating config: {e}",
-            style=styles.error,
-        )
+        logger.error(f"Error loading or validating config: {e}")
         raise typer.Exit(1)
 
 
