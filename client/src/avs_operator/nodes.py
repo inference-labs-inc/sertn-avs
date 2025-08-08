@@ -299,13 +299,13 @@ class OperatorNodesManager:
         )
 
         if not registered_node_ids:
-            logger.warning("No nodes registered for this operator.")
+            print("No nodes registered for this operator.")
             return
 
-        logger.info(
+        print(
             f"\n📋 Nodes registered for operator {self.operator_address}:",
         )
-        logger.info("=" * 80)
+        print("=" * 80)
 
         # Create reverse mapping from model ID to model URI
         model_id_to_uri = {
@@ -343,53 +343,49 @@ class OperatorNodesManager:
                 )
 
                 # Print node header
-                status_style = styles.agg_info if is_active else styles.warning
-                status_text = "🟢 ACTIVE" if is_active else "🔴 INACTIVE"
+                if is_active:
+                    print(f"\n{i}. Node ID: {node_id} - 🟢 ACTIVE")
+                else:
+                    print(f"\n{i}. Node ID: {node_id} - 🔴 INACTIVE")
 
-                logger.info(
-                    f"\n{i}. Node ID: {node_id} - {status_text}", style=status_style
-                )
-                logger.debug("-" * 60)
+                print("-" * 60)
 
                 # Print basic node information
-                logger.debug(f"   Name: {node_name}")
-                logger.info(
+                print(f"   Name: {node_name}")
+                print(
                     f"   Metadata: {metadata if metadata else 'N/A'}",
                 )
-                logger.info(f"   Total FUCUs: {total_fucus:,}")
-                logger.info(f"   Allocated FUCUs: {allocated_fucus:,}")
-                logger.info(f"   Available FUCUs: {available_fucus:,}")
+                print(f"   Total FUCUs: {total_fucus:,}")
+                print(f"   Allocated FUCUs: {allocated_fucus:,}")
+                print(f"   Available FUCUs: {available_fucus:,}")
                 readable_created_at = datetime.fromtimestamp(
                     created_at, tz=timezone.utc
                 ).strftime("%Y-%m-%d %H:%M:%S UTC")
-                logger.info(
-                    f"   Created At: {created_at} ({readable_created_at})",
-                    style=styles.debug,
-                )
-                logger.info(
+                print(f"   Created At: {created_at} ({readable_created_at})")
+                print(
                     f"   Supported Models Count: {supported_models_count}",
                 )
 
                 # Print supported models
                 if supported_model_ids:
-                    logger.info("\n   📦 Supported Models:")
+                    print("\n   📦 Supported Models:")
                     for model_id, model_fucus in zip(
                         supported_model_ids, model_allocated_fucus
                     ):
                         model_uri = model_id_to_uri.get(
                             model_id, f"Unknown (ID: {model_id})"
                         )
-                        logger.debug(f"      • Model: {model_uri}")
-                        logger.info(
+                        print(f"      • Model: {model_uri}")
+                        print(
                             f"        Allocated FUCUs: {model_fucus:,}",
                         )
                 else:
-                    logger.warning("   📦 No models supported")
+                    print("   📦 No models supported")
 
             except Exception as e:
-                logger.info(
+                print(
                     f"   ❌ Error getting details for node {node_id}: {e}",
                 )
 
-        logger.info("\n" + "=" * 80)
-        logger.info(f"Total nodes: {len(registered_node_ids)}")
+        print("\n" + "=" * 80)
+        print(f"Total nodes: {len(registered_node_ids)}")
