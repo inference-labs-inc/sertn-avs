@@ -1,12 +1,11 @@
-from dataclasses import dataclass
 from typing import Optional
 
 import typer
-import yaml
 
-from avs_operator import run_operator
 from aggregator import run_aggregator
-from common.console import console, styles
+from avs_operator import run_operator
+from common.config import load_config
+from common.logging import get_logger, setup_logging
 
 app = typer.Typer(
     name="sertn",
@@ -29,28 +28,41 @@ def start(
         "-c",
         help="Path to config file",
     ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Enable verbose logging (debug level)",
+    ),
+    log_file: Optional[str] = typer.Option(
+        None,
+        "--log-file",
+        "-l",
+        help="Path to log file (optional)",
+    ),
 ) -> None:
-    console.print(f"Starting Sertn in {mode} mode...", style=styles.debug)
+    # Setup logging first
+    setup_logging(verbose=verbose, log_file=log_file)
+    logger = get_logger()
 
-    try:
-        with open(config, "r") as f:
-            config_dict = yaml.load(f, Loader=yaml.BaseLoader)
-    except Exception as e:
-        console.print(
-            f"Error loading config file. Please check the path and format.",
-            style=styles.error,
-        )
+    logger.debug(f"Starting Sertn in {mode} mode...")
+
+    if not config:
+        logger.error("Config file path is required. Use --config to specify the path.")
         raise typer.Exit(1)
 
-    if mode == "operator":
-        run_operator(config_dict)
-    elif mode == "aggregator":
-        run_aggregator(config_dict)
-    else:
-        console.print(
-            f"Invalid mode: {mode}. Use 'operator' or 'aggregator'",
-            style=styles.error,
-        )
+    try:
+        if mode == "operator":
+            config_obj = load_config(config, "operator")
+            run_operator(config_obj)
+        elif mode == "aggregator":
+            config_obj = load_config(config, "aggregator")
+            run_aggregator(config_obj)
+        else:
+            logger.error(f"Invalid mode: {mode}. Use 'operator' or 'aggregator'")
+            raise typer.Exit(1)
+    except Exception as e:
+        logger.error(f"Error loading or validating config: {e}")
         raise typer.Exit(1)
 
 

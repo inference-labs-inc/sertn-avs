@@ -44,10 +44,7 @@ contract ModelRegistryTest is Test {
         );
         console.log("Config read");
 
-        coreDeployment = CoreDeploymentLib.deployContracts(
-            proxyAdmin,
-            coreConfigData
-        );
+        coreDeployment = CoreDeploymentLib.deployContracts(proxyAdmin, coreConfigData);
         console.log("CoreDeploymentLib deployed");
 
         // Deploy contracts as owner
@@ -63,7 +60,8 @@ contract ModelRegistryTest is Test {
             address(mockVerifier),
             IModelRegistry.VerificationStrategy.Onchain,
             "model1",
-            100
+            100,
+            10
         );
 
         vm.stopPrank();
@@ -76,16 +74,14 @@ contract ModelRegistryTest is Test {
 
         // Fail to create second model with same verifier
         vm.expectRevert(
-            abi.encodeWithSelector(
-                IModelRegistry.ModelAlreadyExists.selector,
-                modelId
-            )
+            abi.encodeWithSelector(IModelRegistry.ModelAlreadyExists.selector, modelId)
         );
         modelRegistry.createNewModel(
             address(mockVerifier),
             IModelRegistry.VerificationStrategy.Offchain,
             "model2",
-            200
+            200,
+            15
         );
 
         // Create second model
@@ -95,13 +91,15 @@ contract ModelRegistryTest is Test {
             address(mockVerifier2),
             IModelRegistry.VerificationStrategy.Offchain,
             "model2",
-            200
+            200,
+            15
         );
         uint256 modelId2 = modelRegistry.createNewModel(
             address(mockVerifier2),
             IModelRegistry.VerificationStrategy.Offchain,
             "model2",
-            200
+            200,
+            15
         );
 
         require(modelId == 1, "First model ID should be 1");
@@ -150,10 +148,7 @@ contract ModelRegistryTest is Test {
         modelRegistry.updateComputeCost(modelId, 200);
 
         // Verify the update
-        require(
-            modelRegistry.computeCost(modelId) == 200,
-            "Compute cost should be updated to 200"
-        );
+        require(modelRegistry.computeCost(modelId) == 200, "Compute cost should be updated to 200");
 
         vm.stopPrank();
     }
@@ -163,24 +158,16 @@ contract ModelRegistryTest is Test {
 
         // Fail to update model verifier to the same address
         vm.expectRevert(
-            abi.encodeWithSelector(
-                IModelRegistry.ModelAlreadyExists.selector,
-                modelId
-            )
+            abi.encodeWithSelector(IModelRegistry.ModelAlreadyExists.selector, modelId)
         );
         modelRegistry.updateModelVerifier(modelId, address(mockVerifier));
         // Fail to update model verifier to an invalid address
-        vm.expectRevert(
-            abi.encodeWithSelector(IModelRegistry.InvalidModelVerifier.selector)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IModelRegistry.InvalidModelVerifier.selector));
         modelRegistry.updateModelVerifier(modelId, address(0));
 
         // Update the model verifier
         vm.expectEmit(true, true, false, false, address(modelRegistry));
-        emit IModelRegistry.ModelVerifierUpdated(
-            modelId,
-            address(mockVerifier2)
-        );
+        emit IModelRegistry.ModelVerifierUpdated(modelId, address(mockVerifier2));
         modelRegistry.updateModelVerifier(modelId, address(mockVerifier2));
 
         // Verify the update

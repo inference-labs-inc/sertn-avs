@@ -41,6 +41,11 @@
         "name": "_computeCost",
         "type": "uint256",
         "internalType": "uint256"
+      },
+      {
+        "name": "_requiredFUCUs",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "outputs": [
@@ -151,6 +156,25 @@
   },
   {
     "type": "function",
+    "name": "requiredFUCUs",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "transferOwnership",
     "inputs": [
       {
@@ -211,6 +235,24 @@
         "name": "_modelVerifier",
         "type": "address",
         "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "updateRequiredFUCUs",
+    "inputs": [
+      {
+        "name": "modelId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "fucus",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "outputs": [],
@@ -318,6 +360,12 @@
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
+      },
+      {
+        "name": "requiredFUCUs",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -375,6 +423,25 @@
         "type": "address",
         "indexed": true,
         "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RequiredFUCUsUpdated",
+    "inputs": [
+      {
+        "name": "modelId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "requiredFUCUs",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false

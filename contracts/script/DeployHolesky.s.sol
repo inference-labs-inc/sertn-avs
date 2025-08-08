@@ -5,6 +5,7 @@ import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 import {SertnServiceManager} from "../src/SertnServiceManager.sol";
 import {SertnTaskManager} from "../src/SertnTaskManager.sol";
+import {SertnNodesManager} from "../src/SertnNodesManager.sol";
 import {ModelRegistry} from "../src/ModelRegistry.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
@@ -30,30 +31,32 @@ contract DeployHolesky is Script {
         ModelRegistry modelRegistryImpl = new ModelRegistry();
         SertnTaskManager taskManagerImpl = new SertnTaskManager();
         SertnServiceManager serviceManagerImpl = new SertnServiceManager();
+        SertnNodesManager nodesManagerImpl = new SertnNodesManager();
 
         console2.log("Deployed implementations:");
         console2.log("- ModelRegistry:", address(modelRegistryImpl));
         console2.log("- TaskManager:", address(taskManagerImpl));
         console2.log("- ServiceManager:", address(serviceManagerImpl));
+        console2.log("- NodesManager:", address(nodesManagerImpl));
 
         bytes memory empty = "";
         TransparentUpgradeableProxy modelRegistryProxy = new TransparentUpgradeableProxy(
-                address(modelRegistryImpl),
-                address(proxyAdmin),
-                empty
-            );
+            address(modelRegistryImpl),
+            address(proxyAdmin),
+            empty
+        );
 
         TransparentUpgradeableProxy taskManagerProxy = new TransparentUpgradeableProxy(
-                address(taskManagerImpl),
-                address(proxyAdmin),
-                empty
-            );
+            address(taskManagerImpl),
+            address(proxyAdmin),
+            empty
+        );
 
         TransparentUpgradeableProxy serviceManagerProxy = new TransparentUpgradeableProxy(
-                address(serviceManagerImpl),
-                address(proxyAdmin),
-                empty
-            );
+            address(serviceManagerImpl),
+            address(proxyAdmin),
+            empty
+        );
 
         console2.log("Deployed proxies:");
         console2.log("- ModelRegistry:", address(modelRegistryProxy));
@@ -69,7 +72,8 @@ contract DeployHolesky is Script {
             delegationManager,
             allocationManager,
             address(serviceManagerProxy),
-            address(modelRegistryProxy)
+            address(modelRegistryProxy),
+            address(nodesManagerImpl)
         );
         SertnServiceManager(address(serviceManagerProxy)).initialize(
             rewardsCoordinator,
@@ -103,16 +107,13 @@ contract DeployHolesky is Script {
         uint32[] memory operatorSetIds = new uint32[](1);
         operatorSetIds[0] = 1;
 
-        IAllocationManagerTypes.RegisterParams
-            memory register = IAllocationManagerTypes.RegisterParams({
+        IAllocationManagerTypes.RegisterParams memory register = IAllocationManagerTypes
+            .RegisterParams({
                 avs: address(serviceManagerProxy),
                 operatorSetIds: operatorSetIds,
                 data: ""
             });
-        allocMgr.registerForOperatorSets(
-            address(serviceManagerProxy),
-            register
-        );
+        allocMgr.registerForOperatorSets(address(serviceManagerProxy), register);
 
         string memory deploymentInfo = string(
             abi.encodePacked(

@@ -24,7 +24,8 @@ interface IModelRegistry {
         address indexed modelVerifier,
         VerificationStrategy indexed verificationStrategy,
         string modelURI,
-        uint256 computeCost
+        uint256 computeCost,
+        uint256 requiredFUCUs
     );
     /**
      * @notice The event emitted when a model is updated
@@ -38,6 +39,13 @@ interface IModelRegistry {
      * @param computeCost The new compute cost of the model
      */
     event ComputeCostUpdated(uint256 indexed modelId, uint256 indexed computeCost);
+
+    /**
+     * @notice The event emitted when the required FUCUs of a model is updated
+     * @param modelId The id of the model
+     * @param requiredFUCUs The new required FUCUs of the model
+     */
+    event RequiredFUCUsUpdated(uint256 indexed modelId, uint256 indexed requiredFUCUs);
 
     /**
      * @notice The event emitted when a model verifier is updated
@@ -80,7 +88,8 @@ interface IModelRegistry {
         address modelVerifier,
         VerificationStrategy verificationStrategy,
         string memory modelURI,
-        uint256 computeCost
+        uint256 computeCost,
+        uint256 requiredFUCUs
     ) external returns (uint256 modelId);
 
     /**
@@ -96,6 +105,13 @@ interface IModelRegistry {
      * @param computeCost The new compute cost of the model
      */
     function updateComputeCost(uint256 modelId, uint256 computeCost) external;
+
+    /**
+     * @notice The function to update the required FUCUs of a model
+     * @param modelId The id of the model
+     * @param requiredFUCUs The new required FUCUs of the model
+     */
+    function updateRequiredFUCUs(uint256 modelId, uint256 requiredFUCUs) external;
 
     /**
      * @notice The function to update the model verifier of a model
