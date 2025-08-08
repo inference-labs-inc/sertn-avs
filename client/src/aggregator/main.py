@@ -355,12 +355,12 @@ class Aggregator:
             logger.error(
                 f"The task #{task_id} is already {TaskStateMap.from_int(state)}, skipping..."
             )
-            return InvalidProofError("The task is already resolved")
+            raise InvalidProofError("The task is already resolved")
         if state != TaskStateMap.CHALLENGED.value:
             logger.error(
                 f"The task #{task_id} isn't challenged. State is {TaskStateMap.from_int(state)}, skipping..."
             )
-            return InvalidProofError("The task isn't challenged")
+            raise InvalidProofError("The task isn't challenged")
 
         # check the task verification strategy
         model_id = task[TaskStructMap.MODEL_ID]

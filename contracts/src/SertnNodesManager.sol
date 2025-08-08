@@ -316,11 +316,9 @@ contract SertnNodesManager is OwnableUpgradeable, ISertnNodesManager {
             revert OnlyTaskManager();
         }
 
-        if (operatorAllocatedFucus[operator][modelId] >= fucusToRelease) {
-            operatorAllocatedFucus[operator][modelId] -= fucusToRelease;
-        } else {
-            operatorAllocatedFucus[operator][modelId] = 0;
-        }
+        uint256 currentAllocated = operatorAllocatedFucus[operator][modelId];
+        require(currentAllocated >= fucusToRelease, "Attempting to release more than allocated");
+        operatorAllocatedFucus[operator][modelId] = currentAllocated - fucusToRelease;
 
         emit FucusReleased(operator, modelId, fucusToRelease);
     }

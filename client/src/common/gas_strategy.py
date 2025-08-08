@@ -9,7 +9,7 @@ logger = get_logger("common")
 
 def get_gas_config(
     w3_eth: Eth, strategy: GasStrategy = GasStrategy.STANDARD
-) -> tuple[int | None, int]:
+) -> tuple[int | None, int | None]:
     """
     Get recommended gas configuration based on strategy
 

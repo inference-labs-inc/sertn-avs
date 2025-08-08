@@ -8,7 +8,7 @@ from common.config import GasStrategy
 class AvsOwner:
     def __init__(self, private_key: str, eth_rpc_url: str):
         self.eth_client = EthereumClient(
-            eth_rpc_url=eth_rpc_url, gas_strategy=GasStrategy.STANDARD.value
+            eth_rpc_url=eth_rpc_url, gas_strategy=GasStrategy.STANDARD
         )
         self.private_key = private_key
         self.owner_address = Account.from_key(self.private_key).address

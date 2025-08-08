@@ -216,11 +216,9 @@ class EthereumClient:
                 gas_limit = 2000000
 
         tx_params = base_tx.copy()
-        tx_params.update(
-            {
-                "gas": gas_limit,
-                "maxFeePerGas": self.max_fee_per_gas,
-                "maxPriorityFeePerGas": self.max_priority_fee_per_gas,
-            }
-        )
+        tx_params.update({"gas": gas_limit})
+        if self.max_fee_per_gas is not None:
+            tx_params["maxFeePerGas"] = self.max_fee_per_gas
+        if self.max_priority_fee_per_gas is not None:
+            tx_params["maxPriorityFeePerGas"] = self.max_priority_fee_per_gas
         return tx_params

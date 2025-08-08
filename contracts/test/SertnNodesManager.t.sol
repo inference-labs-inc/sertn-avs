@@ -578,9 +578,11 @@ contract SertnNodesManagerTest is Test {
         nodesManager.allocateFucusForTask(operator1.addr, modelId1, 100);
 
         vm.prank(address(taskManager));
+        vm.expectRevert("Attempting to release more than allocated");
         nodesManager.releaseFucusForTask(operator1.addr, modelId1, 200);
 
-        assertEq(nodesManager.operatorAllocatedFucus(operator1.addr, modelId1), 0);
+        // Verify the allocated amount is unchanged
+        assertEq(nodesManager.operatorAllocatedFucus(operator1.addr, modelId1), 100);
     }
 
     // ============ VIEW FUNCTION TESTS ============
