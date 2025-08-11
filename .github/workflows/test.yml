@@ -59,7 +59,7 @@ jobs:
     - name: Install ezkl
       env: 
         EZKL_DIR: /home/runner/.ezkl
-      run: curl https://raw.githubusercontent.com/zkonduit/ezkl/main/install_ezkl_cli.sh | bash
+      run: curl https://raw.githubusercontent.com/zkonduit/ezkl/main/install_ezkl_cli.sh | bash -s 22.0.1
 
     - name: Check ezkl version
       run: /home/runner/.ezkl/ezkl --version
