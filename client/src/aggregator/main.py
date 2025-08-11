@@ -373,13 +373,13 @@ class Aggregator:
             logger.info(
                 f"The task #{task_id} is not offchain verifiable...",
             )
-            return InvalidProofError("Not verifiable")
+            raise InvalidProofError("Not verifiable")
         model_uri = self.eth_client.model_registry.functions.modelURI(model_id).call()
         if not model_uri:
             logger.info(
                 f"The model {model_id} has no URI, cannot verify the proof...",
             )
-            return InvalidProofError("Model URI is empty")
+            raise InvalidProofError("Model URI is empty")
 
         inputs: bytes = task[TaskStructMap.INPUTS]
         output: bytes = task[TaskStructMap.OUTPUT]
