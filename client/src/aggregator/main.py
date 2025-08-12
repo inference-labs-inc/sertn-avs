@@ -174,7 +174,7 @@ class Aggregator:
             self.private_key,
             [
                 self.eth_client.service_manager.address,  # Approve the task manager to spend tokens
-                Web3.to_wei(task["fee"], "ether"),  # Approve the fee amount
+                task["fee"],  # Approve the fee amount
             ],
         )
 

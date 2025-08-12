@@ -127,8 +127,8 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
         }
         // TODO: configurable timeout
         if (
-            (task.state == TaskState.ASSIGNED && task.startBlock + 300 > block.number) ||
-            (task.state == TaskState.CHALLENGED && task.startBlock + 600 > block.number)
+            (task.state == TaskState.ASSIGNED && task.startBlock + 300 < block.number) ||
+            (task.state == TaskState.CHALLENGED && task.startBlock + 600 < block.number)
         ) {
             OperatorSet memory operatorSet = allocationManager.getAllocatedSets(task.operator)[0];
             IStrategy strategy = allocationManager.getAllocatedStrategies(
@@ -239,55 +239,6 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
             result[i] = pendingTasks.at(i);
         }
         return result;
-    }
-
-    /**
-     * @notice Select an operator for a model based on available FUCUs
-     * @param modelId The ID of the model to run
-     * @param requiredFucus The required compute units (if 0, uses model's compute cost)
-     * @return selectedOperator The address of the selected operator (address(0) if none available)
-     */
-    function selectOperatorForModel(
-        uint256 modelId,
-        uint256 requiredFucus
-    ) external view returns (address selectedOperator) {
-        // If no specific FUCU requirement, use model's compute cost
-        if (requiredFucus == 0) {
-            requiredFucus = modelRegistry.computeCost(modelId);
-        }
-
-        // Get available operators for this model
-        (address[] memory availableOperators, ) = sertnNodesManager.getAvailableOperatorsForModel(
-            modelId,
-            requiredFucus
-        );
-
-        if (availableOperators.length == 0) {
-            return address(0); // No operators available
-        }
-
-        // Simple selection: return the first operator with enough capacity
-        // TODO: Implement more sophisticated selection logic (round-robin, load balancing, etc.)
-        return availableOperators[0];
-    }
-
-    /**
-     * @notice Get available operators for a model with their capacity
-     * @param modelId The ID of the model
-     * @param requiredFucus The required compute units (if 0, uses model's compute cost)
-     * @return availableOperators Array of available operators
-     * @return availableFucus Array of available FUCUs for each operator
-     */
-    function getAvailableOperators(
-        uint256 modelId,
-        uint256 requiredFucus
-    ) external view returns (address[] memory availableOperators, uint256[] memory availableFucus) {
-        // If no specific FUCU requirement, use model's compute cost
-        if (requiredFucus == 0) {
-            requiredFucus = modelRegistry.computeCost(modelId);
-        }
-
-        return sertnNodesManager.getAvailableOperatorsForModel(modelId, requiredFucus);
     }
 
     /**
