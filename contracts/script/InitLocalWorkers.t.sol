@@ -290,7 +290,7 @@ contract InitLocalEnvScript is Script {
 
             _registerAggregator();
             _createModel("model_0", 1, 10);
-            _createModel("model_1", 2, 15);
+            // _createModel("model_1", 2, 15);
         }
 
         vm.stopBroadcast();
