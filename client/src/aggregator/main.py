@@ -141,7 +141,7 @@ class Aggregator:
             )
             return None
 
-        operator_address = self.get_random_operator()
+        operator_address = self.get_random_operator(model_id)
         if operator_address is None:
             logger.warning("No operators found, cannot send a new task")
             return None
@@ -195,16 +195,16 @@ class Aggregator:
 
         return task_index
 
-    def get_random_operator(self) -> str | None:
+    def get_random_operator(self, model_id: int) -> str | None:
         """
         Get a random operator address from the allocation manager.
         """
-        operators = self.eth_client.allocation_manager.functions.getMembers(
-            {
-                "avs": self.eth_client.service_manager.address,
-                "id": OPERATOR_SET_ID,
-            }
-        ).call()
+        fucus: int = self.get_model_fucus(model_id)
+        operators = (
+            self.eth_client.nodes_manager.functions.getAvailableOperatorsForModel(
+                model_id, fucus
+            ).call()
+        )[0]
         if operators:
             return random.choice(operators)
         else:
@@ -234,6 +234,15 @@ class Aggregator:
             logger.error(f"Model {model_id} has zero cost!!!")
             cost = 0
         return cost
+
+    def get_model_fucus(self, model_id: int) -> int:
+        fucus: int = self.eth_client.model_registry.functions.requiredFUCUs(
+            model_id
+        ).call()
+        if not fucus:
+            logger.error(f"Model {model_id} has zero fucus!!!")
+            fucus = 0
+        return fucus
 
     def get_token(self, task: dict):
         """
