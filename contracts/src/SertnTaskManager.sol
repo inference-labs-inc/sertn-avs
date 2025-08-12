@@ -151,7 +151,7 @@ contract SertnTaskManager is OwnableUpgradeable, ISertnTaskManager {
             revert TaskDoesNotExist();
         }
         Task memory task = tasks[taskId];
-        if (task.state != TaskState.CHALLENGED) {
+        if (task.state != TaskState.CHALLENGED && task.state != TaskState.COMPLETED) {
             revert TaskStateIncorrect(TaskState.CHALLENGED);
         }
         OperatorSet memory operatorSet = allocationManager.getAllocatedSets(task.operator)[0];
