@@ -26,6 +26,9 @@ interface ISertnTaskManager {
     /// @notice Thrown when the task model does not imply a verification, but a proof is submitted
     error InvalidVerificationStrategy(uint256 taskId);
 
+    /// @notice Thrown when there is insufficient FUCUs capacity and the task cannot be executed by the operator
+    error InsufficientFucusCapacity(address operator, uint256 modelId, uint256 required);
+
     /// @notice Emitted when a task is created
     event TaskCreated(uint256 indexed taskId, address indexed user);
 

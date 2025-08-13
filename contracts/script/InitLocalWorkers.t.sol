@@ -243,14 +243,19 @@ contract InitLocalEnvScript is Script {
         serviceManager.addAggregator(aggregatorAddress);
     }
 
-    function _createModel() internal {
+    function _createModel(
+        string memory modelUri,
+        uint256 computeCost,
+        uint256 requiredFUCUs
+    ) internal {
         console.log("Creating new model in the model registry...");
         MockVerifier mockVerifier = new MockVerifier();
         uint256 modelId = serviceManager.modelRegistry().createNewModel(
             address(mockVerifier),
             IModelRegistry.VerificationStrategy.Offchain,
-            "model_0",
-            1 // Example compute cost
+            modelUri,
+            computeCost,
+            requiredFUCUs
         );
         console.log("Model created with ID:", modelId);
     }
@@ -284,7 +289,8 @@ contract InitLocalEnvScript is Script {
             vm.startBroadcast(deployerPrivateKey);
 
             _registerAggregator();
-            _createModel();
+            _createModel("model_0", 1, 10);
+            // _createModel("model_1", 2, 15);
         }
 
         vm.stopBroadcast();

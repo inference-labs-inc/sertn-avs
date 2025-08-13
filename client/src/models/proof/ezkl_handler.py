@@ -7,8 +7,10 @@ from typing import Optional, Iterable
 
 import ezkl
 
-from common.console import console, styles
+from common.logging import get_logger
 from common.constants import MODELS_FOLDER, PROOFS_FOLDER
+
+logger = get_logger("models")
 
 LOCAL_EZKL_PATH = os.path.join(os.path.expanduser("~"), ".ezkl", "ezkl")
 
@@ -45,7 +47,7 @@ class EZKLHandler:
         self.proof_filepath = os.path.join(self.proof_dir, "proof.json")
 
     def gen_input_file(self):
-        console.print("Generating input file", style=styles.op_info)
+        logger.info("Generating input file")
         if isinstance(self.input_data, list):
             input_data = self.input_data
         else:
@@ -54,14 +56,14 @@ class EZKLHandler:
         os.makedirs(os.path.dirname(self.input_path), exist_ok=True)
         with open(self.input_path, "w", encoding="utf-8") as f:
             json.dump(data, f)
-        console.print(f"Generated input.json with data: {data}", style=styles.op_info)
+        logger.info(f"Generated input.json with data: {data}")
 
     def gen_proof(self) -> tuple[str, str]:
         try:
-            console.print("Starting proof generation...", style=styles.op_info)
+            logger.info("Starting proof generation...")
 
             self.generate_witness()
-            console.print("Generating proof", style=styles.debug)
+            logger.debug("Generating proof")
 
             result = subprocess.run(
                 [
@@ -81,9 +83,8 @@ class EZKLHandler:
                 text=True,
             )
 
-            console.print(
+            logger.info(
                 f"Proof generated: {self.proof_filepath}, result: {result.stdout}",
-                style=styles.op_info,
             )
 
             with open(self.proof_filepath, "r", encoding="utf-8") as f:
@@ -92,9 +93,7 @@ class EZKLHandler:
             return json.dumps(proof), json.dumps(proof["instances"])
 
         except Exception as e:
-            console.print(
-                f"An error occurred during proof generation: {e}", style=styles.error
-            )
+            logger.error(f"An error occurred during proof generation: {e}")
             traceback.print_exc()
             raise
 
@@ -139,15 +138,13 @@ class EZKLHandler:
             )
             return "verified: true" in result.stdout
         except subprocess.TimeoutExpired:
-            console.print(
-                "Verification process timed out after 60 seconds", style=styles.warning
-            )
+            logger.warning("Verification process timed out after 60 seconds")
             return False
         except subprocess.CalledProcessError:
             return False
 
     def generate_witness(self, return_content: bool = False) -> list | dict:
-        console.print("Generating witness...", style=styles.debug)
+        logger.debug("Generating witness...")
 
         result = subprocess.run(
             [
@@ -167,7 +164,7 @@ class EZKLHandler:
             text=True,
         )
 
-        console.print(f"Gen witness result: {result.stdout}", style=styles.debug)
+        logger.debug(f"Gen witness result: {result.stdout}")
 
         if return_content:
             with open(self.witness_path, "r", encoding="utf-8") as f:

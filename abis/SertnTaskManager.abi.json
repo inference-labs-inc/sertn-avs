@@ -40,6 +40,35 @@
   },
   {
     "type": "function",
+    "name": "getAvailableOperators",
+    "inputs": [
+      {
+        "name": "modelId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "requiredFucus",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "availableOperators",
+        "type": "address[]",
+        "internalType": "address[]"
+      },
+      {
+        "name": "availableFucus",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "getPendingTasksIds",
     "inputs": [],
     "outputs": [
@@ -155,6 +184,11 @@
         "name": "_modelRegistry",
         "type": "address",
         "internalType": "address"
+      },
+      {
+        "name": "_sertnNodesManager",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "outputs": [],
@@ -245,6 +279,30 @@
   },
   {
     "type": "function",
+    "name": "selectOperatorForModel",
+    "inputs": [
+      {
+        "name": "modelId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "requiredFucus",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "selectedOperator",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "sendTask",
     "inputs": [
       {
@@ -322,6 +380,19 @@
         "name": "",
         "type": "address",
         "internalType": "contract IERC20"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "sertnNodesManager",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract ISertnNodesManager"
       }
     ],
     "stateMutability": "view"
@@ -653,6 +724,27 @@
       }
     ],
     "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "InsufficientFucusCapacity",
+    "inputs": [
+      {
+        "name": "operator",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "modelId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "required",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   },
   {
     "type": "error",

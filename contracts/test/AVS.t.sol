@@ -3,6 +3,7 @@ pragma solidity ^0.8.12;
 
 import {SertnServiceManager} from "../src/SertnServiceManager.sol";
 import {SertnTaskManager} from "../src/SertnTaskManager.sol";
+import {SertnNodesManager} from "../src/SertnNodesManager.sol";
 import "../interfaces/ISertnServiceManager.sol";
 import "../interfaces/ISertnTaskManager.sol";
 import "../interfaces/IModelRegistry.sol";
@@ -23,13 +24,14 @@ import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationMa
 import {IAllocationManagerTypes} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {IAVSRegistrar} from "@eigenlayer/contracts/interfaces/IAVSRegistrar.sol";
 import {OperatorSet} from "@eigenlayer/contracts/libraries/OperatorSetLib.sol";
-
 import "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
+
 import {Test, console2 as console} from "forge-std/Test.sol";
 import {ECDSAUpgradeable} from "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
 import {MockVerifier} from "./mockContracts/VerifierMock.sol";
 import {MockVerifier2} from "./mockContracts/VerifierMock2.sol";
 import {ModelRegistry} from "../src/ModelRegistry.sol";
+
 import {MockAVSRegistrar} from "./mockContracts/RegistrarMock.sol";
 
 contract AVSSetup2 is Test {
@@ -68,6 +70,7 @@ contract AVSSetup2 is Test {
 
     SertnServiceManager sertnServiceManager;
     SertnTaskManager sertnTaskManager;
+    SertnNodesManager sertnNodesManager;
     MockVerifier mockVerifier;
     ModelRegistry modelRegistry;
 
@@ -93,6 +96,9 @@ contract AVSSetup2 is Test {
         vm.startPrank(owner.key.addr);
         console.log("Deploying AVS as sertnRegistrar");
         MockAVSRegistrar sertnRegistrar = new MockAVSRegistrar();
+
+        sertnNodesManager = new SertnNodesManager();
+
         console.log("Deployed AVS as sertnRegistrar");
         sertnServiceManager = new SertnServiceManager();
         sertnServiceManager.initialize(
@@ -112,7 +118,8 @@ contract AVSSetup2 is Test {
             address(mockVerifier),
             IModelRegistry.VerificationStrategy.Onchain,
             "model1",
-            100
+            100,
+            10
         );
 
         sertnTaskManager = new SertnTaskManager();
@@ -121,11 +128,18 @@ contract AVSSetup2 is Test {
             coreDeployment.delegationManager,
             coreDeployment.allocationManager,
             address(sertnServiceManager),
-            address(modelRegistry)
+            address(modelRegistry),
+            address(sertnNodesManager)
         );
         // // console.log(sertnServiceManager.owner(), owner.key.addr);
         sertnServiceManager.updateTaskManager(address(sertnTaskManager));
         // sertnServiceManager.updateModelRegistry(address(modelRegistry));
+
+        sertnNodesManager.initialize(
+            address(coreDeployment.delegationManager),
+            address(sertnTaskManager),
+            address(modelRegistry)
+        );
 
         vm.stopPrank();
         // labelContracts(coreDeployment);
@@ -251,6 +265,13 @@ contract AVSSetup2 is Test {
         operators.push(newOperator);
         return newOperator;
     }
+
+    function registerOperatorNodes(Operator memory operator) internal {
+        vm.startPrank(operator.key.addr);
+        uint256 node_id = sertnNodesManager.registerNode("node1", "", 1000000);
+        sertnNodesManager.addModelSupport(node_id, modelId, 1000000);
+        vm.stopPrank();
+    }
 }
 
 contract RegisterOperatorToAVS2 is AVSSetup2 {
@@ -313,6 +334,7 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
             registerAsOperator(operators[i]);
             console.log("Registering as operator to AVS...");
             registerAsOperatorToAVS(operators[i]);
+            registerOperatorNodes(operators[i]);
             vm.startPrank(_operatorKeys[i]);
             console.log("Set allocation delay to 1 block...");
             allocationManager.setAllocationDelay(operators[i].key.addr, 1);
@@ -435,7 +457,8 @@ contract RegisterOperatorToAVS2 is AVSSetup2 {
     //         address(mockVerifier),
     //         IModelRegistry.VerificationStrategy.Onchain,
     //         "model1",
-    //         1e2
+    //         1e2,
+    //         15
     //     );
 
     //     require(modelId == 0, "Model ID should be 0");

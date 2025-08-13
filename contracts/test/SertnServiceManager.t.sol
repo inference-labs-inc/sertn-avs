@@ -11,6 +11,7 @@ import {ModelRegistry} from "../src/ModelRegistry.sol";
 import {MockVerifier} from "./mockContracts/VerifierMock.sol";
 import {ERC20Mock} from "./mockContracts/ERC20Mock.sol";
 import {MockAllocationManager} from "./mockContracts/AllocationManagerMock.sol";
+import {MockSertnTaskManager} from "./mockContracts/SertnTaskManagerMock.sol";
 import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IRewardsCoordinator, IRewardsCoordinatorTypes} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
@@ -47,14 +48,6 @@ contract MockStrategy {
 
     constructor(address _token) {
         underlyingToken = _token;
-    }
-}
-
-contract MockSertnTaskManager {
-    address public sertnServiceManager;
-
-    function setServiceManager(address _serviceManager) external {
-        sertnServiceManager = _serviceManager;
     }
 }
 
@@ -398,7 +391,8 @@ contract SertnServiceManagerTest is Test {
             address(mockVerifier),
             IModelRegistry.VerificationStrategy.Onchain,
             "test_model",
-            100
+            100,
+            10
         );
 
         // Verify model exists
@@ -416,7 +410,8 @@ contract SertnServiceManagerTest is Test {
             address(mockVerifier),
             IModelRegistry.VerificationStrategy.Onchain,
             "workflow_model",
-            500
+            500,
+            10
         );
         serviceManager.addAggregator(aggregator1);
 

@@ -2,40 +2,29 @@ from eth_account import Account
 from eth_account.datastructures import SignedTransaction
 
 from common.eth import EthereumClient
+from common.config import GasStrategy
 
 
 class AvsOwner:
     def __init__(self, private_key: str, eth_rpc_url: str):
-        self.eth_client = EthereumClient(rpc_url=eth_rpc_url)
+        self.eth_client = EthereumClient(
+            eth_rpc_url=eth_rpc_url, gas_strategy=GasStrategy.STANDARD
+        )
         self.private_key = private_key
         self.owner_address = Account.from_key(self.private_key).address
 
-    def submit_rewards_for_interval(
-        self, current_interval: int, gas_limit: int = 2000000, gas_price_gwei: int = 20
-    ):
+    def submit_rewards_for_interval(self, current_interval: int, **gas_kwargs):
         """
         Submit rewards for the current interval.
         This function is called by the owner of the aggregator.
+
+        :param current_interval: The interval for which to submit rewards
+        :param gas_kwargs: Optional gas parameters (gas_limit, max_fee_per_gas, etc.)
         """
-        tx = self.eth_client.service_manager.functions.submitRewardsForInterval(
-            current_interval
-        ).build_transaction(
-            {
-                "from": self.owner_address,
-                "gas": gas_limit,
-                "gasPrice": self.eth_client.w3.to_wei(str(gas_price_gwei), "gwei"),
-                "nonce": self.eth_client.w3.eth.get_transaction_count(
-                    self.owner_address
-                ),
-                "chainId": self.eth_client.w3.eth.chain_id,
-            }
+        self.eth_client.execute_transaction(
+            self.eth_client.service_manager,
+            "submitRewardsForInterval",
+            self.private_key,
+            [current_interval],
+            **gas_kwargs
         )
-        signed_tx: SignedTransaction = self.eth_client.w3.eth.account.sign_transaction(
-            tx, private_key=self.private_key
-        )
-        tx_hash = self.eth_client.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-        receipt = self.eth_client.w3.eth.wait_for_transaction_receipt(tx_hash)
-        if receipt.status != 1:
-            raise Exception(
-                f"Failed to submit rewards for interval {current_interval}. Transaction hash: {tx_hash.hex()}"
-            )

@@ -11,6 +11,7 @@ from eth_account import Account
 
 from aggregator.main import Aggregator
 from avs_operator.main import TaskOperator
+from common.config import AggregatorConfig, OperatorConfig
 from common.constants import ROOT_DIR, STRATEGIES_ADDRESSES
 from common.contract_constants import TaskStateMap, TaskStructMap
 from owner.main import AvsOwner
@@ -21,24 +22,47 @@ load_dotenv(os.path.join(ROOT_DIR, ".env"))  # Load environment variables
 class TestWorkflow:
     @pytest.fixture(scope="session")
     def aggregator(self):
-        return Aggregator(
-            {
-                "eth_rpc_url": "http://localhost:8545",
-                "aggregator_server_ip_port_address": "localhost:8090",
-                "ecdsa_private_key_store_path": "tests/keys/aggregator.ecdsa.key.json",
-                "proof_request_probability": 1.0,  # challenge every task
-            }
+        config = AggregatorConfig(
+            eth_rpc_url="http://localhost:8545",
+            aggregator_server_ip_port_address="localhost:8090",
+            ecdsa_private_key_store_path="tests/keys/aggregator.ecdsa.key.json",
+            proof_request_probability=1.0,  # challenge every task
         )
+        return Aggregator(config)
 
     @pytest.fixture(scope="session")
     def operator(self):
-        return TaskOperator(
-            {
-                "eth_rpc_url": "http://localhost:8545",
-                "aggregator_server_ip_port_address": "localhost:8090",
-                "ecdsa_private_key_store_path": "tests/keys/operator.ecdsa.key.json",
-            }
+        config = OperatorConfig(
+            eth_rpc_url="http://localhost:8545",
+            aggregator_server_ip_port_address="localhost:8090",
+            ecdsa_private_key_store_path="tests/keys/operator.ecdsa.key.json",
+            nodes=[
+                {
+                    "node_name": "node1",
+                    "metadata": "optional metadata",
+                    "total_fucus": 100,
+                    "is_active": True,
+                    "models": [
+                        {"model_uri": "model_0", "allocated_fucus": 50},
+                        # {"model_uri": "model_1", "allocated_fucus": 50},
+                    ],
+                },
+                {
+                    "node_name": "node2",
+                    "metadata": "optional metadata",
+                    "total_fucus": 100,
+                    "is_active": True,
+                    "models": [
+                        {"model_uri": "model_0", "allocated_fucus": 90},
+                        # {"model_uri": "model_1", "allocated_fucus": 10},
+                    ],
+                },
+            ],
         )
+        operator = TaskOperator(config)
+        operator.nodes_manager.sync_nodes()
+        operator.nodes_manager.print_nodes()
+        return operator
 
     @pytest.fixture(scope="session")
     def owner(self):

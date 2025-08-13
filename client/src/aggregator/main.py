@@ -13,11 +13,10 @@ from pydantic import BaseModel
 from web3 import Web3
 
 from common.abis import ERC20_ABI, STRATEGY_ABI
-from common.console import console, styles
+from common.config import AggregatorConfig
 from common.constants import (
-    DEFAULT_PROOF_REQUEST_PROBABILITY,
-    RESOLVE_BLOCKS_DELAY,
     OPERATOR_SET_ID,
+    RESOLVE_BLOCKS_DELAY,
 )
 from common.contract_constants import (
     TaskStateMap,
@@ -25,11 +24,14 @@ from common.contract_constants import (
     VerificationStrategiesMap,
 )
 from common.eth import EthereumClient, load_ecdsa_private_key
+from common.logging import get_logger
 from models.proof.ezkl_handler import EZKLHandler
 
+logger = get_logger("aggregator")
 
-def run_aggregator(config: dict) -> None:
-    console.print("Starting Sertn Aggregator...", style=styles.agg_info)
+
+def run_aggregator(config: AggregatorConfig) -> None:
+    logger.info("Starting Sertn Aggregator...")
     aggregator = Aggregator(config=config)
     threading.Thread(target=aggregator.start_sending_new_tasks, args=[]).start()
     threading.Thread(target=aggregator.listen_for_events, args=[]).start()
@@ -62,17 +64,17 @@ class ProofRequest(BaseModel):
 
 
 class Aggregator:
-    def __init__(self, config: dict = None):
+    def __init__(self, config: AggregatorConfig = None):
         self.config = config
-        self.eth_client = EthereumClient(rpc_url=self.config["eth_rpc_url"])
+        self.eth_client = EthereumClient(
+            eth_rpc_url=self.config.eth_rpc_url, gas_strategy=self.config.gas_strategy
+        )
         self.private_key = load_ecdsa_private_key(
-            keystore_path=self.config["ecdsa_private_key_store_path"],
+            keystore_path=str(self.config.ecdsa_private_key_store_path),
             password=os.environ.get("AGGREGATOR_ECDSA_KEY_PASSWORD", ""),
         )
         # the aggregator gonna request proofs for some responses randomly, so probability:
-        self.proof_req_probability = config.get(
-            "proof_request_probability", DEFAULT_PROOF_REQUEST_PROBABILITY
-        )
+        self.proof_req_probability = self.config.proof_request_probability
         self.aggregator_address = Account.from_key(self.private_key).address
 
         self.tasks = {}
@@ -91,7 +93,7 @@ class Aggregator:
                 raise HTTPException(status_code=400, detail=str(exc))
 
     def start_server(self):
-        host, port = self.config["aggregator_server_ip_port_address"].split(":")
+        host, port = self.config.aggregator_server_ip_port_address.split(":")
         uvicorn.run(
             self.app,
             host=host,
@@ -120,10 +122,10 @@ class Aggregator:
         """
         i = 0
         while True:
-            console.print("Sending new task", style=styles.debug)
+            logger.debug("Sending new task")
             self.send_new_task(i)
             if not loop_running:
-                console.print("Stopping sending new tasks", style=styles.debug)
+                logger.debug("Stopping sending new tasks")
                 break
             time.sleep(60)
             i += 1
@@ -134,17 +136,14 @@ class Aggregator:
 
         model_id = self.get_model_id()
         if model_id is None:
-            console.print(
+            logger.info(
                 "No models found in the model registry, cannot send a new task",
-                style=styles.error,
             )
             return None
 
-        operator_address = self.get_random_operator()
+        operator_address = self.get_random_operator(model_id)
         if operator_address is None:
-            console.print(
-                "No operators found, cannot send a new task", style=styles.error
-            )
+            logger.warning("No operators found, cannot send a new task")
             return None
 
         # Define the _task struct, the dict should correspond to the struct in the contract
@@ -169,64 +168,22 @@ class Aggregator:
         token = self.get_token(task)
 
         print(f"Approving funds for the task - {task['fee']} tokens")
-        tx = token.functions.approve(
-            self.eth_client.service_manager.address,  # Approve the task manager to spend tokens
-            # TODO: check is the fee correct after converting to wei
-            Web3.to_wei(task["fee"], "ether"),  # Approve the fee amount
-        ).build_transaction(
-            {
-                "from": self.aggregator_address,
-                "gas": 2000000,
-                "gasPrice": Web3.to_wei("20", "gwei"),
-                "nonce": self.eth_client.w3.eth.get_transaction_count(
-                    self.aggregator_address
-                ),
-                "chainId": self.eth_client.w3.eth.chain_id,
-            }
-        )
-        signed_tx: SignedTransaction = self.eth_client.w3.eth.account.sign_transaction(
-            tx, private_key=self.private_key
-        )
-        tx_hash = self.eth_client.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-        receipt = self.eth_client.w3.eth.wait_for_transaction_receipt(tx_hash)
-        if receipt.status != 1:
-            console.print("Failed to approve funds for the task", style=styles.error)
-            return
-        console.print(
-            f"Successfully approved {task['fee']} tokens for the task",
-            style=styles.agg_info,
+        self.eth_client.execute_transaction(
+            token,
+            "approve",
+            self.private_key,
+            [
+                self.eth_client.service_manager.address,  # Approve the task manager to spend tokens
+                task["fee"],  # Approve the fee amount
+            ],
         )
 
         # XXX: Approve funds for the task?
-        tx = self.eth_client.task_manager.functions.sendTask(task).build_transaction(
-            {
-                "from": self.aggregator_address,
-                "gas": 2000000,
-                "gasPrice": Web3.to_wei("20", "gwei"),
-                "nonce": self.eth_client.w3.eth.get_transaction_count(
-                    self.aggregator_address
-                ),
-                "chainId": self.eth_client.w3.eth.chain_id,
-            }
+        receipt = self.eth_client.execute_transaction(
+            self.eth_client.task_manager, "sendTask", self.private_key, [task]
         )
 
-        # try:
-        #     # Simulate the transaction
-        #     self.eth_client.w3.eth.call(tx)
-        # except Exception as e:
-        #     print(f"Transaction simulation failed: {e}")
-
-        signed_tx: SignedTransaction = self.eth_client.w3.eth.account.sign_transaction(
-            tx, private_key=self.private_key
-        )
-        tx_hash = self.eth_client.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-        receipt = self.eth_client.w3.eth.wait_for_transaction_receipt(tx_hash)
-
-        if not receipt["logs"]:
-            console.print("Failed to send new task", style=styles.error)
-            return
-
-        console.print(f"New task sent!", style=styles.agg_info)
+        logger.debug(f"New task sent!")
 
         # also `TaskCreated` event is emitted, do we need it?
         event = self.eth_client.task_manager.events.TaskAssigned().process_log(
@@ -234,28 +191,24 @@ class Aggregator:
         )
 
         task_index = event["args"]["taskId"]
-        console.print(
-            f"Successfully sent the new task {task_index}", style=styles.agg_info
-        )
+        logger.info(f"Successfully sent the new task {task_index}")
 
         return task_index
 
-    def get_random_operator(self) -> str | None:
+    def get_random_operator(self, model_id: int) -> str | None:
         """
         Get a random operator address from the allocation manager.
         """
-        operators = self.eth_client.allocation_manager.functions.getMembers(
-            {
-                "avs": self.eth_client.service_manager.address,
-                "id": OPERATOR_SET_ID,
-            }
-        ).call()
+        fucus: int = self.get_model_fucus(model_id)
+        operators = (
+            self.eth_client.nodes_manager.functions.getAvailableOperatorsForModel(
+                model_id, fucus
+            ).call()
+        )[0]
         if operators:
             return random.choice(operators)
         else:
-            console.print(
-                "No operators found in the allocation manager", style=styles.error
-            )
+            logger.error("No operators found in the allocation manager")
             return None
 
     def get_model_id(self) -> int:
@@ -264,7 +217,7 @@ class Aggregator:
         """
         models_count = self.eth_client.model_registry.functions.modelIndex().call() - 1
         if models_count <= 0:
-            console.print("No models found in the model registry", style=styles.error)
+            logger.error("No models found in the model registry")
             return None
         # return a random model ID from 1 to models_count
         return random.randint(1, models_count)
@@ -278,9 +231,18 @@ class Aggregator:
             model_id
         ).call()
         if not cost:
-            console.print(f"Model {model_id} has zero cost!!!", style=styles.error)
+            logger.error(f"Model {model_id} has zero cost!!!")
             cost = 0
         return cost
+
+    def get_model_fucus(self, model_id: int) -> int:
+        fucus: int = self.eth_client.model_registry.functions.requiredFUCUs(
+            model_id
+        ).call()
+        if not fucus:
+            logger.error(f"Model {model_id} has zero fucus!!!")
+            fucus = 0
+        return fucus
 
     def get_token(self, task: dict):
         """
@@ -319,7 +281,7 @@ class Aggregator:
         """
         Listen for task manager events in a separate thread.
         """
-        console.print("Listening for task manager events...", style=styles.debug)
+        logger.debug("Listening for task manager events...")
         task_completed_events = (
             self.eth_client.task_manager.events.TaskCompleted.create_filter(
                 from_block="latest"
@@ -328,14 +290,12 @@ class Aggregator:
         processed_count: int = 0
         while True:
             for event in task_completed_events.get_new_entries():
-                console.print(
-                    f"Some task has been completed. Processing...", style=styles.debug
-                )
+                logger.debug(f"Some task has been completed. Processing...")
                 self.process_completed_task(event)
                 processed_count += 1
 
             if not loop_running:
-                console.print("Stopping event listener...", style=styles.debug)
+                logger.debug("Stopping event listener...")
                 return processed_count
 
             time.sleep(3)
@@ -347,14 +307,13 @@ class Aggregator:
         It checks the task state and either resolves the task or challenges it for a proof.
         """
         task_id = event["args"]["taskId"]
-        console.print(f"Processing completed task #{task_id}", style=styles.agg_info)
+        logger.info(f"Processing completed task #{task_id}")
         # get task details from the contract
         task = self.eth_client.task_manager.functions.getTask(task_id).call()
         task_state = task[TaskStructMap.STATE]  # TaskStateMap
         if task_state != TaskStateMap.COMPLETED.value:
-            console.print(
+            logger.info(
                 f"Task {task_id} has invalid state, current state: {task_state}",
-                style=styles.error,
             )
             return
         # no we are going to mark the task resolved or challenge it, requesting a proof
@@ -373,36 +332,13 @@ class Aggregator:
         1. The task is not completed for a long time (300 blocks or something). So we are slashing the operator
         2. The task is completed, but we want to get a proof from the operator.
         """
-        tx = self.eth_client.task_manager.functions.challengeTask(
-            task_id
-        ).build_transaction(
-            {
-                "from": self.aggregator_address,
-                "gas": 2000000,
-                "gasPrice": Web3.to_wei("20", "gwei"),
-                "nonce": self.eth_client.w3.eth.get_transaction_count(
-                    self.aggregator_address
-                ),
-                "chainId": self.eth_client.w3.eth.chain_id,
-            }
-        )
-        signed_tx: SignedTransaction = self.eth_client.w3.eth.account.sign_transaction(
-            tx, private_key=self.private_key
-        )
-        tx_hash = self.eth_client.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-        receipt = self.eth_client.w3.eth.wait_for_transaction_receipt(tx_hash)
-        if receipt.status != 1:
-            console.print("Failed to challenge the task", style=styles.error)
-            return
-        console.print(
-            f"Successfully challenged the task #{task_id}",
-            style=styles.agg_info,
+        self.eth_client.execute_transaction(
+            self.eth_client.task_manager, "challengeTask", self.private_key, [task_id]
         )
 
     def process_submitted_proof(self, task_id: int, proof: str, signature: str) -> bool:
-        console.print(
+        logger.info(
             f"Processing proof submitted for the task #{task_id}...",
-            style=styles.agg_info,
         )
         task: tuple = self.eth_client.task_manager.functions.getTask(task_id).call()
         operator_address: str = task[TaskStructMap.OPERATOR]
@@ -417,26 +353,23 @@ class Aggregator:
             message, signature=bytes.fromhex(signature)
         )
         if recovered_address != operator_address:
-            console.print(
+            logger.info(
                 f"Signature verification failed: {recovered_address} != {operator_address}",
-                style=styles.error,
             )
             raise InvalidProofError("Signature verification failed")
 
         # check the task state
         state: int = task[TaskStructMap.STATE]
         if state in (TaskStateMap.RESOLVED.value, TaskStateMap.REJECTED.value):
-            console.print(
-                f"The task #{task_id} is already {TaskStateMap.from_int(state)}, skipping...",
-                style=styles.error,
+            logger.error(
+                f"The task #{task_id} is already {TaskStateMap.from_int(state)}, skipping..."
             )
-            return InvalidProofError("The task is already resolved")
+            raise InvalidProofError("The task is already resolved")
         if state != TaskStateMap.CHALLENGED.value:
-            console.print(
-                f"The task #{task_id} isn't challenged. State is {TaskStateMap.from_int(state)}, skipping...",
-                style=styles.error,
+            logger.error(
+                f"The task #{task_id} isn't challenged. State is {TaskStateMap.from_int(state)}, skipping..."
             )
-            return InvalidProofError("The task isn't challenged")
+            raise InvalidProofError("The task isn't challenged")
 
         # check the task verification strategy
         model_id = task[TaskStructMap.MODEL_ID]
@@ -446,18 +379,16 @@ class Aggregator:
             ).call()
         )
         if verification_strategy != VerificationStrategiesMap.OFFCHAIN:
-            console.print(
+            logger.info(
                 f"The task #{task_id} is not offchain verifiable...",
-                style=styles.error,
             )
-            return InvalidProofError("Not verifiable")
+            raise InvalidProofError("Not verifiable")
         model_uri = self.eth_client.model_registry.functions.modelURI(model_id).call()
         if not model_uri:
-            console.print(
+            logger.info(
                 f"The model {model_id} has no URI, cannot verify the proof...",
-                style=styles.error,
             )
-            return InvalidProofError("Model URI is empty")
+            raise InvalidProofError("Model URI is empty")
 
         inputs: bytes = task[TaskStructMap.INPUTS]
         output: bytes = task[TaskStructMap.OUTPUT]
@@ -465,10 +396,9 @@ class Aggregator:
 
         # check the task hash (is the same one submitted to the chain?)
         if proof_hash != Web3.keccak(proof.encode()):
-            print(
+            logger.error(
                 "Proof hashes mismatch! Proof, submitted to the aggregator differs from"
-                f" one submitted to the chain. Task #{task_id} Rejecting...",
-                style=styles.error,
+                f" one submitted to the chain. Task #{task_id} Rejecting..."
             )
             self.resolve_task(task_id=task_id, resolved=False)  # slash the operator
             raise InvalidProofError("Invalid proof hash")
@@ -485,14 +415,12 @@ class Aggregator:
         )
         if verified:
             # cool, the operator might receive the reward
-            console.print(f"The task #{task_id} is verified!", style=styles.agg_info)
+            logger.info(f"The task #{task_id} is verified!")
             self.resolve_task(task_id=task_id, resolved=True)
             return True
         else:
             # not good... the proof is not verified
-            console.print(
-                f"The proof for task #{task_id} is invalid!", style=styles.error
-            )
+            logger.error(f"The proof for task #{task_id} is invalid!")
             self.resolve_task(task_id=task_id, resolved=False)
             raise InvalidProofError("Proof is not verified")
 
@@ -502,30 +430,11 @@ class Aggregator:
         If `resolved` is True, the task is resolved as completed.
         If `resolved` is False, the task is resolved as rejected and the operator is slashed.
         """
-        tx = self.eth_client.task_manager.functions.resolveTask(
-            task_id, resolved
-        ).build_transaction(
-            {
-                "from": self.aggregator_address,
-                "gas": 2000000,
-                "gasPrice": Web3.to_wei("20", "gwei"),
-                "nonce": self.eth_client.w3.eth.get_transaction_count(
-                    self.aggregator_address
-                ),
-                "chainId": self.eth_client.w3.eth.chain_id,
-            }
-        )
-        signed_tx: SignedTransaction = self.eth_client.w3.eth.account.sign_transaction(
-            tx, private_key=self.private_key
-        )
-        tx_hash = self.eth_client.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-        receipt = self.eth_client.w3.eth.wait_for_transaction_receipt(tx_hash)
-        if receipt.status != 1:
-            console.print("Failed to resolve the task", style=styles.error)
-            return
-        console.print(
-            f"Successfully resolved the task #{task_id}",
-            style=styles.agg_info,
+        self.eth_client.execute_transaction(
+            self.eth_client.task_manager,
+            "resolveTask",
+            self.private_key,
+            [task_id, resolved],
         )
 
     def check_pending_tasks(self):
@@ -539,9 +448,7 @@ class Aggregator:
             )
             current_block: int = self.eth_client.w3.eth.block_number
             for task_id in pending_ids:
-                console.print(
-                    f"Checking pending task #{task_id}...", style=styles.debug
-                )
+                logger.debug(f"Checking pending task #{task_id}...")
                 task: tuple = self.eth_client.task_manager.functions.getTask(
                     task_id
                 ).call()
@@ -553,9 +460,8 @@ class Aggregator:
                 ):
                     # the task is assigned, but not completed for a long time
                     # we are going to challenge it and slash the operator
-                    console.print(
+                    logger.info(
                         f"Task #{task_id} is assigned, but not completed for a long time. Challenging...",
-                        style=styles.agg_info,
                     )
                     self.challenge_task(task_id)
                 elif (
@@ -564,10 +470,9 @@ class Aggregator:
                 ):
                     # the task is challenged, but not completed for a long time
                     # we are going to resolve it as rejected and slash the operator
-                    console.print(
+                    logger.info(
                         f"Task #{task_id} is challenged, but a proof is not completed for a long time. "
                         "Challenging again... Contract will slash the operator.",
-                        style=styles.agg_info,
                     )
                     self.challenge_task(task_id=task_id)
             time.sleep(60)
