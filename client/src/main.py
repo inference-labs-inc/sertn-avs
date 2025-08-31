@@ -7,6 +7,7 @@ from avs_operator import run_operator
 from common.config import load_config
 from common.logging import get_logger, setup_logging
 from management import manage_app
+from models.execution_layer.model_registry import ensure_external_files
 
 app = typer.Typer(
     name="sertn",
@@ -18,7 +19,7 @@ app = typer.Typer(
 app.add_typer(manage_app, name="manage")
 
 
-@app.command()
+@app.command(name="start")
 def start(
     mode: str = typer.Option(
         ...,
@@ -54,6 +55,8 @@ def start(
     if not config:
         logger.error("Config file path is required. Use --config to specify the path.")
         raise typer.Exit(1)
+
+    ensure_external_files()
 
     try:
         if mode == "operator":

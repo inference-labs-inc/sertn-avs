@@ -76,6 +76,7 @@ def sync_models(
     logger.info(f"Syncing models according to model path {MODELS_DATA_DIR}...")
 
     model_registry.sync_models()
+    model_registry.print_models()
 
 
 @manage_app.command("submit-rewards")

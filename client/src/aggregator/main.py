@@ -148,7 +148,7 @@ class Aggregator:
             logger.warning(f"No valid input class found for model {model_name}")
             return None
 
-        inputs = " ".join(model_input_class.generate())
+        inputs = " ".join([str(x) for x in model_input_class.generate()])
 
         # Define the _task struct, the dict should correspond to the struct in the contract
         task = {
@@ -225,9 +225,7 @@ class Aggregator:
             return None
         # return a random model ID from 1 to models_count
         model_id = random.randint(1, models_count)
-        model_name = self.eth_client.model_registry.functions.getModelName(
-            model_id
-        ).call()
+        model_name = self.eth_client.model_registry.functions.modelName(model_id).call()
         return model_id, model_name
 
     def get_model_cost(self, model_id: int) -> int:

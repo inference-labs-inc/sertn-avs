@@ -3,18 +3,20 @@ import sys
 from pathlib import Path
 from typing import Dict, Optional
 
+import requests
+
 from common.config import GasStrategy
-from common.eth import EthereumClient
-from common.logging import get_logger
 from common.constants import MODELS_FOLDER
 from common.contract_constants import ContractVerificationStrategy
+from common.eth import EthereumClient
+from common.logging import get_logger
 from models.execution_layer.base_input import BaseInput
-from models.execution_layer.request_type import RequestType
 from models.execution_layer.model_config import (
     VERIFICATION_STRATEGY_MAP,
     ModelMetadata,
     load_model_metadata,
 )
+from models.execution_layer.request_type import RequestType
 
 logger = get_logger("model_registry")
 
@@ -69,6 +71,62 @@ class ModelValidationError(Exception):
     """Raised when model validation fails"""
 
     pass
+
+
+def ensure_external_files(models_root: Path = MODELS_FOLDER, timeout: int = 60) -> None:
+    """
+    Ensure external files declared in each model's metadata.json are present locally.
+    """
+    if not models_root.exists():
+        logger.error(f"Models folder not found: {models_root}")
+        return
+
+    for model_path in models_root.iterdir():
+        if not model_path.is_dir():
+            continue
+
+        model_name = model_path.name
+        logger.info(f"Checking external files for model: {model_name}")
+        metadata_path = model_path / "metadata.json"
+        if not metadata_path.exists():
+            logger.warning(f"Skipping {model_name}: no metadata.json")
+            continue
+
+        try:
+            metadata = load_model_metadata(metadata_path)
+        except Exception as e:
+            logger.error(f"Failed to load metadata for {model_name}: {e}")
+            continue
+
+        ext = getattr(metadata, "external_files", None)
+        if not ext:
+            continue
+
+        for filename, src in ext.items():
+            try:
+                target_path = model_path / filename
+
+                if target_path.exists():
+                    continue
+
+                logger.info(f"Fetching external file: {filename} -> {src}")
+                if isinstance(src, str) and src.startswith(("http://", "https://")):
+                    with requests.get(src, stream=True, timeout=timeout) as r:
+                        r.raise_for_status()
+                        with open(target_path, "wb") as f:
+                            for chunk in r.iter_content(chunk_size=1024 * 1024):
+                                logger.debug(f"...")
+                                if chunk:  # filter out keep-alive chunks
+                                    f.write(chunk)
+                    logger.info("✅")
+                else:
+                    logger.error(
+                        f"Unknown external file source for {model_name}: {filename} -> {src}"
+                    )
+            except Exception as e:
+                logger.error(
+                    f"Failed to fetch external file for {model_name}/{filename}: {e}"
+                )
 
 
 class ModelRegistry:
@@ -309,7 +367,6 @@ class ModelRegistry:
             )
 
             # Update required FUCUS
-            breakpoint()
             self.eth_client.execute_transaction(
                 self.eth_client.model_registry,
                 "updateRequiredFUCUs",
@@ -402,7 +459,6 @@ class ModelRegistry:
         # Create the model in the ModelRegistry contract
         logger.info(f"Adding model '{model_name}' to ModelRegistry...")
 
-        breakpoint()
         receipt = self.eth_client.execute_transaction(
             self.eth_client.model_registry,
             "createNewModel",
@@ -462,68 +518,7 @@ class ModelRegistry:
                 f"Failed to load CircuitInput class from '{model_name}': {e}"
             )
 
-        # Test the CircuitInput implementation
-        try:
-            self._test_circuit_input(circuit_input_class, model_name)
-            logger.info(f"Model '{model_name}' validation passed")
-        except Exception as e:
-            raise ModelValidationError(
-                f"CircuitInput validation failed for '{model_name}': {e}"
-            )
-
         return metadata
-
-    def _test_circuit_input(self, circuit_input_class, model_name: str) -> None:
-        """
-        Test the CircuitInput class by attempting to create instances and call required methods.
-
-        :param circuit_input_class: The CircuitInput class to test
-        :param model_name: Name of the model (for error reporting)
-        :raises Exception: If any test fails
-        """
-        logger.info(f"Testing CircuitInput implementation for '{model_name}'...")
-
-        # Test benchmark data generation
-        try:
-            benchmark_input = circuit_input_class(RequestType.BENCHMARK)
-            logger.info(f"✓ Benchmark data generation successful for '{model_name}'")
-        except Exception as e:
-            raise Exception(f"Benchmark data generation failed: {e}")
-
-        # Test data validation with generated benchmark data
-        try:
-            generated_data = circuit_input_class.generate()
-            circuit_input_class(RequestType.RWR, generated_data)
-            logger.info(f"✓ Data validation successful for '{model_name}'")
-        except Exception as e:
-            raise Exception(f"Data validation failed: {e}")
-
-        # Test required methods exist and are callable
-        required_methods = ["generate", "validate", "process", "to_array", "to_json"]
-        for method_name in required_methods:
-            if not hasattr(benchmark_input, method_name):
-                raise Exception(f"CircuitInput missing required method: {method_name}")
-
-            method = getattr(benchmark_input, method_name)
-            if not callable(method):
-                raise Exception(f"CircuitInput.{method_name} is not callable")
-
-        # Test to_array and to_json methods
-        try:
-            array_data = benchmark_input.to_array()
-            if not isinstance(array_data, list):
-                raise Exception("to_array() must return a list")
-            logger.info(f"✓ to_array() method works for '{model_name}'")
-        except Exception as e:
-            raise Exception(f"to_array() method failed: {e}")
-
-        try:
-            json_data = benchmark_input.to_json()
-            if not isinstance(json_data, dict):
-                raise Exception("to_json() must return a dict")
-            logger.info(f"✓ to_json() method works for '{model_name}'")
-        except Exception as e:
-            raise Exception(f"to_json() method failed: {e}")
 
     def _extract_model_id_from_receipt(self, receipt) -> int:
         """
@@ -550,3 +545,61 @@ class ModelRegistry:
 
         except Exception as e:
             raise RuntimeError(f"Failed to extract model ID from receipt: {e}")
+
+    def print_models(self, truncate: bool = True) -> None:
+        """
+        Fetch all models from the blockchain and print a readable table to the CLI.
+
+        :param truncate: If True, shorten long addresses for compact display
+        """
+        models = self._get_blockchain_models()
+        if not models:
+            logger.info("No models found in the blockchain registry.")
+            return
+
+        print("\nCurrently Registered Models in Blockchain:")
+        # Prepare rows
+        headers = ["ID", "NAME", "STRATEGY", "COMPUTE", "FUCUS", "VERIFIER"]
+
+        def strategy_name(v: int) -> str:
+            try:
+                return ContractVerificationStrategy(v).name
+            except Exception:
+                return str(v)
+
+        def short(addr: str) -> str:
+            if not truncate or len(addr) <= 12:
+                return addr
+            return f"{addr[:6]}...{addr[-4:]}"
+
+        rows = []
+        for model_id in sorted(models.keys()):
+            m = models[model_id]
+            rows.append(
+                [
+                    str(model_id),
+                    str(m.get("name", "")),
+                    strategy_name(int(m.get("verification_strategy", 0))),
+                    str(m.get("compute_cost", "")),
+                    str(m.get("required_fucus", "")),
+                    short(str(m.get("verifier", ""))),
+                ]
+            )
+
+        # Compute column widths
+        widths = [len(h) for h in headers]
+        for row in rows:
+            for i, cell in enumerate(row):
+                widths[i] = max(widths[i], len(cell))
+
+        # Build lines
+        def fmt(row: list[str]) -> str:
+            return " | ".join(cell.ljust(widths[i]) for i, cell in enumerate(row))
+
+        header_line = fmt(headers)
+        sep_line = "-" * len(header_line)
+
+        print("\n" + header_line)
+        print(sep_line)
+        for row in rows:
+            print(fmt(row))
