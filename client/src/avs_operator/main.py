@@ -99,12 +99,12 @@ class TaskOperator:
         inputs: bytes = task[TaskStructMap.INPUTS]  # bytes inputs
         operator_address: str = task[TaskStructMap.OPERATOR]  # address operator
 
-        model_uri: str = self.eth_client.model_registry.functions.modelURI(
+        model_name: str = self.eth_client.model_registry.functions.modelName(
             model_id
         ).call()
         input_data = [float(i) for i in inputs.decode().split(" ") if i]
         output = run_onnx(
-            model_id=model_uri,
+            model_id=model_name,
             input_data=input_data,
         )
         output_bytes: bytes = json.dumps(output).encode()
@@ -186,11 +186,11 @@ class TaskOperator:
         Generate proof for the task with the given task_id.
         """
         # generate proof for the task
-        model_uri: str = self.eth_client.model_registry.functions.modelURI(
+        model_name: str = self.eth_client.model_registry.functions.modelName(
             model_id
         ).call()
         proof_generator = EZKLHandler(
-            model_id=model_uri,
+            model_id=model_name,
             task_id=str(task_id),
             inputs=[float(i) for i in inputs.decode().split(" ")],
         )

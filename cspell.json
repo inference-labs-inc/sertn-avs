@@ -23,6 +23,7 @@
         "inheritdoc",
         "keccak",
         "Localnet",
+        "LSTM",
         "Offchain",
         "operatorsinfo",
         "pbar",

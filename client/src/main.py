@@ -6,12 +6,16 @@ from aggregator import run_aggregator
 from avs_operator import run_operator
 from common.config import load_config
 from common.logging import get_logger, setup_logging
+from management import manage_app
 
 app = typer.Typer(
     name="sertn",
     help="Sertn AVS Client",
     add_completion=False,
 )
+
+# Add the management sub-application
+app.add_typer(manage_app, name="manage")
 
 
 @app.command()

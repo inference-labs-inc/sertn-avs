@@ -34,15 +34,15 @@ class OperatorNodesManager:
 
         # Iterate through all model IDs (starting from 1)
         for model_id in range(1, model_index):
-            # Get the model URI for this model ID
-            model_uri = self.eth_client.model_registry.functions.modelURI(
+            # Get the model Name for this model ID
+            model_name = self.eth_client.model_registry.functions.modelName(
                 model_id
             ).call()
-            if model_uri:  # Only add models with non-empty URIs
-                models[model_uri] = int(model_id)
+            if model_name:  # Only add models with non-empty Names
+                models[model_name] = int(model_id)
             else:
                 logger.info(
-                    f"Model ID {model_id} has an empty URI, skipping.",
+                    f"Model ID {model_id} has an empty Name, skipping.",
                 )
         return models
 

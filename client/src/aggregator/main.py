@@ -2,11 +2,11 @@ import os
 import random
 import threading
 import time
+from typing import Tuple
 
 import eth_abi
 import uvicorn
 from eth_account import Account
-from eth_account.datastructures import SignedTransaction
 from eth_account.messages import encode_defunct
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -15,17 +15,17 @@ from web3 import Web3
 from common.abis import ERC20_ABI, STRATEGY_ABI
 from common.config import AggregatorConfig
 from common.constants import (
-    OPERATOR_SET_ID,
     RESOLVE_BLOCKS_DELAY,
 )
 from common.contract_constants import (
     TaskStateMap,
     TaskStructMap,
-    VerificationStrategiesMap,
+    ContractVerificationStrategy,
 )
 from common.eth import EthereumClient, load_ecdsa_private_key
 from common.logging import get_logger
 from models.proof.ezkl_handler import EZKLHandler
+from models.execution_layer.model_registry import load_circuit_input_class
 
 logger = get_logger("aggregator")
 
@@ -131,10 +131,7 @@ class Aggregator:
             i += 1
 
     def send_new_task(self, i) -> int | None:
-        # create some generic input data
-        inputs = " ".join(str(random.uniform(0.0, 0.85)) for _ in range(5))
-
-        model_id = self.get_model_id()
+        model_id, model_name = self.get_model_id()
         if model_id is None:
             logger.info(
                 "No models found in the model registry, cannot send a new task",
@@ -145,6 +142,13 @@ class Aggregator:
         if operator_address is None:
             logger.warning("No operators found, cannot send a new task")
             return None
+
+        model_input_class = load_circuit_input_class(model_name)
+        if model_input_class is None:
+            logger.warning(f"No valid input class found for model {model_name}")
+            return None
+
+        inputs = " ".join(model_input_class.generate())
 
         # Define the _task struct, the dict should correspond to the struct in the contract
         task = {
@@ -211,7 +215,7 @@ class Aggregator:
             logger.error("No operators found in the allocation manager")
             return None
 
-    def get_model_id(self) -> int:
+    def get_model_id(self) -> Tuple[int, str] | None:
         """
         Get a model ID from the model registry.
         """
@@ -220,7 +224,11 @@ class Aggregator:
             logger.error("No models found in the model registry")
             return None
         # return a random model ID from 1 to models_count
-        return random.randint(1, models_count)
+        model_id = random.randint(1, models_count)
+        model_name = self.eth_client.model_registry.functions.getModelName(
+            model_id
+        ).call()
+        return model_id, model_name
 
     def get_model_cost(self, model_id: int) -> int:
         """
@@ -378,17 +386,17 @@ class Aggregator:
                 model_id
             ).call()
         )
-        if verification_strategy != VerificationStrategiesMap.OFFCHAIN:
+        if verification_strategy != ContractVerificationStrategy.OFFCHAIN:
             logger.info(
                 f"The task #{task_id} is not offchain verifiable...",
             )
             raise InvalidProofError("Not verifiable")
-        model_uri = self.eth_client.model_registry.functions.modelURI(model_id).call()
-        if not model_uri:
+        model_name = self.eth_client.model_registry.functions.modelName(model_id).call()
+        if not model_name:
             logger.info(
-                f"The model {model_id} has no URI, cannot verify the proof...",
+                f"The model {model_id} has no name, cannot verify the proof...",
             )
-            raise InvalidProofError("Model URI is empty")
+            raise InvalidProofError("Model name is empty")
 
         inputs: bytes = task[TaskStructMap.INPUTS]
         output: bytes = task[TaskStructMap.OUTPUT]
@@ -406,7 +414,7 @@ class Aggregator:
         # OK, we are good to verify the task
         validator_input = [float(i) for i in inputs.decode().split(" ")]
         proof_generator = EZKLHandler(
-            model_id=model_uri,
+            model_id=model_name,
             task_id=str(task_id),
             inputs=validator_input,
         )

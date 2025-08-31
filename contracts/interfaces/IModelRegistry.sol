@@ -16,23 +16,23 @@ interface IModelRegistry {
      * @param modelId The id of the model
      * @param modelVerifier The address of the model verifier
      * @param verificationStrategy The strategy used to verify the model
-     * @param modelURI The URI of the model
+     * @param modelName The name of the model (unique)
      * @param computeCost The compute cost of the model
      */
     event ModelCreated(
         uint256 indexed modelId,
         address indexed modelVerifier,
         VerificationStrategy indexed verificationStrategy,
-        string modelURI,
+        string modelName,
         uint256 computeCost,
         uint256 requiredFUCUs
     );
     /**
-     * @notice The event emitted when a model is updated
+     * @notice The event emitted when a model name is updated
      * @param modelId The id of the model
-     * @param modelURI The URI of the model
+     * @param modelName The name of the model (unique)
      */
-    event ModelURIUpdated(uint256 indexed modelId, string indexed modelURI);
+    event ModelNameUpdated(uint256 indexed modelId, string indexed modelName);
     /**
      * @notice The event emitted when the compute cost of a model is updated
      * @param modelId The id of the model
@@ -82,22 +82,22 @@ interface IModelRegistry {
      * @notice The function to create a new model
      * @param modelVerifier The address of the model verifier
      * @param verificationStrategy The strategy used to verify the model
-     * @param modelURI The URI of the model
+     * @param modelName The name of the model (unique)
      */
     function createNewModel(
         address modelVerifier,
         VerificationStrategy verificationStrategy,
-        string memory modelURI,
+        string memory modelName,
         uint256 computeCost,
         uint256 requiredFUCUs
     ) external returns (uint256 modelId);
 
     /**
-     * @notice The function to update the URI of a model
+     * @notice The function to update the name of a model
      * @param modelId The id of the model
-     * @param modelURI The new URI of the model
+     * @param modelName The new name of the model (unique)
      */
-    function updateModelURI(uint256 modelId, string memory modelURI) external;
+    function updateModelName(uint256 modelId, string memory modelName) external;
 
     /**
      * @notice The function to update the compute cost of a model

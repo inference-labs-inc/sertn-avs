@@ -14,7 +14,7 @@ from avs_operator.main import TaskOperator
 from common.config import AggregatorConfig, OperatorConfig
 from common.constants import ROOT_DIR, STRATEGIES_ADDRESSES
 from common.contract_constants import TaskStateMap, TaskStructMap
-from owner.main import AvsOwner
+from management.owner import AvsOwner
 
 load_dotenv(os.path.join(ROOT_DIR, ".env"))  # Load environment variables
 

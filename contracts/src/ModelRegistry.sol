@@ -17,8 +17,10 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
 
     // modelId => modelVerifier
     mapping(uint256 => address) public modelVerifier;
-    // modelId => modelURI
-    mapping(uint256 => string) public modelURI;
+    // modelId => modelName
+    mapping(uint256 => string) public modelName;
+    // modelName => modelId (enforce uniqueness of modelName values)
+    mapping(string => uint256) public modelNameToId;
     // modelId => verificationStrategy
     mapping(uint256 => VerificationStrategy) public verificationStrategy;
     // modelId => computeCost
@@ -35,7 +37,7 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
     function createNewModel(
         address _modelVerifier,
         VerificationStrategy _verificationStrategy,
-        string memory _modelURI,
+        string memory _modelName,
         uint256 _computeCost,
         uint256 _requiredFUCUs
     ) external onlyOwner returns (uint256 modelId) {
@@ -43,9 +45,12 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
         if (_modelVerifier == address(0)) revert InvalidModelVerifier();
         if (modelVerifiers[_modelVerifier] != 0)
             revert ModelAlreadyExists(modelVerifiers[_modelVerifier]);
-        // Assign verifier and URI
+        // Ensure modelName is unique
+        if (modelNameToId[_modelName] != 0) revert ModelAlreadyExists(modelNameToId[_modelName]);
+        // Assign verifier and Name
         modelVerifier[modelIndex] = _modelVerifier;
-        modelURI[modelIndex] = _modelURI;
+        modelName[modelIndex] = _modelName;
+        modelNameToId[_modelName] = modelIndex;
         verificationStrategy[modelIndex] = _verificationStrategy;
         computeCost[modelIndex] = _computeCost;
         requiredFUCUs[modelIndex] = _requiredFUCUs;
@@ -56,7 +61,7 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
             modelIndex,
             _modelVerifier,
             _verificationStrategy,
-            _modelURI,
+            _modelName,
             _computeCost,
             _requiredFUCUs
         );
@@ -66,10 +71,20 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
     }
 
     /// @inheritdoc IModelRegistry
-    function updateModelURI(uint256 modelId, string memory _modelURI) external onlyOwner {
+    function updateModelName(uint256 modelId, string memory _modelName) external onlyOwner {
         if (modelId >= modelIndex) revert ModelDoesNotExist();
-        modelURI[modelId] = _modelURI;
-        emit ModelURIUpdated(modelId, _modelURI);
+        // Enforce uniqueness: allow same modelId to keep its own name
+        uint256 existing = modelNameToId[_modelName];
+        if (existing != 0 && existing != modelId) revert ModelAlreadyExists(existing);
+        // Update reverse mapping: remove old name mapping
+        string memory oldName = modelName[modelId];
+        if (bytes(oldName).length != 0) {
+            // Clear only if previously set
+            delete modelNameToId[oldName];
+        }
+        modelName[modelId] = _modelName;
+        modelNameToId[_modelName] = modelId;
+        emit ModelNameUpdated(modelId, _modelName);
     }
 
     /// @inheritdoc IModelRegistry
@@ -93,6 +108,10 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
         if (modelVerifiers[_modelVerifier] != 0)
             revert ModelAlreadyExists(modelVerifiers[_modelVerifier]);
         // Update the verifier
+        address oldVerifier = modelVerifier[modelId];
+        if (oldVerifier != address(0)) {
+            delete modelVerifiers[oldVerifier];
+        }
         modelVerifiers[_modelVerifier] = modelId;
         modelVerifier[modelId] = _modelVerifier;
         emit ModelVerifierUpdated(modelId, _modelVerifier);

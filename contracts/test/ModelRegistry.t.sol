@@ -105,35 +105,35 @@ contract ModelRegistryTest is Test {
         require(modelId == 1, "First model ID should be 1");
         require(modelId2 == 2, "Second model ID should be 2");
 
-        // Verify model URIs
+        // Verify model names
         require(
-            keccak256(abi.encodePacked(modelRegistry.modelURI(modelId))) ==
+            keccak256(abi.encodePacked(modelRegistry.modelName(modelId))) ==
                 keccak256(abi.encodePacked("model1")),
-            "First model URI should be model1"
+            "First model name should be model1"
         );
 
         require(
-            keccak256(abi.encodePacked(modelRegistry.modelURI(modelId2))) ==
+            keccak256(abi.encodePacked(modelRegistry.modelName(modelId2))) ==
                 keccak256(abi.encodePacked("model2")),
-            "Second model URI should be model2"
+            "Second model name should be model2"
         );
 
         vm.stopPrank();
     }
 
-    function test_updateModelURI() public {
+    function test_updateModelName() public {
         vm.startPrank(owner.key.addr);
 
-        // Update the model URI
+        // Update the model name
         vm.expectEmit(true, true, false, false, address(modelRegistry));
-        emit IModelRegistry.ModelURIUpdated(modelId, "updatedModel1");
-        modelRegistry.updateModelURI(modelId, "updatedModel1");
+        emit IModelRegistry.ModelNameUpdated(modelId, "updatedModel1");
+        modelRegistry.updateModelName(modelId, "updatedModel1");
 
         // Verify the update
         require(
-            keccak256(abi.encodePacked(modelRegistry.modelURI(modelId))) ==
+            keccak256(abi.encodePacked(modelRegistry.modelName(modelId))) ==
                 keccak256(abi.encodePacked("updatedModel1")),
-            "Model URI should be updated to updatedModel1"
+            "Model name should be updated to updatedModel1"
         );
 
         vm.stopPrank();
@@ -204,10 +204,10 @@ contract ModelRegistryTest is Test {
     }
 
     function test_Permissions() public {
-        // Check that only the owner can update model URI
+    // Check that only the owner can update model name
         vm.startPrank(address(0x123));
         vm.expectRevert("Ownable: caller is not the owner");
-        modelRegistry.updateModelURI(modelId, "unauthorizedUpdate");
+    modelRegistry.updateModelName(modelId, "unauthorizedUpdate");
         vm.stopPrank();
 
         // Check that only the owner can update compute cost
