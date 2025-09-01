@@ -215,16 +215,25 @@ class Aggregator:
             logger.error("No operators found in the allocation manager")
             return None
 
-    def get_model_id(self) -> Tuple[int, str] | None:
+    def get_model_id(self) -> Tuple[int | None, str | None]:
         """
         Get a model ID from the model registry.
         """
         models_count = self.eth_client.model_registry.functions.modelIndex().call() - 1
-        if models_count <= 0:
+        if models_count < 1:
             logger.error("No models found in the model registry")
-            return None
-        # return a random model ID from 1 to models_count
-        model_id = random.randint(1, models_count)
+            return None, None
+
+        # Prefer on-chain random active model selection for efficiency
+        try:
+            seed = random.randint(0, 2**256 - 1)
+            model_id = self.eth_client.model_registry.functions.getRandomActiveModel(
+                seed
+            ).call()
+        except Exception:
+            logger.error("No active model found")
+            return None, None
+
         model_name = self.eth_client.model_registry.functions.modelName(model_id).call()
         return model_id, model_name
 

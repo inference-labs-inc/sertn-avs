@@ -65,6 +65,12 @@ interface IModelRegistry {
     );
 
     /**
+     * @notice Emitted when a model is disabled (made unusable)
+     * @param modelId The id of the model
+     */
+    event ModelDisabled(uint256 indexed modelId);
+
+    /**
      * @notice The error emitted when a model already exists
      * @param modelId The id of the model
      */
@@ -77,6 +83,10 @@ interface IModelRegistry {
      * @notice The error emitted when a model does not exist
      */
     error ModelDoesNotExist();
+    /**
+     * @notice The error emitted when no active models exist
+     */
+    error NoActiveModels();
 
     /**
      * @notice The function to create a new model
@@ -129,4 +139,30 @@ interface IModelRegistry {
         uint256 modelId,
         VerificationStrategy verificationStrategy
     ) external;
+
+    /**
+     * @notice Disable a model by clearing its verifier. Disabled models cannot be used by the TaskManager.
+     * @param modelId The id of the model to disable
+     */
+    function disableModel(uint256 modelId) external;
+
+    /**
+     * @notice Get the number of active models
+     */
+    function activeModelsLength() external view returns (uint256);
+
+    /**
+     * @notice Get the full list of active models (use with care for large sets)
+     */
+    function getActiveModels() external view returns (uint256[] memory ids);
+
+    /**
+     * @notice Return a pseudo-random active model id using provided seed
+     */
+    function getRandomActiveModel(uint256 seed) external view returns (uint256);
+
+    /**
+     * @notice Check whether a model is active
+     */
+    function isActive(uint256 modelId) external view returns (bool);
 }

@@ -165,9 +165,22 @@ class ModelRegistry:
         blockchain_models = self._get_blockchain_models()
         logger.info(f"Found {len(blockchain_models)} models in blockchain registry")
 
-        # Step 4: Synchronize models
+        # Step 3: Disable models that were removed locally or marked inactive
+        for model_id, bc in blockchain_models.items():
+            name = bc.get("name")
+            if name not in local_models or local_models[name]["is_active"] is False:
+                # Local folder removed -> disable on-chain if active
+                if bc["active"]:
+                    logger.info(f"Disabling model '{name}' (id {model_id})...")
+                    self._disable_blockchain_model(model_id)
+                continue
+
+        # Step 4: Synchronize models (create/update active ones)
         model_id_mapping: Dict[str, int] = {}
         for model_name, metadata in local_models.items():
+            # Skip inactive models entirely
+            if metadata["is_active"] is False:
+                continue
 
             # Check if model exists in blockchain
             existing_model_id: Optional[int] = None
@@ -263,6 +276,9 @@ class ModelRegistry:
                             model_id
                         ).call()
                     )
+                    active = self.eth_client.model_registry.functions.isActive(
+                        model_id
+                    ).call()
 
                     # Skip if model verifier is zero address (model might be deleted)
                     if model_verifier == "0x0000000000000000000000000000000000000000":
@@ -274,6 +290,7 @@ class ModelRegistry:
                         "verification_strategy": verification_strategy,
                         "compute_cost": compute_cost,
                         "required_fucus": required_fucus,
+                        "active": bool(active),
                     }
 
                     logger.debug(f"Retrieved blockchain model {model_id}: {model_name}")
@@ -396,6 +413,18 @@ class ModelRegistry:
         except Exception as e:
             logger.error(f"Failed to update model {model_id}: {e}")
             raise RuntimeError(f"Failed to update blockchain model {model_id}: {e}")
+
+    def _disable_blockchain_model(self, model_id: int) -> None:
+        try:
+            self.eth_client.execute_transaction(
+                self.eth_client.model_registry,
+                "disableModel",
+                self.private_key,
+                [model_id],
+            )
+        except Exception as e:
+            logger.error(f"Failed to disable model {model_id}: {e}")
+            raise
 
     def _create_blockchain_model(self, model_name: str, metadata: ModelMetadata) -> int:
         """
@@ -559,7 +588,7 @@ class ModelRegistry:
 
         print("\nCurrently Registered Models in Blockchain:")
         # Prepare rows
-        headers = ["ID", "NAME", "STRATEGY", "COMPUTE", "FUCUS", "VERIFIER"]
+        headers = ["ID", "NAME", "ACTIVE", "STRATEGY", "COMPUTE", "FUCUS", "VERIFIER"]
 
         def strategy_name(v: int) -> str:
             try:
@@ -579,6 +608,7 @@ class ModelRegistry:
                 [
                     str(model_id),
                     str(m.get("name", "")),
+                    "yes" if m.get("active", True) else "no",
                     strategy_name(int(m.get("verification_strategy", 0))),
                     str(m.get("compute_cost", "")),
                     str(m.get("required_fucus", "")),

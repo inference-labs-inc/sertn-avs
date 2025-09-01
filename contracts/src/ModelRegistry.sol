@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.29;
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {OwnableUpgradeable} from "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import {IModelRegistry} from "../interfaces/IModelRegistry.sol";
 
@@ -9,6 +10,7 @@ import {IModelRegistry} from "../interfaces/IModelRegistry.sol";
  * @notice ModelRegistry is a contract that stores models for the Sertn network.
  */
 contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
+    using EnumerableSet for EnumerableSet.UintSet;
     // Current model index (starts at 1 to avoid zero-indexing issues)
     uint256 public modelIndex = 1;
 
@@ -27,6 +29,8 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
     mapping(uint256 => uint256) public computeCost;
     // modelId => requiredFUCUs
     mapping(uint256 => uint256) public requiredFUCUs;
+    // Active models set for efficient presence check and enumeration
+    EnumerableSet.UintSet private activeModelIds;
 
     function initialize() public initializer {
         __Ownable_init();
@@ -54,6 +58,7 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
         verificationStrategy[modelIndex] = _verificationStrategy;
         computeCost[modelIndex] = _computeCost;
         requiredFUCUs[modelIndex] = _requiredFUCUs;
+        activeModelIds.add(modelIndex);
         // Assign reverse mapping values
         modelVerifiers[_modelVerifier] = modelIndex;
 
@@ -114,6 +119,7 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
         }
         modelVerifiers[_modelVerifier] = modelId;
         modelVerifier[modelId] = _modelVerifier;
+        activeModelIds.add(modelId);
         emit ModelVerifierUpdated(modelId, _modelVerifier);
     }
 
@@ -125,5 +131,42 @@ contract ModelRegistry is OwnableUpgradeable, IModelRegistry {
         if (modelId >= modelIndex) revert ModelDoesNotExist();
         verificationStrategy[modelId] = _verificationStrategy;
         emit VerificationStrategyUpdated(modelId, _verificationStrategy);
+    }
+
+    /// @inheritdoc IModelRegistry
+    function disableModel(uint256 modelId) external onlyOwner {
+        if (modelId >= modelIndex) revert ModelDoesNotExist();
+        address oldVerifier = modelVerifier[modelId];
+        if (oldVerifier != address(0)) {
+            delete modelVerifiers[oldVerifier];
+        }
+        modelVerifier[modelId] = address(0);
+        activeModelIds.remove(modelId);
+        emit ModelDisabled(modelId);
+    }
+
+    /// @inheritdoc IModelRegistry
+    function activeModelsLength() external view returns (uint256) {
+        return activeModelIds.length();
+    }
+
+    /// @inheritdoc IModelRegistry
+    function getActiveModels() external view returns (uint256[] memory ids) {
+        return activeModelIds.values();
+    }
+
+    /// @inheritdoc IModelRegistry
+    function getRandomActiveModel(uint256 seed) external view returns (uint256) {
+        uint256 len = activeModelIds.length();
+        if (len == 0) revert NoActiveModels();
+        uint256 idx = uint256(
+            keccak256(abi.encodePacked(block.prevrandao, block.timestamp, seed))
+        ) % len;
+        return activeModelIds.at(idx);
+    }
+
+    /// @inheritdoc IModelRegistry
+    function isActive(uint256 modelId) external view returns (bool) {
+        return activeModelIds.contains(modelId);
     }
 }

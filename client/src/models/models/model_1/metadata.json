@@ -11,5 +11,6 @@
   "verification_strategy": "offchain",
   "model_verifier_address": "0x4b6aB5F819A515382B0dEB6935D793817bB4af28",
   "compute_cost": 100,
-  "required_fucus": 50
+  "required_fucus": 50,
+  "is_active": false
 }

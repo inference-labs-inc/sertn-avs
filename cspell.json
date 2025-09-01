@@ -27,6 +27,7 @@
         "Offchain",
         "operatorsinfo",
         "pbar",
+        "prevrandao",
         "pycache",
         "pycodestyle",
         "pyproject",

@@ -116,6 +116,11 @@ class ModelMetadata(BaseModel):
         ge=0,
     )
 
+    is_active: bool = Field(
+        default=True,
+        description="If false, this model will be disabled on-chain and ignored locally",
+    )
+
     @field_validator("external_files")
     @classmethod
     def validate_external_files(
@@ -149,20 +154,6 @@ class ModelMetadata(BaseModel):
         """Validate compute cost is a non-negative integer."""
         if v < 0:
             raise ValueError("Compute cost must be non-negative")
-        return v
-
-    @field_validator("required_fucus")
-    @classmethod
-    def validate_required_fucus(cls, v: str) -> str:
-        """Validate required FUCUS is a positive integer."""
-        try:
-            fucus = int(v)
-            if fucus <= 0:
-                raise ValueError("Required FUCUS must be positive")
-        except ValueError as e:
-            if "invalid literal" in str(e):
-                raise ValueError("Required FUCUS must be a valid integer")
-            raise
         return v
 
 
