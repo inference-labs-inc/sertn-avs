@@ -1,11 +1,15 @@
+import json
 import os
+import shutil
 import sys
+import tempfile
 from pathlib import Path
 
 import pytest
 import requests
 from dotenv import load_dotenv
 from eth_account import Account
+from web3 import Web3
 
 from aggregator.main import Aggregator
 from avs_operator.main import TaskOperator
@@ -120,3 +124,72 @@ def init_environment(aggregator: Aggregator):
         "owner_address": owner_address,
         "interval_seconds": interval_seconds,
     }
+
+
+@pytest.fixture(scope="session")
+def models_root():
+    """Create an empty temporary directory and remove it after the test.
+
+    Returns:
+        Path: path to the created empty directory.
+    """
+    path = Path(tempfile.mkdtemp(prefix="pytest-empty-"))
+    try:
+        yield path
+    finally:
+        shutil.rmtree(path, ignore_errors=True)
+
+
+@pytest.fixture(scope="function")
+def write_model(dummy_address):
+    """
+    Fixture to create a helper function which creates test models.
+    """
+    created_dirs: list[Path] = []
+
+    def _write_model(tmp_root: Path, name: str, is_active: bool = True, **overrides):
+        model_dir = tmp_root / name
+        model_dir.mkdir(parents=True, exist_ok=True)
+        # input.py with CircuitInput
+        (model_dir / "input.py").write_text(
+            "\nfrom models.execution_layer.base_input import BaseInput"
+            "\n"
+            "\nclass CircuitInput(BaseInput):"
+            "\n    @classmethod"
+            "\n    def generate(cls):"
+            "\n        return [1, 2, 3]"
+        )
+        # metadata.json
+        metadata = {
+            "name": name.upper(),
+            "description": f"desc {name}",
+            "author": "tester",
+            "version": "0.0.1",
+            "proof_system": "EZKL",
+            "type": "proof_of_computation",
+            "verification_strategy": "offchain",
+            "model_verifier_address": dummy_address,
+            "compute_cost": 100,
+            "required_fucus": 10,
+            "is_active": is_active,
+        }
+        metadata.update(overrides)
+        (model_dir / "metadata.json").write_text(json.dumps(metadata))
+        # Create empty network.onnx and settings.json files
+        (model_dir / "network.onnx").touch()
+        (model_dir / "settings.json").write_text("{}")
+        created_dirs.append(model_dir)
+        return model_dir
+
+    yield _write_model
+
+    # Cleanup created model directories
+    for d in created_dirs:
+        shutil.rmtree(d, ignore_errors=True)
+
+
+@pytest.fixture(scope="function")
+def dummy_address() -> str:
+    """Return a valid EIP-55 Ethereum address for tests."""
+    raw = "0x" + os.urandom(20).hex()
+    return Web3.to_checksum_address(raw)

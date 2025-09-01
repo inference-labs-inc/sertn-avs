@@ -21,7 +21,7 @@ from models.execution_layer.request_type import RequestType
 logger = get_logger("model_registry")
 
 
-def load_circuit_input_class(model_name: str):
+def load_circuit_input_class(model_name: str, models_root: Path = MODELS_FOLDER):
     """
     Dynamically load the CircuitInput class from the model's input.py file.
 
@@ -29,7 +29,7 @@ def load_circuit_input_class(model_name: str):
     :return: CircuitInput class
     :raises ModelValidationError: If class loading fails
     """
-    input_file = MODELS_FOLDER / model_name / "input.py"
+    input_file = models_root / model_name / "input.py"
     spec = importlib.util.spec_from_file_location(f"{model_name}_input", input_file)
     if spec is None or spec.loader is None:
         raise ModelValidationError(f"Failed to load module from {input_file}")
@@ -73,14 +73,15 @@ class ModelValidationError(Exception):
     pass
 
 
-def ensure_external_files(models_root: Path = MODELS_FOLDER, timeout: int = 60) -> None:
+def ensure_external_files(models_root: Path = MODELS_FOLDER, timeout: int = 60) -> int:
     """
     Ensure external files declared in each model's metadata.json are present locally.
     """
     if not models_root.exists():
         logger.error(f"Models folder not found: {models_root}")
-        return
+        return 0
 
+    downloaded = 0
     for model_path in models_root.iterdir():
         if not model_path.is_dir():
             continue
@@ -119,6 +120,7 @@ def ensure_external_files(models_root: Path = MODELS_FOLDER, timeout: int = 60) 
                                 if chunk:  # filter out keep-alive chunks
                                     f.write(chunk)
                     logger.info("✅")
+                    downloaded += 1
                 else:
                     logger.error(
                         f"Unknown external file source for {model_name}: {filename} -> {src}"
@@ -127,21 +129,29 @@ def ensure_external_files(models_root: Path = MODELS_FOLDER, timeout: int = 60) 
                 logger.error(
                     f"Failed to fetch external file for {model_name}/{filename}: {e}"
                 )
+    return downloaded
 
 
 class ModelRegistry:
-    def __init__(self, private_key: str, eth_rpc_url: str, gas_strategy: GasStrategy):
+    def __init__(
+        self,
+        private_key: str,
+        eth_rpc_url: str,
+        gas_strategy: GasStrategy,
+        models_root: Path = MODELS_FOLDER,
+    ):
         self.eth_client = EthereumClient(
             eth_rpc_url=eth_rpc_url, gas_strategy=gas_strategy
         )
         self.private_key = private_key
+        self.models_root = models_root
 
     def sync_models(self) -> Dict[str, int]:
         """
         Synchronize local models with the blockchain registry.
 
         This function:
-        1. Scans MODELS_FOLDER for model folders
+        1. Scans `models_root` for model folders
         2. Validates each model's metadata.json with ModelMetadata
         3. Validates each model's implementation with _validate_model
         4. Compares with blockchain registry and updates as needed
@@ -152,8 +162,8 @@ class ModelRegistry:
         """
         logger.info("Starting model synchronization...")
 
-        if not MODELS_FOLDER.exists():
-            raise FileNotFoundError(f"Models folder not found: {MODELS_FOLDER}")
+        if not self.models_root.exists():
+            raise FileNotFoundError(f"Models folder not found: {self.models_root}")
 
         # Step 1: Discover and validate local models
         local_models = self._discover_local_models()
@@ -168,7 +178,7 @@ class ModelRegistry:
         # Step 3: Disable models that were removed locally or marked inactive
         for model_id, bc in blockchain_models.items():
             name = bc.get("name")
-            if name not in local_models or local_models[name]["is_active"] is False:
+            if name not in local_models or local_models[name].is_active is False:
                 # Local folder removed -> disable on-chain if active
                 if bc["active"]:
                     logger.info(f"Disabling model '{name}' (id {model_id})...")
@@ -179,13 +189,13 @@ class ModelRegistry:
         model_id_mapping: Dict[str, int] = {}
         for model_name, metadata in local_models.items():
             # Skip inactive models entirely
-            if metadata["is_active"] is False:
+            if metadata.is_active is False:
                 continue
 
             # Check if model exists in blockchain
             existing_model_id: Optional[int] = None
             for model_id, model_data in blockchain_models.items():
-                if model_data["name"] == model_name:
+                if model_data["name"].lower() == model_name.lower():
                     existing_model_id = model_id
                     break
 
@@ -194,6 +204,14 @@ class ModelRegistry:
                 logger.debug(
                     f"Model '{model_name}' exists in blockchain with ID {existing_model_id}"
                 )
+
+                if model_data["active"] is False:
+                    logger.info(
+                        f"Enabling model '{model_name}' (id {existing_model_id})..."
+                    )
+                    self._update_model_verifier(  # activates the model
+                        existing_model_id, metadata.model_verifier_address
+                    )
 
                 needs_update = self._check_model_needs_update(
                     existing_model_id, metadata, blockchain_models[existing_model_id]
@@ -225,12 +243,12 @@ class ModelRegistry:
         self,
     ) -> Dict[str, ModelMetadata]:
         """
-        Discover model folders in MODELS_FOLDER that contain metadata.json.
+        Discover model folders in `models_root` that contain metadata.json.
         """
         local_models = {}
 
         # Scan for model directories
-        for item in MODELS_FOLDER.iterdir():
+        for item in self.models_root.iterdir():
             if not item.is_dir():
                 continue
             local_models[item.name] = self._validate_model(item)
@@ -279,10 +297,6 @@ class ModelRegistry:
                     active = self.eth_client.model_registry.functions.isActive(
                         model_id
                     ).call()
-
-                    # Skip if model verifier is zero address (model might be deleted)
-                    if model_verifier == "0x0000000000000000000000000000000000000000":
-                        continue
 
                     blockchain_models[model_id] = {
                         "verifier": model_verifier,
@@ -403,16 +417,23 @@ class ModelRegistry:
                 model_id
             ).call()
             if current_verifier.lower() != metadata.model_verifier_address.lower():
-                self.eth_client.execute_transaction(
-                    self.eth_client.model_registry,
-                    "updateModelVerifier",
-                    self.private_key,
-                    [model_id, metadata.model_verifier_address],
-                )
+                self._update_model_verifier(model_id, metadata.model_verifier_address)
 
         except Exception as e:
             logger.error(f"Failed to update model {model_id}: {e}")
             raise RuntimeError(f"Failed to update blockchain model {model_id}: {e}")
+
+    def _update_model_verifier(self, model_id: int, new_verifier: str) -> None:
+        try:
+            self.eth_client.execute_transaction(
+                self.eth_client.model_registry,
+                "updateModelVerifier",
+                self.private_key,
+                [model_id, new_verifier],
+            )
+        except Exception as e:
+            logger.error(f"Failed to update model verifier for {model_id}: {e}")
+            raise
 
     def _disable_blockchain_model(self, model_id: int) -> None:
         try:
@@ -473,7 +494,7 @@ class ModelRegistry:
         """
         Add a new model to the AVS by validating it and creating a transaction to the ModelRegistry contract.
 
-        :param model_name: Name of the model (should match folder name in MODELS_FOLDER)
+        :param model_name: Name of the model (should match folder name in `models_root`)
         :param model_verifier_address: Address of the verifier contract for this model
         :param verification_strategy: Verification strategy (0=None, 1=Onchain, 2=Offchain)
         :param compute_cost: Computational cost of running this model
@@ -481,7 +502,7 @@ class ModelRegistry:
         :param gas_kwargs: Optional gas parameters (gas_limit, max_fee_per_gas, etc.)
         :return: Model ID assigned by the contract
         """
-        model_path = MODELS_FOLDER / model_name
+        model_path = self.models_root / model_name
         if not model_path.exists():
             raise FileNotFoundError(f"Model data not found: {model_path}")
 
@@ -541,7 +562,7 @@ class ModelRegistry:
 
         # Load and validate the CircuitInput class
         try:
-            circuit_input_class = load_circuit_input_class(model_name)
+            load_circuit_input_class(model_name, models_root=self.models_root)
         except Exception as e:
             raise ModelValidationError(
                 f"Failed to load CircuitInput class from '{model_name}': {e}"
