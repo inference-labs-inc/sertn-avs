@@ -4,6 +4,7 @@ import uuid
 
 import pytest
 
+from common.constants import MODELS_FOLDER
 from models.execution_layer.base_input import BaseInput
 from models.execution_layer.model_registry import (
     ModelRegistry,
@@ -131,3 +132,12 @@ def test_sync_models_create_update_disable(
         if model["active"]
     ]
     assert len(active_chain_models) == 0
+
+    # set "real" models from "real" models folder back to the chain
+    model_registry = ModelRegistry(
+        private_key=owner.private_key,
+        eth_rpc_url=owner.eth_rpc_url,
+        gas_strategy=owner.gas_strategy,
+        models_root=MODELS_FOLDER,
+    )
+    model_registry.sync_models()
