@@ -1,5 +1,4 @@
 from __future__ import annotations
-from pydantic import BaseModel
 from models.execution_layer.base_input import BaseInput
 from models.execution_layer.request_type import RequestType
 import random

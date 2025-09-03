@@ -34,7 +34,7 @@ class ModelConfig(BaseModel):
     """Configuration for a model supported by an operator node."""
 
     model_name: str = Field(
-        ..., description="URI identifier for the model", min_length=1
+        ..., description="Name identifier for the model", min_length=1
     )
     allocated_fucus: int = Field(
         ..., description="Amount of FUCUs allocated to this model", gt=0

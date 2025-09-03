@@ -147,7 +147,7 @@ class TaskOperator:
 
         # sign the proof
         encoded = eth_abi.encode(
-            ["uint32", "bytes", "address"],
+            ["uint256", "bytes", "address"],
             [task_id, proof_encoded, operator_address],
         )
         message = encode_defunct(primitive=encoded)
@@ -156,7 +156,7 @@ class TaskOperator:
         )
         signature = signed_message.signature.hex()
         logger.info(
-            f"Signature generated, task_id: {starting_block}, model: {model_id}, "
+            f"Signature generated, task_id: {task_id}, model: {model_id}, "
             f"signature: {signature}",
         )
 
@@ -174,9 +174,10 @@ class TaskOperator:
             logger.info(
                 f"Successfully posted a proof for the {task_id} task",
             )
-        except requests.RequestException:
-            logger.info(
-                f"Failed to post a proof for the {task_id} task: {resp.text}",
+        except requests.RequestException as e:
+            err_text = e.response.text if getattr(e, "response", None) else str(e)
+            logger.warning(
+                f"Failed to post a proof for the {task_id} task: {err_text}",
             )
 
     def generate_proof_for_task(

@@ -14,11 +14,11 @@ from web3 import Web3
 from aggregator.main import Aggregator
 from avs_operator.main import TaskOperator
 from common.config import AggregatorConfig, OperatorConfig
-from common.constants import ROOT_DIR
+from common.constants import ROOT_DIR, CLIENT_SRC_PATH
 from management.owner import AvsOwner
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-load_dotenv(os.path.join(ROOT_DIR, ".env"))  # Load environment variables
+sys.path.insert(0, str(CLIENT_SRC_PATH))
+load_dotenv(ROOT_DIR / ".env")  # Load environment variables
 
 
 @pytest.fixture(scope="session")

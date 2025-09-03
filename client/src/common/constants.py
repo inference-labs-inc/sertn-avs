@@ -4,11 +4,12 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).parent.parent.parent.parent
 CLIENT_PATH = ROOT_DIR / "client"
+CLIENT_SRC_PATH = CLIENT_PATH / "src"
 CONTRACTS_DIR = ROOT_DIR / "contracts"
-MODELS_DATA_DIR = CLIENT_PATH / "src" / "models" / "models_data"
-TEMP_FOLDER = CLIENT_PATH / "src" / "models" / "temp"
-PROOFS_FOLDER = CLIENT_PATH / "src" / "models" / "generated_proofs"
-MODELS_FOLDER = CLIENT_PATH / "src" / "models" / "models"
+MODELS_DATA_DIR = CLIENT_SRC_PATH / "models" / "models_data"
+TEMP_FOLDER = CLIENT_SRC_PATH / "models" / "temp"
+PROOFS_FOLDER = CLIENT_SRC_PATH / "models" / "generated_proofs"
+MODELS_FOLDER = CLIENT_SRC_PATH / "models" / "models"
 
 LOCAL_EZKL_PATH = Path(
     os.environ.get("LOCAL_EZKL_PATH", str(Path.home() / ".ezkl" / "ezkl"))

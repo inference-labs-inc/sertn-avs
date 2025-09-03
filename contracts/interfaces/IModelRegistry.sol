@@ -87,6 +87,10 @@ interface IModelRegistry {
      * @notice The error emitted when no active models exist
      */
     error NoActiveModels();
+    /**
+     * @notice The error emitted when a model name is empty
+     */
+    error InvalidModelName();
 
     /**
      * @notice The function to create a new model
