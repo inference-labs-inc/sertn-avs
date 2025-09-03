@@ -7,13 +7,7 @@ import random
 LIST_SIZE = 5
 
 
-class CircuitInputSchema(BaseModel):
-    list_items: list[float]
-
-
 class CircuitInput(BaseInput):
-
-    schema = CircuitInputSchema
 
     def __init__(
         self, request_type: RequestType, data: dict[str, object] | None = None
@@ -21,14 +15,8 @@ class CircuitInput(BaseInput):
         super().__init__(request_type, data)
 
     @staticmethod
-    def generate() -> dict[str, object]:
-        return {
-            "list_items": [random.uniform(0.0, 0.85) for _ in range(LIST_SIZE)],
-        }
-
-    @staticmethod
-    def validate(data: dict[str, object]) -> None:
-        return CircuitInputSchema(**data)
+    def generate() -> list[float]:
+        return [random.uniform(0.0, 0.85) for _ in range(LIST_SIZE)]
 
     @staticmethod
     def process(data: dict[str, object]) -> dict[str, object]:

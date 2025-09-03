@@ -220,6 +220,8 @@ class Aggregator:
         Get a model ID from the model registry.
         """
         models_count = self.eth_client.model_registry.functions.modelIndex().call() - 1
+        # `modelIndex` is an index for future new model.
+        # So `modelIndex == 1` means there is no model registered.
         if models_count < 1:
             logger.error("No models found in the model registry")
             return None, None

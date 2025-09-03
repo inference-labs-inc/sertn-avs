@@ -52,8 +52,8 @@ def operator():
                 "total_fucus": 100,
                 "is_active": True,
                 "models": [
-                    {"model_uri": "model_0", "allocated_fucus": 50},
-                    # {"model_uri": "model_1", "allocated_fucus": 50},
+                    {"model_name": "model_0", "allocated_fucus": 50},
+                    # {"model_name": "model_1", "allocated_fucus": 50},
                 ],
             },
             {
@@ -62,8 +62,8 @@ def operator():
                 "total_fucus": 100,
                 "is_active": True,
                 "models": [
-                    {"model_uri": "model_0", "allocated_fucus": 90},
-                    # {"model_uri": "model_1", "allocated_fucus": 10},
+                    {"model_name": "model_0", "allocated_fucus": 90},
+                    # {"model_name": "model_1", "allocated_fucus": 10},
                 ],
             },
         ],

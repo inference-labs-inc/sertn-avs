@@ -159,7 +159,7 @@ class OperatorNodesManager:
         actual_models = dict(zip(supported_models, model_allocated_fucus))
         config_models = {
             # Validated model URIs are guaranteed to exist in registered_models by Pydantic validation
-            self.registered_models[model.model_uri]: model.allocated_fucus
+            self.registered_models[model.model_name]: model.allocated_fucus
             for model in models
         }
 
@@ -308,9 +308,9 @@ class OperatorNodesManager:
         print("=" * 80)
 
         # Create reverse mapping from model ID to model URI
-        model_id_to_uri = {
-            model_id: model_uri
-            for model_uri, model_id in self.registered_models.items()
+        model_id_to_name = {
+            model_id: model_name
+            for model_name, model_id in self.registered_models.items()
         }
 
         for i, node_id in enumerate(registered_node_ids, 1):
@@ -372,10 +372,10 @@ class OperatorNodesManager:
                     for model_id, model_fucus in zip(
                         supported_model_ids, model_allocated_fucus
                     ):
-                        model_uri = model_id_to_uri.get(
+                        model_name = model_id_to_name.get(
                             model_id, f"Unknown (ID: {model_id})"
                         )
-                        print(f"      • Model: {model_uri}")
+                        print(f"      • Model: {model_name}")
                         print(
                             f"        Allocated FUCUs: {model_fucus:,}",
                         )

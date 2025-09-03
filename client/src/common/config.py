@@ -33,7 +33,7 @@ class GasStrategy(str, Enum):
 class ModelConfig(BaseModel):
     """Configuration for a model supported by an operator node."""
 
-    model_uri: str = Field(
+    model_name: str = Field(
         ..., description="URI identifier for the model", min_length=1
     )
     allocated_fucus: int = Field(

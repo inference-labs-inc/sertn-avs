@@ -161,20 +161,20 @@ class TaskOperator:
         )
 
         # send the proof and signature to the aggregator server
-        resp = requests.post(
-            f"http://{self.config.aggregator_server_ip_port_address}/proof",
-            json={
-                "task_id": task_id,
-                "proof": proof,
-                "signature": signature,
-            },
-        )
         try:
+            resp = requests.post(
+                f"http://{self.config.aggregator_server_ip_port_address}/proof",
+                json={
+                    "task_id": task_id,
+                    "proof": proof,
+                    "signature": signature,
+                },
+            )
             resp.raise_for_status()
             logger.info(
                 f"Successfully posted a proof for the {task_id} task",
             )
-        except requests.HTTPError:
+        except requests.RequestException:
             logger.info(
                 f"Failed to post a proof for the {task_id} task: {resp.text}",
             )
