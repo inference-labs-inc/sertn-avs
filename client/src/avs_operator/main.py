@@ -12,6 +12,7 @@ from tqdm import tqdm
 from web3 import Web3
 
 from avs_operator.nodes import OperatorNodesManager
+from common.auto_update import AutoUpdate
 from common.config import OperatorConfig
 from common.logging import get_logger
 from common.contract_constants import TaskStructMap
@@ -53,6 +54,7 @@ class TaskOperator:
             eth_client=self.eth_client,
             nodes_config=self.config.nodes,
         )
+        self.auto_update = AutoUpdate()
 
     def listen_for_events(self, loop_running: bool = True) -> int | None:
         logger.info("Starting Operator...")
@@ -81,6 +83,8 @@ class TaskOperator:
             if not loop_running:
                 logger.info("Stopping Operator...")
                 return processed_count
+            if self.config.auto_update:
+                self.auto_update.try_update()
             time.sleep(3)
 
     def process_assigned_task(self, task_id: int, operator_address: bytes):

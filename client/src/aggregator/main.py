@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from web3 import Web3
 
 from common.abis import ERC20_ABI, STRATEGY_ABI
+from common.auto_update import AutoUpdate
 from common.config import AggregatorConfig
 from common.constants import (
     RESOLVE_BLOCKS_DELAY,
@@ -80,6 +81,8 @@ class Aggregator:
         self.tasks = {}
         self.taskResponses = {}
 
+        self.auto_update = AutoUpdate()
+
         # Initialize FastAPI app
         self.server_thread: threading.Thread | None = None
         self.app = FastAPI()
@@ -128,6 +131,8 @@ class Aggregator:
                 logger.debug("Stopping sending new tasks")
                 break
             time.sleep(60)
+            if self.config.auto_update:
+                self.auto_update.try_update()
             i += 1
 
     def send_new_task(self, i) -> int | None:
@@ -362,7 +367,7 @@ class Aggregator:
 
         # check the signature (the origin operator submitted us the data)
         encoded = eth_abi.encode(
-            ["uint32", "bytes", "address"],
+            ["uint256", "bytes", "address"],
             [task_id, proof.encode(), operator_address],
         )
         message = encode_defunct(primitive=encoded)

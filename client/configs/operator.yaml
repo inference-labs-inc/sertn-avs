@@ -13,6 +13,7 @@ ecdsa_private_key_store_path: tests/keys/operator.ecdsa.key.json
 
 # address which the aggregator listens on for operator signed messages
 aggregator_server_ip_port_address: localhost:8090
+auto_update: false
 
 nodes:
   # this is the list of operator nodes

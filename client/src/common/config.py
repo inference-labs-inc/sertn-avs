@@ -90,6 +90,10 @@ class BaseConfig(BaseModel):
         default=GasStrategy.STANDARD,
         description="Gas strategy for transaction execution",
     )
+    auto_update: bool = Field(
+        default=True,
+        description="Enable automatic updates for the application",
+    )
 
     @field_validator("ecdsa_private_key_store_path")
     @classmethod

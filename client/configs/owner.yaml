@@ -7,6 +7,7 @@ eth_rpc_url: http://localhost:8545
 # Path to ECDSA private key store file for the owner
 # This should contain the encrypted keystore for the AVS owner account
 ecdsa_private_key_store_path: tests/keys/owner.ecdsa.key.json
+auto_update: false
 
 # Gas strategy for transactions: slow, standard, fast, priority
 gas_strategy: standard
