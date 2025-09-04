@@ -276,6 +276,9 @@ class Aggregator:
         print(
             f"Got {len(allocated_sets)} allocated sets for operator {task['operator']}"
         )
+        if not allocated_sets:
+            logger.error(f"No allocated sets for operator {task['operator']}")
+            return None
         strategy_addresses = (
             self.eth_client.allocation_manager.functions.getAllocatedStrategies(
                 task["operator"], allocated_sets[0]
@@ -284,6 +287,9 @@ class Aggregator:
         print(
             f"Got {len(strategy_addresses)} allocated strategies for operator {task['operator']}"
         )
+        if not strategy_addresses:
+            logger.error(f"No allocated strategies for operator {task['operator']}")
+            return None
 
         strategy = self.eth_client.w3.eth.contract(
             address=strategy_addresses[0],

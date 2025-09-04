@@ -35,7 +35,8 @@ class AutoUpdate:
         try:
             self.repo = git.Repo(search_parent_directories=True)
         except Exception as e:
-            logger.exception("Failed to initialize the repository", e)
+            logger.exception("Failed to initialize the repository")
+            self.repo = None
 
     def get_local_latest_tag(self) -> Optional[git.Tag]:
         """
@@ -48,7 +49,7 @@ class AutoUpdate:
                 logger.info(f"Current tag: {current_tag.name}")
             return current_tag
         except Exception as e:
-            logger.exception("Failed to get the current tag", e)
+            logger.exception("Failed to get the current tag")
             return None
 
     def get_latest_release_tag(self):
@@ -63,7 +64,7 @@ class AutoUpdate:
             latest_release = response.json()
             return latest_release["tag_name"]
         except requests.RequestException as e:
-            logger.exception("Failed to fetch the latest release from GitHub.", e)
+            logger.exception("Failed to fetch the latest release from GitHub.")
             return None
 
     def attempt_packages_update(self):
@@ -82,7 +83,7 @@ class AutoUpdate:
             )
             logger.info("Successfully updated packages.")
         except Exception as e:
-            logger.exception("Failed to update requirements", e)
+            logger.exception("Failed to update requirements")
 
     def update_to_latest_release(self) -> bool:
         """
@@ -103,7 +104,7 @@ class AutoUpdate:
 
             current_tag = self.get_local_latest_tag()
 
-            if current_tag.name == latest_release_tag_name:
+            if current_tag and current_tag.name == latest_release_tag_name:
                 if self.repo.head.commit.hexsha == current_tag.commit.hexsha:
                     logger.info("Your version is up to date.")
                     return False
@@ -130,7 +131,6 @@ class AutoUpdate:
         except Exception as e:
             logger.exception(
                 "Automatic update failed. Manually pull the latest changes and update.",
-                e,
             )
 
         return False
@@ -139,6 +139,9 @@ class AutoUpdate:
         """
         Automatic update entrypoint method
         """
+        if not self.repo:
+            logger.warning("Git repository is not initialized.")
+            return
 
         if time.time() - self.last_check_time < 300:
             return

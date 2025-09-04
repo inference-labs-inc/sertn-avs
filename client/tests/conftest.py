@@ -14,7 +14,7 @@ from web3 import Web3
 from aggregator.main import Aggregator
 from avs_operator.main import TaskOperator
 from common.config import AggregatorConfig, OperatorConfig
-from common.constants import ROOT_DIR, CLIENT_SRC_PATH
+from common.constants import CLIENT_SRC_PATH, ROOT_DIR
 from management.owner import AvsOwner
 
 sys.path.insert(0, str(CLIENT_SRC_PATH))
